@@ -343,7 +343,7 @@ local function ui()
 	controlLabel.AnchorPoint=Vector2.new(0.5,0)
 	controlLabel.Position=UDim2.new(0.5,0,0,6)
 	controlLabel.Size=UDim2.new(0,500,0,20)
-	controlLabel.Text=flightToggleKey.Name.." or Mobile Button = Fly   •   ""
+	controlLabel.Text=flightToggleKey.Name.." or Mobile Button = Fly   •   "..menuToggleKey.Name.." or X = ???"
 	controlLabel.Font=Enum.Font.Gotham
 	controlLabel.TextColor3=Color3.new(0,0,0)
 	controlLabel.TextSize=16
