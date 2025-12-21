@@ -2986,4 +2986,4 @@ local function safeLoad(url)
     print("Loaded addon:", url)
 end
 
-safeLoad("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/BR05TagSystem") 
+safeLoad("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/BR05TagSystem.lua") 
