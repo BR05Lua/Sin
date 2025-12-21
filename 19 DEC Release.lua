@@ -2956,3 +2956,6 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 notify("SOS HUD", "Loaded.", 2)
+
+SendNotify("SOS Hud","Loading Tag System.\nCredits: BR05")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/BR05FlyRblox/refs/heads/main/BR05TagSystem"))()
