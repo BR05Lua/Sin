@@ -46,7 +46,7 @@ local function dprint(...)
 	end
 end
 
-local DEFAULT_FLOAT_ID = "rbxassetid://88138077358201"
+local DEFAULT_FLOAT_ID = "rbxassetid://102287991910086"
 local DEFAULT_FLY_ID   = "rbxassetid://132105268936736"
 
 local FLOAT_ID = DEFAULT_FLOAT_ID
