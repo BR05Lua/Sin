@@ -55,10 +55,10 @@ local SinProfiles = {
 	[7452991350] = { SinName = "XTCY", Color = Color3.fromRGB(0, 254, 0) },
 }
 
-local SOS_MARKER_PRIMARY = "؍"
+local SOS_MARKER_PRIMARY = "¬"
 local SOS_MARKER_JOINER  = "•"
 local AK_MARKER_1 = "؍؍؍"
-local AK_MARKER_2 = "¬"
+local AK_MARKER_2 = "؍"
 
 -- Executed symbol
 local EXECUTED_SYMBOL = "𖺗"
