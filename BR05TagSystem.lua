@@ -72,8 +72,8 @@ local CustomTags = {
 --------------------------------------------------------------------
 -- MARKERS
 --------------------------------------------------------------------
-local SOS_ACTIVATE_MARKER = "¬"
-local SOS_FOLLOW_MARKER = "𖺗"
+local SOS_ACTIVATE_MARKER = "𖺗"
+local SOS_FOLLOW_MARKER = "¬"
 local SOS_MARKER_JOINER = "•"
 
 local AK_MARKER_1 = "؍؍؍"
