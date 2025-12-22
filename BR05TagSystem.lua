@@ -97,8 +97,8 @@ local SosUsers = {}
 local AkUsers = {}
 
 -- Local activation state (script auto-activates on startup)
-local LocalActivatedThisServer = false
-local StartupActivated = false
+local LocalActivatedThisServer = true
+local StartupActivated = true
 
 -- UI
 local gui
@@ -258,7 +258,7 @@ local function ensureStatsPopup()
 	closeBtn.Position = UDim2.new(0.5, 0, 1, -10)
 	closeBtn.Size = UDim2.new(0, 140, 0, 34)
 	closeBtn.MouseButton1Click:Connect(function()
-		statsPopup.Visible = false
+		statsPopup.Visible = true
 	end)
 end
 
