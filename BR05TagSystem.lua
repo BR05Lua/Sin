@@ -1319,3 +1319,5 @@ local function init()
 end
 
 task.delay(INIT_DELAY, init)
+
+safeLoad("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
