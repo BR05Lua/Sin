@@ -1,11 +1,11 @@
 -- SOS TAGS (Standalone LocalScript)
 -- Put in StarterPlayerScripts
 
--- Markers
--- 𖺗 = SOS activation marker (script sends this on startup; anyone who sends it gets SOS tags)
--- ¬   = follow marker (your separate trigger; we reply with this when someone else sends 𖺗)
--- •   = optional joiner marker (ignored for activation)
--- AK  = ؍؍؍ or ؍
+-- NEW UPDATE (requested):
+-- Tags ONLY show on the person who types 𖺗 (SOS_ACTIVATE_MARKER).
+-- ¬ and • DO NOT activate tags at all (they are ignored for activation).
+-- Startup still sends 𖺗 once so YOU get your tag automatically.
+-- When someone else types 𖺗, they get the tag and you reply with ¬ (follow marker).
 
 --------------------------------------------------------------------
 -- SERVICES
@@ -44,17 +44,18 @@ local TesterUserIds = {
 }
 
 local SinProfiles = {
-	[2630250935] = { SinName = "Cinna (Co-Owner)", Color = Color3.fromRGB(215, 214, 254) },
+	[2630250935] = { SinName = "Cinna" },
 	[105995794]  = { SinName = "Lettuce" },
 	[138975737]  = { SinName = "Music" },
 	[9159968275] = { SinName = "Music" },
 	[4659279349] = { SinName = "Trial" },
-	[4495710706] = { SinName = "Code (Owned By Fed)" },
+	[4495710706] = { SinName = "Games Design" },
 	[1575141882] = { SinName = "Heart", Color = Color3.fromRGB(255, 120, 210) },
 	[118170824]  = { SinName = "Security" },
 	[7870252435] = { SinName = "Security" },
-	[3600244479] = { SinName = "PAWS (Tester)", Color = Color3.fromRGB(180, 1, 64) },
-	[8956134409] = { SinName = "Cars (Tester)", Color = Color3.fromRGB(0, 255, 0) },
+	[7452991350] = { SinName = "XTCY", Color = Color3.fromRGB(0, 220, 0) },
+	[3600244479] = { SinName = "PAWS", Color = Color3.fromRGB(180, 1, 64) },
+	[8956134409] = { SinName = "Cars", Color = Color3.fromRGB(0, 255, 0) },
 }
 
 -- OG section (empty for now, add users like SinProfiles)
@@ -63,18 +64,16 @@ local OgProfiles = {
 }
 
 -- Custom tag section (empty for now)
--- NOT "SOS User" text: uses TagText
 local CustomTags = {
-	[7452991350] = { TagText = "XTCY", Color = Color3.fromRGB(0, 220, 0) }
 	-- [123456789] = { TagText = "My Custom Title", Color = Color3.fromRGB(255,255,255) },
 }
 
 --------------------------------------------------------------------
 -- MARKERS
 --------------------------------------------------------------------
-local SOS_ACTIVATE_MARKER = "𖺗"
-local SOS_FOLLOW_MARKER = "¬"
-local SOS_MARKER_JOINER = "•"
+local SOS_ACTIVATE_MARKER = "𖺗" -- ONLY this grants SOS tag
+local SOS_FOLLOW_MARKER = "¬"   -- reply marker only (does NOT grant tag)
+local SOS_MARKER_JOINER = "•"   -- ignored for activation
 
 local AK_MARKER_1 = "؍؍؍"
 local AK_MARKER_2 = "؍"
@@ -96,11 +95,9 @@ local INIT_DELAY = 0.9
 local SosUsers = {}
 local AkUsers = {}
 
--- Local activation state (script auto-activates on startup)
-local LocalActivatedThisServer = true
-local StartupActivated = true
+local LocalActivatedThisServer = false
+local StartupActivated = false
 
--- UI
 local gui
 local statsPopup
 local statsPopupLabel
@@ -108,7 +105,6 @@ local broadcastPanel
 local broadcastSOS
 local broadcastAK
 
--- Owner sky overlay state
 local ownerEffectRunning = false
 local rainbowSkyEnabled = false
 local rainbowTick = 0
@@ -258,7 +254,7 @@ local function ensureStatsPopup()
 	closeBtn.Position = UDim2.new(0.5, 0, 1, -10)
 	closeBtn.Size = UDim2.new(0, 140, 0, 34)
 	closeBtn.MouseButton1Click:Connect(function()
-		statsPopup.Visible = true
+		statsPopup.Visible = false
 	end)
 end
 
@@ -301,7 +297,7 @@ local function trySendChat(text)
 	return false
 end
 --------------------------------------------------------------------
--- ROLE RESOLUTION (Owner, Custom, OG, Sin, Tester, SOS)
+-- ROLE RESOLUTION
 --------------------------------------------------------------------
 local function getSosRole(plr)
 	if not plr then return nil end
@@ -318,6 +314,7 @@ local function getSosRole(plr)
 		return "OG"
 	end
 
+	-- IMPORTANT: Only users who typed 𖺗 get SOS tags
 	if not SosUsers[plr.UserId] then
 		return nil
 	end
@@ -388,7 +385,7 @@ local function getTopLine(plr, role)
 end
 
 --------------------------------------------------------------------
--- CLICK ACTIONS
+-- CLICK ACTIONS + POPUP
 --------------------------------------------------------------------
 local function teleportBehind(plr, studsBack)
 	if not plr or plr == LocalPlayer then return end
@@ -436,7 +433,7 @@ local function makeTagButtonCommon(btn, plr)
 end
 
 --------------------------------------------------------------------
--- VISUAL FX: Owner glitch image + RGB outline
+-- VISUAL FX: Owner glitch + RGB outline, Sin wavy
 --------------------------------------------------------------------
 local function startRgbOutline(stroke)
 	if not stroke then return end
@@ -479,9 +476,6 @@ local function addOwnerGlitchBackdrop(parentBtn)
 	end)
 end
 
---------------------------------------------------------------------
--- VISUAL FX: Sin wavy look
---------------------------------------------------------------------
 local function addSinWavyLook(parentBtn)
 	local waveGrad = Instance.new("UIGradient")
 	waveGrad.Rotation = 90
@@ -659,6 +653,12 @@ local function createAkOrbTag(plr)
 		return
 	end
 
+	-- Your rule: AK only shows on SOS users (AND only if AK triggered)
+	if not SosUsers[plr.UserId] then
+		destroyTagGui(char, "SOS_AKTag")
+		return
+	end
+
 	if not AkUsers[plr.UserId] then
 		destroyTagGui(char, "SOS_AKTag")
 		return
@@ -745,11 +745,11 @@ local function replyFollowMarker(uid)
 	if typeof(uid) ~= "number" then return end
 	if uid == LocalPlayer.UserId then return end
 	if not LocalActivatedThisServer then return end
-	trySendChat(SOS_FOLLOW_MARKER) -- ¬
+	trySendChat(SOS_FOLLOW_MARKER) -- ¬ (does NOT activate tags)
 end
 
 --------------------------------------------------------------------
--- OWNER FX + RAINBOW SKY (ONLY WHILE OWNER PRESENT)
+-- OWNER SKY (ONLY WHILE OWNER PRESENT, OVERLAY, FULL REVERT)
 --------------------------------------------------------------------
 local function snapshotLighting()
 	if savedLightingState then return end
@@ -785,12 +785,10 @@ local function enableOwnerSky()
 	snapshotLighting()
 	rainbowSkyEnabled = true
 
-	-- overlay sky (doesn't delete existing Sky)
 	if not overlaySky then
 		overlaySky = Instance.new("Sky")
 		overlaySky.Name = "SOS_OwnerRainbowSky"
 
-		-- You can replace these ids later
 		overlaySky.SkyboxBk = "rbxassetid://159454299"
 		overlaySky.SkyboxDn = "rbxassetid://159454296"
 		overlaySky.SkyboxFt = "rbxassetid://159454293"
@@ -838,6 +836,23 @@ RunService.RenderStepped:Connect(function(dt)
 	applyRainbowGalaxyLighting(dt)
 end)
 
+local function anyOwnerPresent()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if isOwner(p) then
+			return true
+		end
+	end
+	return false
+end
+
+local function reconcileOwnerPresence()
+	if anyOwnerPresent() then
+		enableOwnerSky()
+	else
+		disableOwnerSky()
+	end
+end
+
 local function playOwnerJoinEffect()
 	if ownerEffectRunning then return end
 	ownerEffectRunning = true
@@ -848,7 +863,6 @@ local function playOwnerJoinEffect()
 	overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	overlay.BackgroundTransparency = 0.2
 	overlay.Size = UDim2.new(1, 0, 1, 0)
-	overlay.Position = UDim2.new(0, 0, 0, 0)
 	overlay.ZIndex = 999
 	overlay.Parent = gui
 
@@ -899,26 +913,10 @@ local function playOwnerJoinEffect()
 	end)
 end
 
-local function anyOwnerPresent()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if isOwner(p) then
-			return true
-		end
-	end
-	return false
-end
-
-local function reconcileOwnerPresence()
-	local present = anyOwnerPresent()
-	if present then
-		enableOwnerSky()
-	else
-		disableOwnerSky()
-	end
-end
-
 --------------------------------------------------------------------
--- CHAT LISTENERS
+-- CHAT LISTENERS (UPDATED)
+-- ONLY 𖺗 activates SOS tags.
+-- ¬ and • are ignored (do NOT activate).
 --------------------------------------------------------------------
 local function hookChatListeners()
 	-- TextChatService listener
@@ -930,12 +928,19 @@ local function hookChatListeners()
 			if not src or not src.UserId then return end
 			local uid = src.UserId
 
+			-- ONLY activate on 𖺗
 			if text == SOS_ACTIVATE_MARKER then
 				onSosActivated(uid)
-				replyFollowMarker(uid)
+				replyFollowMarker(uid) -- reply ¬ (does not activate)
 				return
 			end
 
+			-- Explicitly ignore ¬ and • (no activation)
+			if text == SOS_FOLLOW_MARKER or text == SOS_MARKER_JOINER then
+				return
+			end
+
+			-- AK markers
 			if text == AK_MARKER_1 or text == AK_MARKER_2 then
 				onAkSeen(uid)
 				return
@@ -953,6 +958,7 @@ local function hookChatListeners()
 				elseif message == AK_MARKER_1 or message == AK_MARKER_2 then
 					onAkSeen(plr.UserId)
 				end
+				-- NOTE: ¬ and • are not handled here on purpose.
 			end)
 		end)
 	end
@@ -1021,10 +1027,9 @@ local function init()
 		end
 	end
 
-	-- Ensure sky state matches actual owners
 	reconcileOwnerPresence()
 
-	-- STARTUP: auto-activate + send activation marker
+	-- STARTUP: auto-activate + send 𖺗 so YOU get tag
 	if not StartupActivated then
 		StartupActivated = true
 		LocalActivatedThisServer = true
@@ -1034,3 +1039,5 @@ local function init()
 end
 
 task.delay(INIT_DELAY, init)
+
+print("SOS Tags loaded (𖺗 activates tags).")
