@@ -110,6 +110,7 @@ local SinProfiles = {
 
 -- OG profiles (empty by default)
 local OgProfiles = {
+		[8956134409] = { OGName = "BR05", Color = Color3.fromRGB(255, 0, 0) }
 	-- [123456789] = { OgName = "OG", Color = Color3.fromRGB(160,220,255) },
 }
 
