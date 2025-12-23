@@ -1,29 +1,7 @@
---[[
-	SOS HUD (The Sins Of Scripting)
-	Single LocalScript (StarterPlayerScripts recommended)
-
-	Core kept:
-	- Smooth superman-style flight (BodyGyro + BodyVelocity), tilt 85 degrees
-	- WASD movement relative to camera, Q/E up/down
-	- Footstep/run sound mute while flying
-	- Mobile Fly button (bottom-right)
-	- Top pop-down glass menu with red outline + arrow toggle (no dragging)
-
-	Fixed now:
-	- Lighting crash fixed (Atmosphere has NO .Enabled, and Sky has no .Enabled)
-	- If a lighting toggle is OFF, we destroy that SOS effect instead of toggling invalid properties
-	- Anim override saving fixed (your saved overrides now actually load properly)
-	- Intro UI removed (per request) but intro sound still plays
-	- Menu builds immediately (no 2 second delay), starts CLOSED, and opens/closes reliably
-
-	Added back:
-	- Mic up tab VIP button: gives "Better Speed Coil" (invisible tool, speed 111) if you own any VIP pass listed
-	- Button click sound on every button: 111174530730534
-
-	Note:
-	- Persistent saving across sessions needs an executor that supports writefile/readfile.
-	  Otherwise it will persist via Player Attributes during the same session.
-]]
+-- SOS HUD (The Sins Of Scripting)
+-- Single LocalScript (StarterPlayerScripts recommended)
+-- Update: Added mini Animations sub-tab inside Sins and Co/Owners tabs (Idle + Run only)
+-- Future-proof: Added empty tables for Sins/CoOwners custom idles/runs so you can tell me later what to add where
 
 --------------------------------------------------------------------
 -- SERVICES
@@ -83,29 +61,56 @@ local MICUP_PLACE_IDS = {
 
 local DISCORD_LINK = "https://discord.gg/cacg7kvX"
 
--- Intro sound (no intro UI)
 local INTRO_SOUND_ID = "rbxassetid://1843492223"
 
--- Button click sound
 local BUTTON_CLICK_SOUND_ID = "rbxassetid://111174530730534"
 local BUTTON_CLICK_VOLUME = 0.6
 
--- Camera defaults captured on first setup
 local DEFAULT_FOV = nil
 local DEFAULT_CAM_MIN_ZOOM = nil
 local DEFAULT_CAM_MAX_ZOOM = nil
 local DEFAULT_CAMERA_SUBJECT_MODE = "Humanoid"
 local INFINITE_ZOOM = 1e9
 
--- Saved settings key
 local SETTINGS_FILE_PREFIX = "SOS_HUD_Settings_"
 local SETTINGS_ATTR_NAME = "SOS_HUD_SETTINGS_JSON"
 
--- VIP gamepasses
 local VIP_GAMEPASSES = {
 	951459548,
 	28828491,
 }
+
+--------------------------------------------------------------------
+-- ROLE GATES FOR TABS
+--------------------------------------------------------------------
+local OWNER_USERIDS = {
+	-- Add your UserId(s) here if needed, example:
+	-- [123456789] = true,
+}
+
+local function isOwnerUser()
+	if OWNER_USERIDS[LocalPlayer.UserId] then
+		return true
+	end
+	if game.CreatorType == Enum.CreatorType.User then
+		return LocalPlayer.UserId == game.CreatorId
+	end
+	return false
+end
+
+local function isSinsAllowed()
+	if LocalPlayer.Name == "Sins" then
+		return true
+	end
+	return isOwnerUser()
+end
+
+local function isCoOwnersAllowed()
+	if LocalPlayer.Name == "Cinna" then
+		return true
+	end
+	return isOwnerUser()
+end
 
 --------------------------------------------------------------------
 -- STATE
@@ -162,17 +167,14 @@ local stateOverrides = {
 local lastChosenState = "Idle"
 local lastChosenCategory = "Custom"
 
--- Player speed
 local DEFAULT_WALKSPEED = nil
 local playerSpeed = nil
 
--- Camera settings
 local camSubjectMode = DEFAULT_CAMERA_SUBJECT_MODE
 local camOffset = Vector3.new(0, 0, 0)
 local camFov = nil
 local camMaxZoom = INFINITE_ZOOM
 
--- UI State
 local gui
 
 local menuFrame
@@ -189,15 +191,12 @@ local fpsFrames = 0
 local fpsValue = 60
 local rainbowHue = 0
 
--- Menu tween safety
 local menuOpen = false
 local menuTween = nil
 
--- Button sound system
 local clickSoundTemplate = nil
 local buttonSoundAttached = setmetatable({}, { __mode = "k" })
 
--- Save debounce
 local pendingSave = false
 
 --------------------------------------------------------------------
@@ -788,7 +787,6 @@ local CustomIdle = {
 	["Dio"] = 138467089338692,
 	["Dio OH"] = 96658788627102,
 	["Joseph"] = 87470625500564,
-	["Jolyne"] = 97892708412696,
 	["Diego"] = 127117233320016,
 	["Polnareff"] = 104647713661701,
 	["Jotaro"] = 134878791451155,
@@ -821,21 +819,24 @@ local CustomIdle = {
 	["Hmmm Float"] = 107666091494733,
 	["OG Golden Freddy"] = 138402679058341,
 	["Wally West"] = 106169111259587,
-	["𝓛"] = 103267638009024,
+	["L"] = 103267638009024,
 	["Robot Malfunction"] = 110419039625879,
+
+	["A Vibing Spider"] = 86005347720103,
+	["Spiderman"] = 74785222555193,
+	["Ballora"] = 88392341793465,
 }
 
 local CustomRun = {
 	["Tall"] = 134010853417610,
 	["Officer Earl"] = 104646820775114,
 	["AOT Titan"] = 95363958550738,
+	["TF2"] = 122588181027551,
 	["Captain JS"] = 87806542116815,
 	["Ninja Sprint"] = 123763532572423,
 	["IDEK"] = 101293881003047,
 	["Honored One"] = 82260970223217,
 	["Head Hold"] = 92715775326925,
-
-	["Robot Speed 3"] = 128047975332475,
 
 	["Springtrap Sturdy"] = 80927378599036,
 	["UFO"] = 118703314621593,
@@ -846,39 +847,60 @@ local CustomRun = {
 	["Very Happy Run"] = 86522070222739,
 	["Missile"] = 92401041987431,
 	["I Wanna Run Away"] = 78510387198062,
+
+	["A Spider"] = 89356423918695,
+	["Ballora"] = 75557142930836,
 }
 
-local CustomWalk = {
-	["Football/Soccer"] = 116881956670910,
-	["Animal"] = 87721497492370,
-	["Fredbear"] = 133284420439423,
-	["Cute Anime"] = 106767496454996,
+-- Custom Walk removed per request
+local CustomWalk = nil
+
+--------------------------------------------------------------------
+-- NEW: PRIVATE CUSTOM LISTS FOR SINS AND CO/OWNERS
+-- When you later say "put these idles in Sins" or "put these runs in Co/Owners"
+-- I will add them right here.
+--------------------------------------------------------------------
+local SinsIdle = {
+	-- ["Name"] = 1234567890,
 }
 
-local function listCustomNamesForState(stateName)
+local SinsRun = {
+	-- ["Name"] = 1234567890,
+}
+
+local CoOwnersIdle = {
+	-- ["Name"] = 1234567890,
+}
+
+local CoOwnersRun = {
+	-- ["Name"] = 1234567890,
+}
+
+--------------------------------------------------------------------
+-- LIST HELPERS
+--------------------------------------------------------------------
+local function listNamesFromMap(map)
 	local t = {}
-	local src = nil
-	if stateName == "Idle" then src = CustomIdle end
-	if stateName == "Run" then src = CustomRun end
-	if stateName == "Walk" then src = CustomWalk end
-	if not src then return t end
-	for name, _ in pairs(src) do
+	if not map then return t end
+	for name, _ in pairs(map) do
 		table.insert(t, name)
 	end
 	table.sort(t)
 	return t
 end
 
+local function listCustomNamesForState(stateName)
+	if stateName == "Idle" then return listNamesFromMap(CustomIdle) end
+	if stateName == "Run" then return listNamesFromMap(CustomRun) end
+	return {}
+end
+
 local function getCustomIdForState(name, stateName)
 	if stateName == "Idle" then return CustomIdle[name] end
 	if stateName == "Run" then return CustomRun[name] end
-	if stateName == "Walk" then return CustomWalk[name] end
 	return nil
 end
 
---------------------------------------------------------------------
--- ROBLOX/UNRELEASED LIST HELPERS
---------------------------------------------------------------------
 local function listPackNamesForCategory(category)
 	local names = {}
 	for name, _ in pairs(AnimationPacks) do
@@ -1123,7 +1145,7 @@ local function setTabButtonActive(btn, active)
 end
 
 --------------------------------------------------------------------
--- LIGHTING SYSTEM (safe, no invalid .Enabled on Atmosphere/Sky)
+-- LIGHTING SYSTEM (unchanged)
 --------------------------------------------------------------------
 local ORIGINAL_LIGHTING = {
 	Ambient = Lighting.Ambient,
@@ -1357,7 +1379,6 @@ local function applySkyPreset(name)
 		destroyIfExists("SOS_SunRays")
 	end
 
-	-- Atmosphere has no .Enabled, so we toggle by creating/destroying it
 	if LightingState.Toggles.Atmosphere then
 		local atm = getOrCreateEffect("Atmosphere", "SOS_Atmosphere")
 		atm.Density = 0.32
@@ -1418,7 +1439,6 @@ local function syncLightingToggles()
 	if LightingState.SelectedSky and SKY_PRESETS[LightingState.SelectedSky] then
 		applySkyPreset(LightingState.SelectedSky)
 	else
-		-- Even if no sky chosen, keep toggles consistent
 		if not LightingState.Toggles.Sky then destroyIfExists("SOS_Sky") end
 		if not LightingState.Toggles.Atmosphere then destroyIfExists("SOS_Atmosphere") end
 		if not LightingState.Toggles.ColorCorrection then destroyIfExists("SOS_ColorCorrection") end
@@ -1545,7 +1565,6 @@ local function giveBetterSpeedCoil()
 		return
 	end
 
-	-- Prevent duplicates
 	if backpack:FindFirstChild("Better Speed Coil") or character:FindFirstChild("Better Speed Coil") then
 		notify("Better Speed Coil", "You already have it.", 2)
 		return
@@ -1580,6 +1599,274 @@ local function giveBetterSpeedCoil()
 end
 
 --------------------------------------------------------------------
+-- UI: MINI ANIM PICKER (for Sins and Co/Owners)
+-- Same method style as Anim Packs, but smaller and only Idle/Run
+--------------------------------------------------------------------
+local function buildMiniAnimPicker(parentScroll, titleText, privateIdleMap, privateRunMap, miniTabsList)
+	local header = makeText(parentScroll, titleText, 16, true)
+	header.Size = UDim2.new(1, 0, 0, 22)
+
+	local hint = makeText(parentScroll, "Only Idle and Run here. Keep it tidy or the menu will start complaining like it's on low ping.", 13, false)
+	hint.Size = UDim2.new(1, 0, 0, 34)
+	hint.TextColor3 = Color3.fromRGB(210, 210, 210)
+
+	local outer = Instance.new("Frame")
+	outer.BackgroundTransparency = 1
+	outer.Size = UDim2.new(1, 0, 0, 280)
+	outer.Parent = parentScroll
+
+	local tabBar = Instance.new("ScrollingFrame")
+	tabBar.BackgroundTransparency = 1
+	tabBar.BorderSizePixel = 0
+	tabBar.Position = UDim2.new(0, 0, 0, 0)
+	tabBar.Size = UDim2.new(1, 0, 0, 42)
+	tabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+	tabBar.ScrollingDirection = Enum.ScrollingDirection.X
+	tabBar.ScrollBarThickness = 2
+	tabBar.Parent = outer
+
+	local tabLayout = Instance.new("UIListLayout")
+	tabLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabLayout.Padding = UDim.new(0, 10)
+	tabLayout.Parent = tabBar
+
+	local pageHolder = Instance.new("Frame")
+	pageHolder.BackgroundTransparency = 1
+	pageHolder.Position = UDim2.new(0, 0, 0, 48)
+	pageHolder.Size = UDim2.new(1, 0, 1, -48)
+	pageHolder.ClipsDescendants = true
+	pageHolder.Parent = outer
+
+	local miniPages = {}
+	local miniButtons = {}
+	local activeMini = nil
+
+	local function makeMiniPage(name)
+		local p = Instance.new("Frame")
+		p.Name = name
+		p.BackgroundTransparency = 1
+		p.Size = UDim2.new(1, 0, 1, 0)
+		p.Visible = false
+		p.Parent = pageHolder
+		miniPages[name] = p
+		return p
+	end
+
+	local function switchMini(name)
+		if activeMini == name then return end
+		for n, pg in pairs(miniPages) do
+			pg.Visible = (n == name)
+		end
+		for n, b in pairs(miniButtons) do
+			setTabButtonActive(b, n == name)
+		end
+		activeMini = name
+	end
+
+	local list = miniTabsList or { "Animations", "Other" }
+	for i, tabName in ipairs(list) do
+		local b = makeButton(tabBar, tabName)
+		b.Size = UDim2.new(0, (tabName == "Animations" and 130 or 120), 0, 36)
+		b.LayoutOrder = i
+		miniButtons[tabName] = b
+		makeMiniPage(tabName)
+		b.MouseButton1Click:Connect(function()
+			switchMini(tabName)
+		end)
+	end
+
+	-- Animations page content
+	local animPage = miniPages["Animations"]
+	if animPage then
+		local stateBar = Instance.new("ScrollingFrame")
+		stateBar.BackgroundTransparency = 1
+		stateBar.BorderSizePixel = 0
+		stateBar.Size = UDim2.new(1, 0, 0, 42)
+		stateBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+		stateBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+		stateBar.ScrollingDirection = Enum.ScrollingDirection.X
+		stateBar.ScrollBarThickness = 2
+		stateBar.Parent = animPage
+
+		local stLay = Instance.new("UIListLayout")
+		stLay.FillDirection = Enum.FillDirection.Horizontal
+		stLay.SortOrder = Enum.SortOrder.LayoutOrder
+		stLay.Padding = UDim.new(0, 10)
+		stLay.Parent = stateBar
+
+		local catBar = Instance.new("ScrollingFrame")
+		catBar.BackgroundTransparency = 1
+		catBar.BorderSizePixel = 0
+		catBar.Position = UDim2.new(0, 0, 0, 48)
+		catBar.Size = UDim2.new(1, 0, 0, 42)
+		catBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+		catBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+		catBar.ScrollingDirection = Enum.ScrollingDirection.X
+		catBar.ScrollBarThickness = 2
+		catBar.Parent = animPage
+
+		local catLay = Instance.new("UIListLayout")
+		catLay.FillDirection = Enum.FillDirection.Horizontal
+		catLay.SortOrder = Enum.SortOrder.LayoutOrder
+		catLay.Padding = UDim.new(0, 10)
+		catLay.Parent = catBar
+
+		local listScroll = Instance.new("ScrollingFrame")
+		listScroll.BackgroundTransparency = 1
+		listScroll.BorderSizePixel = 0
+		listScroll.Position = UDim2.new(0, 0, 0, 96)
+		listScroll.Size = UDim2.new(1, 0, 1, -96)
+		listScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+		listScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		listScroll.ScrollBarThickness = 4
+		listScroll.Parent = animPage
+
+		local pad = Instance.new("UIPadding")
+		pad.PaddingTop = UDim.new(0, 6)
+		pad.PaddingBottom = UDim.new(0, 6)
+		pad.PaddingLeft = UDim.new(0, 2)
+		pad.PaddingRight = UDim.new(0, 2)
+		pad.Parent = listScroll
+
+		local container = Instance.new("Frame")
+		container.BackgroundTransparency = 1
+		container.Size = UDim2.new(1, 0, 0, 0)
+		container.Parent = listScroll
+
+		local lay = Instance.new("UIListLayout")
+		lay.SortOrder = Enum.SortOrder.LayoutOrder
+		lay.Padding = UDim.new(0, 8)
+		lay.Parent = container
+
+		local miniStateButtons = {}
+		local miniCatButtons = {}
+
+		local miniState = "Idle"
+		local miniCat = "Custom"
+
+		local function getPrivateMapForState(stateName)
+			if stateName == "Idle" then return privateIdleMap end
+			if stateName == "Run" then return privateRunMap end
+			return nil
+		end
+
+		local function rebuildMiniList()
+			for _, ch in ipairs(container:GetChildren()) do
+				if ch:IsA("TextButton") or ch:IsA("TextLabel") or ch:IsA("Frame") then
+					ch:Destroy()
+				end
+			end
+
+			if miniCat == "Custom" then
+				local map = getPrivateMapForState(miniState)
+				local names = listNamesFromMap(map)
+				if #names == 0 then
+					local t = makeText(container, "No private animations added yet for " .. miniState .. ".", 14, true)
+					t.Size = UDim2.new(1, 0, 0, 26)
+					return
+				end
+
+				for _, nm in ipairs(names) do
+					local b = makeButton(container, nm)
+					b.Size = UDim2.new(1, 0, 0, 34)
+					b.MouseButton1Click:Connect(function()
+						local id = map[nm]
+						if not id then return end
+						stateOverrides[miniState] = "rbxassetid://" .. tostring(id)
+						local ok = applyStateOverrideToAnimate(miniState, stateOverrides[miniState])
+						if ok then
+							notify("Anim Packs", "Set " .. miniState .. " to " .. nm, 2)
+							scheduleSave()
+						else
+							notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
+						end
+					end)
+				end
+				return
+			end
+
+			local names = listPackNamesForCategory(miniCat)
+			for _, packName in ipairs(names) do
+				local b = makeButton(container, packName)
+				b.Size = UDim2.new(1, 0, 0, 34)
+				b.MouseButton1Click:Connect(function()
+					local id = getPackValueForState(packName, miniState)
+					if not id then
+						notify("Anim Packs", "That pack has no ID for: " .. miniState, 2)
+						return
+					end
+					stateOverrides[miniState] = "rbxassetid://" .. tostring(id)
+					local ok = applyStateOverrideToAnimate(miniState, stateOverrides[miniState])
+					if ok then
+						notify("Anim Packs", "Set " .. miniState .. " to " .. packName, 2)
+						scheduleSave()
+					else
+						notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
+					end
+				end)
+			end
+		end
+
+		local function setMiniState(s)
+			miniState = s
+			for n, b in pairs(miniStateButtons) do
+				setTabButtonActive(b, n == s)
+			end
+			rebuildMiniList()
+		end
+
+		local function setMiniCat(c)
+			miniCat = c
+			for n, b in pairs(miniCatButtons) do
+				setTabButtonActive(b, n == c)
+			end
+			rebuildMiniList()
+		end
+
+		for _, s in ipairs({ "Idle", "Run" }) do
+			local b = makeButton(stateBar, s)
+			b.Size = UDim2.new(0, 110, 0, 34)
+			miniStateButtons[s] = b
+			b.MouseButton1Click:Connect(function()
+				setMiniState(s)
+			end)
+		end
+
+		for _, c in ipairs({ "Custom", "Roblox Anims", "Unreleased" }) do
+			local b = makeButton(catBar, c)
+			b.Size = UDim2.new(0, (c == "Roblox Anims" and 150 or 120), 0, 34)
+			miniCatButtons[c] = b
+			b.MouseButton1Click:Connect(function()
+				setMiniCat(c)
+			end)
+		end
+
+		setMiniCat("Custom")
+		setMiniState("Idle")
+	end
+
+	-- Fill placeholders so Co/Owners has room for future tabs
+	for _, tabName in ipairs(list) do
+		if tabName ~= "Animations" then
+			local pg = miniPages[tabName]
+			if pg then
+				local t = makeText(pg, "Reserved for future stuff.", 14, true)
+				t.Size = UDim2.new(1, 0, 0, 34)
+
+				local s = makeText(pg, "Tell me what you want added here later and I will wire it in.", 13, false)
+				s.Size = UDim2.new(1, 0, 0, 40)
+				s.Position = UDim2.new(0, 0, 0, 34)
+				s.TextColor3 = Color3.fromRGB(210, 210, 210)
+			end
+		end
+	end
+
+	switchMini("Animations")
+end
+
+--------------------------------------------------------------------
 -- UI: BUILD
 --------------------------------------------------------------------
 local function createUI()
@@ -1595,10 +1882,8 @@ local function createUI()
 	ensureClickSoundTemplate()
 	setupGlobalButtonSounds(gui)
 
-	-- Intro sound only
 	playIntroSoundOnly()
 
-	-- FPS label
 	fpsLabel = Instance.new("TextLabel")
 	fpsLabel.Name = "FPS"
 	fpsLabel.BackgroundTransparency = 1
@@ -1613,7 +1898,6 @@ local function createUI()
 	fpsLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
 	fpsLabel.Parent = gui
 
-	-- Handle
 	menuHandle = Instance.new("Frame")
 	menuHandle.Name = "MenuHandle"
 	menuHandle.AnchorPoint = Vector2.new(0.5, 0)
@@ -1647,7 +1931,6 @@ local function createUI()
 	title.TextXAlignment = Enum.TextXAlignment.Center
 	title.Parent = menuHandle
 
-	-- Menu frame
 	menuFrame = Instance.new("Frame")
 	menuFrame.Name = "Menu"
 	menuFrame.AnchorPoint = Vector2.new(0.5, 0)
@@ -1659,7 +1942,6 @@ local function createUI()
 	makeGlass(menuFrame)
 	makeStroke(menuFrame, 2)
 
-	-- Tabs bar
 	tabsBar = Instance.new("ScrollingFrame")
 	tabsBar.Name = "TabsBar"
 	tabsBar.BackgroundTransparency = 1
@@ -1678,7 +1960,6 @@ local function createUI()
 	tabsLayout.Padding = UDim.new(0, 10)
 	tabsLayout.Parent = tabsBar
 
-	-- Pages holder
 	pagesHolder = Instance.new("Frame")
 	pagesHolder.Name = "PagesHolder"
 	pagesHolder.BackgroundTransparency = 1
@@ -1732,6 +2013,17 @@ local function createUI()
 	local lightingPage, lightingScroll = makePage("Lighting")
 	local serverPage, serverScroll = makePage("Server")
 	local clientPage, clientScroll = makePage("Client")
+
+	-- NEW tabs pages
+	local sinsPage, sinsScroll = nil, nil
+	if isSinsAllowed() then
+		sinsPage, sinsScroll = makePage("Sins")
+	end
+
+	local coOwnersPage, coOwnersScroll = nil, nil
+	if isCoOwnersAllowed() then
+		coOwnersPage, coOwnersScroll = makePage("Co/Owners")
+	end
 
 	local micupPage, micupScroll = nil, nil
 	do
@@ -2074,6 +2366,13 @@ local function createUI()
 			end
 
 			if lastChosenCategory == "Custom" then
+				if lastChosenState == "Walk" then
+					local t = makeText(animListContainer, "Custom is not available for Walk.", 14, true)
+					t.Size = UDim2.new(1, 0, 0, 28)
+					animateListPop()
+					return
+				end
+
 				local names = listCustomNamesForState(lastChosenState)
 				if #names == 0 then
 					local t = makeText(animListContainer, "No Custom animations for: " .. lastChosenState, 14, true)
@@ -2127,20 +2426,31 @@ local function createUI()
 			animateListPop()
 		end
 
-		local function setState(stateName)
-			lastChosenState = stateName
-			for n, btn in pairs(stateButtons) do
-				setTabButtonActive(btn, n == stateName)
+		local function setCategory(catName)
+			if lastChosenState == "Walk" and catName == "Custom" then
+				catName = "Roblox Anims"
+			end
+			lastChosenCategory = catName
+			for n, btn in pairs(categoryButtons) do
+				setTabButtonActive(btn, n == catName)
 			end
 			rebuildPackList()
 			scheduleSave()
 		end
 
-		local function setCategory(catName)
-			lastChosenCategory = catName
-			for n, btn in pairs(categoryButtons) do
-				setTabButtonActive(btn, n == catName)
+		local function setState(stateName)
+			lastChosenState = stateName
+			for n, btn in pairs(stateButtons) do
+				setTabButtonActive(btn, n == stateName)
 			end
+
+			if lastChosenState == "Walk" and lastChosenCategory == "Custom" then
+				lastChosenCategory = "Roblox Anims"
+				for n, btn in pairs(categoryButtons) do
+					setTabButtonActive(btn, n == lastChosenCategory)
+				end
+			end
+
 			rebuildPackList()
 			scheduleSave()
 		end
@@ -2170,7 +2480,7 @@ local function createUI()
 	end
 
 	----------------------------------------------------------------
-	-- PLAYER TAB
+	-- PLAYER TAB (unchanged)
 	----------------------------------------------------------------
 	do
 		local header = makeText(playerScroll, "Player", 16, true)
@@ -2260,7 +2570,7 @@ local function createUI()
 	end
 
 	----------------------------------------------------------------
-	-- CAMERA TAB
+	-- CAMERA TAB (unchanged)
 	----------------------------------------------------------------
 	do
 		local header = makeText(cameraScroll, "Camera", 16, true)
@@ -2411,7 +2721,7 @@ local function createUI()
 	end
 
 	----------------------------------------------------------------
-	-- LIGHTING TAB
+	-- LIGHTING TAB (unchanged)
 	----------------------------------------------------------------
 	do
 		local header = makeText(lightingScroll, "Lighting", 16, true)
@@ -2530,7 +2840,7 @@ local function createUI()
 	end
 
 	----------------------------------------------------------------
-	-- MIC UP TAB
+	-- MIC UP TAB (unchanged)
 	----------------------------------------------------------------
 	if micupScroll then
 		local header = makeText(micupScroll, "Mic up", 16, true)
@@ -2555,7 +2865,7 @@ local function createUI()
 	end
 
 	----------------------------------------------------------------
-	-- SERVER TAB
+	-- SERVER TAB (unchanged)
 	----------------------------------------------------------------
 	do
 		local header = makeText(serverScroll, "Server", 16, true)
@@ -2642,11 +2952,37 @@ local function createUI()
 	end
 
 	----------------------------------------------------------------
-	-- CLIENT TAB (placeholder)
+	-- CLIENT TAB (unchanged)
 	----------------------------------------------------------------
 	do
 		local t = makeText(clientScroll, "Controls\n(Coming soon)", 14, true)
 		t.Size = UDim2.new(1, 0, 0, 50)
+	end
+
+	----------------------------------------------------------------
+	-- SINS TAB (now with mini tabs + Animations)
+	----------------------------------------------------------------
+	if sinsScroll then
+		buildMiniAnimPicker(
+			sinsScroll,
+			"Sins",
+			SinsIdle,
+			SinsRun,
+			{ "Animations", "Notes" }
+		)
+	end
+
+	----------------------------------------------------------------
+	-- CO/OWNERS TAB (now with mini tabs + Animations, room for more)
+	----------------------------------------------------------------
+	if coOwnersScroll then
+		buildMiniAnimPicker(
+			coOwnersScroll,
+			"Co/Owners",
+			CoOwnersIdle,
+			CoOwnersRun,
+			{ "Animations", "Tools", "Settings" }
+		)
 	end
 
 	----------------------------------------------------------------
@@ -2708,8 +3044,15 @@ local function createUI()
 	addTabButton("Lighting", 7)
 	addTabButton("Server", 8)
 	addTabButton("Client", 9)
+
+	if sinsPage then
+		addTabButton("Sins", 10, 120)
+	end
+	if coOwnersPage then
+		addTabButton("Co/Owners", 11, 140)
+	end
 	if micupPage then
-		addTabButton("Mic up", 10, 120)
+		addTabButton("Mic up", 12, 120)
 	end
 
 	pages["Info"].Page.Visible = true
@@ -2882,7 +3225,6 @@ RunService.RenderStepped:Connect(function(dt)
 		tiltDeg = IDLE_TILT_DEG
 	end
 
-	-- Q/E special tilt when only vertical
 	if not hasHorizontal and verticalInput < 0 then
 		tiltDeg = 90
 	elseif not hasHorizontal and verticalInput > 0 then
