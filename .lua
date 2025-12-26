@@ -2479,8 +2479,8 @@ local function createUI()
 		setState(lastChosenState)
 	end
 
-	----------------------------------------------------------------
--- PLAYER TAB (full block, includes original + First Person Arms + Car button hook)
+----------------------------------------------------------------
+-- PLAYER TAB (full block, UPDATED: adds BHOP button + themed BHOP menu, no B-toggle)
 ----------------------------------------------------------------
 do
 	local header = makeText(playerScroll, "Player", 16, true)
@@ -2570,8 +2570,6 @@ do
 
 	----------------------------------------------------------------
 	-- Look Mum im a Car (button hook)
-	-- This expects you to paste the Car UI script into the function below (once),
-	-- or expose a global function named _G.SOS_StartCarUI elsewhere.
 	----------------------------------------------------------------
 	local carHeader = makeText(playerScroll, "Car Animations", 16, true)
 	carHeader.Size = UDim2.new(1, 0, 0, 22)
@@ -2583,7 +2581,6 @@ do
 	local carBtn = makeButton(playerScroll, "Look Mum im a Car")
 	carBtn.Size = UDim2.new(0, 240, 0, 40)
 
-	-- Optional: paste the full Car UI script into this function body if you want it self-contained.
 	local function startCarUI()
 		if typeof(_G) == "table" and typeof(_G.SOS_StartCarUI) == "function" then
 			_G.SOS_StartCarUI()
@@ -2598,44 +2595,547 @@ do
 	end)
 
 	----------------------------------------------------------------
-	-- First Person Arms (show arms + arm accessories)
+	-- BHOP (themed menu, opened via Player tab button, no B toggle)
 	----------------------------------------------------------------
-	local armsHeader = makeText(playerScroll, "First Person Arms", 16, true)
-	armsHeader.Size = UDim2.new(1, 0, 0, 22)
+	local bhopHeader = makeText(playerScroll, "Bhop", 16, true)
+	bhopHeader.Size = UDim2.new(1, 0, 0, 22)
 
-	local armsHint = makeText(playerScroll, "Forces your arms (and accessories attached to them) to stay visible in first person.", 13, false)
-	armsHint.Size = UDim2.new(1, 0, 0, 34)
-	armsHint.TextColor3 = Color3.fromRGB(210, 210, 210)
+	local bhopHint = makeText(playerScroll, "CS 1.6 style movement. Open the menu to enable and tweak settings.", 13, false)
+	bhopHint.Size = UDim2.new(1, 0, 0, 34)
+	bhopHint.TextColor3 = Color3.fromRGB(210, 210, 210)
 
-	local armsBtn = makeButton(playerScroll, "Arms: OFF")
-	armsBtn.Size = UDim2.new(0, 200, 0, 40)
+	local bhopBtn = makeButton(playerScroll, "Bhop")
+	bhopBtn.Size = UDim2.new(0, 240, 0, 40)
 
-	local armsState = {
-		enabled = false,
+	local bhopGui = nil
+	local bhopHandle = nil
+	local bhopFrame = nil
+	local bhopArrow = nil
+	local bhopOpen = false
+	local bhopTween = nil
+
+	local bhopEnabled = false
+	local bhopBodyVel = nil
+
+	local bhopCharacter = nil
+	local bhopHumanoid = nil
+	local bhopRoot = nil
+
+	local bhopOriginalWalkSpeed = nil
+	local bhopOriginalJumpPower = nil
+
+	local isTyping = false
+	local maxSpeedReached = 0
+
+	local bhopConfig = {
+		GROUND_FRICTION = 6,
+		GROUND_ACCELERATE = 10,
+		AIR_ACCELERATE = 16,
+		GROUND_SPEED = 16,
+		AIR_CAP = 10,
+		JUMP_POWER = 50,
+		STOP_SPEED = 1,
+	}
+
+	local bhopCurrentVel = Vector3.new(0, 0, 0)
+
+	UserInputService.TextBoxFocused:Connect(function()
+		isTyping = true
+	end)
+	UserInputService.TextBoxFocusReleased:Connect(function()
+		isTyping = false
+	end)
+
+	local function bhopGetRefs()
+		bhopCharacter = LocalPlayer.Character
+		if not bhopCharacter then return false end
+		bhopHumanoid = bhopCharacter:FindFirstChildOfClass("Humanoid")
+		bhopRoot = bhopCharacter:FindFirstChild("HumanoidRootPart")
+		if not bhopHumanoid or not bhopRoot then return false end
+		return true
+	end
+
+	local function bhopEnsureBodyVel()
+		if not bhopRoot then return end
+		if bhopBodyVel and bhopBodyVel.Parent == bhopRoot then return end
+		if bhopBodyVel then pcall(function() bhopBodyVel:Destroy() end) end
+
+		bhopBodyVel = Instance.new("BodyVelocity")
+		bhopBodyVel.Name = "SOS_BhopVelocity"
+		bhopBodyVel.MaxForce = Vector3.new(0, 0, 0)
+		bhopBodyVel.P = 10000
+		bhopBodyVel.Velocity = Vector3.new(0, 0, 0)
+		bhopBodyVel.Parent = bhopRoot
+	end
+
+	local function bhopIsGrounded()
+		if not bhopRoot or not bhopCharacter then return false end
+
+		local rayOrigin = bhopRoot.Position
+		local rayDirection = Vector3.new(0, -4, 0)
+
+		local params = RaycastParams.new()
+		params.FilterDescendantsInstances = { bhopCharacter }
+		params.FilterType = Enum.RaycastFilterType.Blacklist
+
+		return workspace:Raycast(rayOrigin, rayDirection, params) ~= nil
+	end
+
+	local function bhopGetWishDir()
+		if isTyping then
+			return Vector3.new(0, 0, 0)
+		end
+
+		local cam = workspace.CurrentCamera
+		if not cam then return Vector3.new(0, 0, 0) end
+
+		local moveVector = Vector3.new(0, 0, 0)
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVector = moveVector + cam.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVector = moveVector - cam.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVector = moveVector - cam.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVector = moveVector + cam.CFrame.RightVector end
+
+		moveVector = Vector3.new(moveVector.X, 0, moveVector.Z)
+		if moveVector.Magnitude > 0 then
+			return moveVector.Unit
+		end
+		return Vector3.new(0, 0, 0)
+	end
+
+	local function bhopAirAccelerate(wishDir, wishSpeed, accel, dt)
+		local currentSpeed = bhopCurrentVel:Dot(wishDir)
+		local addSpeed = wishSpeed - currentSpeed
+		if addSpeed <= 0 then return end
+		local accelSpeed = math.min(accel * wishSpeed * dt, addSpeed)
+		bhopCurrentVel = bhopCurrentVel + wishDir * accelSpeed
+	end
+
+	local function bhopGroundAccelerate(wishDir, wishSpeed, accel, dt)
+		local currentSpeed = bhopCurrentVel:Dot(wishDir)
+		local addSpeed = wishSpeed - currentSpeed
+		if addSpeed <= 0 then return end
+		local accelSpeed = math.min(accel * dt * wishSpeed, addSpeed)
+		bhopCurrentVel = bhopCurrentVel + wishDir * accelSpeed
+	end
+
+	local function bhopApplyFriction(dt)
+		local speed = bhopCurrentVel.Magnitude
+		if speed < 0.1 then
+			bhopCurrentVel = Vector3.new(0, 0, 0)
+			return
+		end
+
+		local control = speed < bhopConfig.STOP_SPEED and bhopConfig.STOP_SPEED or speed
+		local drop = control * bhopConfig.GROUND_FRICTION * dt
+		local newSpeed = math.max(speed - drop, 0)
+
+		if speed > 0 then
+			bhopCurrentVel = bhopCurrentVel * (newSpeed / speed)
+		end
+	end
+
+	local bhopDebugLine = nil
+	local function bhopUpdateDebug(speed, grounded)
+		if not bhopDebugLine then return end
+		if speed > maxSpeedReached then
+			maxSpeedReached = speed
+		end
+		local g = grounded and "GROUNDED" or "IN AIR"
+		bhopDebugLine.Text = string.format("Status: %s  |  Speed: %.1f  |  Max: %.1f", g, speed, maxSpeedReached)
+	end
+
+	local function bhopSetEnabled(on)
+		if not bhopGetRefs() then
+			notify("Bhop", "Character not ready.", 2)
+			return
+		end
+
+		bhopEnsureBodyVel()
+
+		bhopEnabled = on and true or false
+		maxSpeedReached = 0
+
+		if bhopEnabled then
+			bhopOriginalWalkSpeed = bhopHumanoid.WalkSpeed
+			bhopOriginalJumpPower = bhopHumanoid.JumpPower
+
+			bhopHumanoid.WalkSpeed = 0
+			bhopHumanoid.JumpPower = 0
+
+			bhopCurrentVel = Vector3.new(0, 0, 0)
+			bhopBodyVel.MaxForce = Vector3.new(100000, 0, 100000)
+			bhopBodyVel.Velocity = Vector3.new(0, 0, 0)
+
+			notify("Bhop", "Enabled.", 2)
+		else
+			if bhopOriginalWalkSpeed ~= nil then
+				bhopHumanoid.WalkSpeed = bhopOriginalWalkSpeed
+			end
+			if bhopOriginalJumpPower ~= nil then
+				bhopHumanoid.JumpPower = bhopOriginalJumpPower
+			end
+
+			bhopBodyVel.MaxForce = Vector3.new(0, 0, 0)
+			bhopBodyVel.Velocity = Vector3.new(0, 0, 0)
+
+			bhopCurrentVel = Vector3.new(0, 0, 0)
+			notify("Bhop", "Disabled.", 2)
+		end
+	end
+
+	local function bhopPhysicsStep(dt)
+		if not bhopEnabled then
+			if bhopRoot then
+				local v = bhopRoot.Velocity
+				local speed = Vector3.new(v.X, 0, v.Z).Magnitude
+				bhopUpdateDebug(speed, bhopIsGrounded())
+			end
+			return
+		end
+		if not bhopRoot or not bhopHumanoid or not bhopBodyVel then return end
+
+		local wishDir = bhopGetWishDir()
+		local onGround = bhopIsGrounded()
+
+		if onGround then
+			bhopApplyFriction(dt)
+			bhopGroundAccelerate(wishDir, bhopConfig.GROUND_SPEED, bhopConfig.GROUND_ACCELERATE, dt)
+
+			if UserInputService:IsKeyDown(Enum.KeyCode.Space) and not isTyping then
+				bhopRoot.Velocity = Vector3.new(bhopCurrentVel.X, bhopConfig.JUMP_POWER, bhopCurrentVel.Z)
+			end
+		else
+			bhopAirAccelerate(wishDir, bhopConfig.AIR_CAP, bhopConfig.AIR_ACCELERATE, dt)
+		end
+
+		bhopBodyVel.Velocity = Vector3.new(bhopCurrentVel.X, 0, bhopCurrentVel.Z)
+		bhopUpdateDebug(bhopCurrentVel.Magnitude, onGround)
+	end
+
+	local function bhopBuildMenu()
+		if bhopGui and bhopGui.Parent then
+			return
+		end
+
+		bhopGui = Instance.new("ScreenGui")
+		bhopGui.Name = "SOS_BhopMenu"
+		bhopGui.ResetOnSpawn = false
+		bhopGui.IgnoreGuiInset = true
+		bhopGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		bhopGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+		setupGlobalButtonSounds(bhopGui)
+
+		bhopHandle = Instance.new("Frame")
+		bhopHandle.Name = "Handle"
+		bhopHandle.AnchorPoint = Vector2.new(0.5, 0)
+		bhopHandle.Position = UDim2.new(0.5, 0, 0, 90)
+		bhopHandle.Size = UDim2.new(0, 420, 0, 42)
+		bhopHandle.BorderSizePixel = 0
+		bhopHandle.Parent = bhopGui
+		makeCorner(bhopHandle, 16)
+		makeGlass(bhopHandle)
+		makeStroke(bhopHandle, 2)
+
+		bhopArrow = Instance.new("TextButton")
+		bhopArrow.Name = "Arrow"
+		bhopArrow.BackgroundTransparency = 1
+		bhopArrow.Size = UDim2.new(0, 40, 0, 40)
+		bhopArrow.Position = UDim2.new(0, 8, 0, 1)
+		bhopArrow.Text = "˄"
+		bhopArrow.Font = Enum.Font.GothamBold
+		bhopArrow.TextSize = 22
+		bhopArrow.TextColor3 = Color3.fromRGB(240, 240, 240)
+		bhopArrow.Parent = bhopHandle
+
+		local title = Instance.new("TextLabel")
+		title.BackgroundTransparency = 1
+		title.Size = UDim2.new(1, -90, 1, 0)
+		title.Position = UDim2.new(0, 70, 0, 0)
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 18
+		title.Text = "Bhop"
+		title.TextColor3 = Color3.fromRGB(245, 245, 245)
+		title.TextXAlignment = Enum.TextXAlignment.Center
+		title.Parent = bhopHandle
+
+		bhopFrame = Instance.new("Frame")
+		bhopFrame.Name = "Menu"
+		bhopFrame.AnchorPoint = Vector2.new(0.5, 0)
+		bhopFrame.Position = UDim2.new(0.5, 0, 0, 136)
+		bhopFrame.Size = UDim2.new(0, 420, 0, 360)
+		bhopFrame.BorderSizePixel = 0
+		bhopFrame.Parent = bhopGui
+		makeCorner(bhopFrame, 16)
+		makeGlass(bhopFrame)
+		makeStroke(bhopFrame, 2)
+
+		local scroll = Instance.new("ScrollingFrame")
+		scroll.Name = "Scroll"
+		scroll.BackgroundTransparency = 1
+		scroll.BorderSizePixel = 0
+		scroll.Size = UDim2.new(1, 0, 1, 0)
+		scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+		scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		scroll.ScrollBarThickness = 4
+		scroll.Parent = bhopFrame
+
+		local pad = Instance.new("UIPadding")
+		pad.PaddingTop = UDim.new(0, 10)
+		pad.PaddingBottom = UDim.new(0, 12)
+		pad.PaddingLeft = UDim.new(0, 10)
+		pad.PaddingRight = UDim.new(0, 10)
+		pad.Parent = scroll
+
+		local layout = Instance.new("UIListLayout")
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 10)
+		layout.Parent = scroll
+
+		local statusRow = Instance.new("Frame")
+		statusRow.BackgroundTransparency = 1
+		statusRow.Size = UDim2.new(1, 0, 0, 44)
+		statusRow.Parent = scroll
+
+		local statusLay = Instance.new("UIListLayout")
+		statusLay.FillDirection = Enum.FillDirection.Horizontal
+		statusLay.VerticalAlignment = Enum.VerticalAlignment.Center
+		statusLay.Padding = UDim.new(0, 10)
+		statusLay.Parent = statusRow
+
+		local toggleBhopBtn = makeButton(statusRow, "Enable")
+		toggleBhopBtn.Size = UDim2.new(0, 140, 0, 40)
+
+		local disableBhopBtn = makeButton(statusRow, "Disable")
+		disableBhopBtn.Size = UDim2.new(0, 140, 0, 40)
+
+		bhopDebugLine = makeText(scroll, "Status: GROUNDED  |  Speed: 0.0  |  Max: 0.0", 13, true)
+		bhopDebugLine.Size = UDim2.new(1, 0, 0, 22)
+		bhopDebugLine.TextColor3 = Color3.fromRGB(220, 220, 220)
+
+		local cfgHeader = makeText(scroll, "Config", 15, true)
+		cfgHeader.Size = UDim2.new(1, 0, 0, 20)
+
+		local function makeCfgRow(labelText, key, minV, maxV, step)
+			local r = Instance.new("Frame")
+			r.BackgroundTransparency = 1
+			r.Size = UDim2.new(1, 0, 0, 44)
+			r.Parent = scroll
+
+			local l = makeText(r, labelText, 13, true)
+			l.Size = UDim2.new(0, 160, 1, 0)
+
+			local minus = makeButton(r, "-")
+			minus.Size = UDim2.new(0, 40, 0, 36)
+			minus.Position = UDim2.new(0, 170, 0, 4)
+
+			local box = makeInput(r, "")
+			box.Size = UDim2.new(0, 120, 0, 36)
+			box.Position = UDim2.new(0, 220, 0, 4)
+			box.Text = tostring(bhopConfig[key])
+
+			local plus = makeButton(r, "+")
+			plus.Size = UDim2.new(0, 40, 0, 36)
+			plus.Position = UDim2.new(0, 350, 0, 4)
+
+			local function setValue(v)
+				v = tonumber(v)
+				if not v then return end
+				v = math.clamp(v, minV, maxV)
+				if step and step > 0 then
+					v = math.floor((v / step) + 0.5) * step
+				end
+				bhopConfig[key] = v
+				box.Text = tostring(v)
+			end
+
+			minus.MouseButton1Click:Connect(function()
+				setValue((bhopConfig[key] or 0) - step)
+			end)
+			plus.MouseButton1Click:Connect(function()
+				setValue((bhopConfig[key] or 0) + step)
+			end)
+			box.FocusLost:Connect(function()
+				setValue(tonumber(box.Text))
+			end)
+		end
+
+		makeCfgRow("Ground Friction", "GROUND_FRICTION", 0, 10000, 1)
+		makeCfgRow("Ground Accel", "GROUND_ACCELERATE", 1, 10000, 1)
+		makeCfgRow("Air Accel", "AIR_ACCELERATE", 1, 100000, 1)
+		makeCfgRow("Ground Speed", "GROUND_SPEED", 1, 10000, 1)
+		makeCfgRow("Air Cap", "AIR_CAP", 0, 10000, 1)
+		makeCfgRow("Jump Power", "JUMP_POWER", 1, 10000, 1)
+		makeCfgRow("Stop Speed", "STOP_SPEED", 0, 10000, 1)
+
+		toggleBhopBtn.MouseButton1Click:Connect(function()
+			bhopSetEnabled(true)
+		end)
+		disableBhopBtn.MouseButton1Click:Connect(function()
+			bhopSetEnabled(false)
+		end)
+
+		local openPos = bhopFrame.Position
+		local closedPos = UDim2.new(openPos.X.Scale, openPos.X.Offset, openPos.Y.Scale, openPos.Y.Offset - (bhopFrame.Size.Y.Offset + 10))
+
+		local function setBhopMenu(open, instant)
+			bhopOpen = open
+			bhopArrow.Text = open and "˅" or "˄"
+
+			if bhopTween then
+				pcall(function() bhopTween:Cancel() end)
+				bhopTween = nil
+			end
+
+			if instant then
+				bhopFrame.Visible = open
+				bhopFrame.Position = open and openPos or closedPos
+				bhopFrame.BackgroundTransparency = open and 0.18 or 1
+				return
+			end
+
+			if open then
+				bhopFrame.Visible = true
+				bhopFrame.Position = closedPos
+				bhopFrame.BackgroundTransparency = 1
+				bhopTween = tween(bhopFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = openPos,
+					BackgroundTransparency = 0.18
+				})
+			else
+				bhopTween = tween(bhopFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Position = closedPos,
+					BackgroundTransparency = 1
+				})
+				bhopTween.Completed:Connect(function()
+					if not bhopOpen then
+						bhopFrame.Visible = false
+					end
+				end)
+			end
+		end
+
+		bhopArrow.MouseButton1Click:Connect(function()
+			setBhopMenu(not bhopOpen, false)
+		end)
+
+		setBhopMenu(false, true)
+	end
+
+	bhopBtn.MouseButton1Click:Connect(function()
+		bhopBuildMenu()
+		if bhopHandle then
+			bhopHandle.Visible = true
+		end
+		if bhopFrame then
+			if not bhopOpen then
+				bhopArrow.Text = "˅"
+				bhopOpen = true
+				bhopFrame.Visible = true
+				bhopFrame.BackgroundTransparency = 0.18
+			else
+				bhopArrow.Text = "˄"
+				bhopOpen = false
+				bhopFrame.Visible = false
+			end
+		end
+	end)
+
+	RunService.RenderStepped:Connect(function(dt)
+		if not bhopGui then return end
+		bhopPhysicsStep(dt)
+	end)
+
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.15)
+		bhopGetRefs()
+		bhopEnsureBodyVel()
+		bhopSetEnabled(false)
+	end)
+
+	----------------------------------------------------------------
+	-- VISIBILITY (sub-section inside Player tab)
+	----------------------------------------------------------------
+	local visHeader = makeText(playerScroll, "Visibility", 16, true)
+	visHeader.Size = UDim2.new(1, 0, 0, 22)
+
+	local visHint = makeText(playerScroll, "Forces parts (and accessories attached to them) to stay visible in first person.", 13, false)
+	visHint.Size = UDim2.new(1, 0, 0, 34)
+	visHint.TextColor3 = Color3.fromRGB(210, 210, 210)
+
+	local visRow = Instance.new("Frame")
+	visRow.BackgroundTransparency = 1
+	visRow.Size = UDim2.new(1, 0, 0, 44)
+	visRow.Parent = playerScroll
+
+	local visLay = Instance.new("UIListLayout")
+	visLay.FillDirection = Enum.FillDirection.Horizontal
+	visLay.VerticalAlignment = Enum.VerticalAlignment.Center
+	visLay.Padding = UDim.new(0, 10)
+	visLay.Parent = visRow
+
+	local armsBtn = makeButton(visRow, "Arms: OFF")
+	armsBtn.Size = UDim2.new(0, 160, 0, 40)
+
+	local bodyBtn = makeButton(visRow, "Body: OFF")
+	bodyBtn.Size = UDim2.new(0, 160, 0, 40)
+
+	local legsBtn = makeButton(visRow, "Legs: OFF")
+	legsBtn.Size = UDim2.new(0, 160, 0, 40)
+
+	local visState = {
+		arms = false,
+		body = false,
+		legs = false,
 		conn = nil,
 	}
 
 	local function isArmPartName(n)
-		-- R15
 		if n == "LeftUpperArm" or n == "LeftLowerArm" or n == "LeftHand" then return true end
 		if n == "RightUpperArm" or n == "RightLowerArm" or n == "RightHand" then return true end
-		-- R6
 		if n == "Left Arm" or n == "Right Arm" then return true end
 		return false
 	end
 
-	local function collectArmParts(char)
+	local function isLegPartName(n)
+		if n == "LeftUpperLeg" or n == "LeftLowerLeg" or n == "LeftFoot" then return true end
+		if n == "RightUpperLeg" or n == "RightLowerLeg" or n == "RightFoot" then return true end
+		if n == "Left Leg" or n == "Right Leg" then return true end
+		return false
+	end
+
+	local function isBodyPartName(n)
+		if n == "UpperTorso" or n == "LowerTorso" or n == "Head" then return true end
+		if n == "Torso" or n == "Head" then return true end
+		return false
+	end
+
+	local function collectTargetParts(char)
 		local parts = {}
 		if not char then return parts end
 		for _, d in ipairs(char:GetDescendants()) do
-			if d:IsA("BasePart") and isArmPartName(d.Name) then
-				table.insert(parts, d)
+			if d:IsA("BasePart") then
+				local n = d.Name
+				if (visState.arms and isArmPartName(n))
+					or (visState.legs and isLegPartName(n))
+					or (visState.body and isBodyPartName(n))
+				then
+					table.insert(parts, d)
+				end
 			end
 		end
 		return parts
 	end
 
-	local function accessoryAttachedToArms(accessory, armPartsSet)
+	local function buildPartSet(parts)
+		local set = {}
+		for _, p in ipairs(parts) do
+			set[p] = true
+		end
+		return set
+	end
+
+	local function accessoryAttachedToParts(accessory, partSet)
 		if not accessory or not accessory:IsA("Accessory") then return false end
 		local handle = accessory:FindFirstChild("Handle")
 		if not handle or not handle:IsA("BasePart") then return false end
@@ -2644,13 +3144,13 @@ do
 			if w:IsA("Weld") or w:IsA("Motor6D") then
 				local p0 = w.Part0
 				local p1 = w.Part1
-				if (p0 and armPartsSet[p0]) or (p1 and armPartsSet[p1]) then
+				if (p0 and partSet[p0]) or (p1 and partSet[p1]) then
 					return true
 				end
 			elseif w:IsA("WeldConstraint") then
 				local p0 = w.Part0
 				local p1 = w.Part1
-				if (p0 and armPartsSet[p0]) or (p1 and armPartsSet[p1]) then
+				if (p0 and partSet[p0]) or (p1 and partSet[p1]) then
 					return true
 				end
 			end
@@ -2660,13 +3160,13 @@ do
 			if j:IsA("Weld") or j:IsA("Motor6D") then
 				local p0 = j.Part0
 				local p1 = j.Part1
-				if (p0 and armPartsSet[p0]) or (p1 and armPartsSet[p1]) then
+				if (p0 and partSet[p0]) or (p1 and partSet[p1]) then
 					return true
 				end
 			elseif j:IsA("WeldConstraint") then
 				local p0 = j.Part0
 				local p1 = j.Part1
-				if (p0 and armPartsSet[p0]) or (p1 and armPartsSet[p1]) then
+				if (p0 and partSet[p0]) or (p1 and partSet[p1]) then
 					return true
 				end
 			end
@@ -2675,37 +3175,45 @@ do
 		return false
 	end
 
-	local function setArmVisibilityEnabled(on)
-		armsState.enabled = on
-		armsBtn.Text = on and "Arms: ON" or "Arms: OFF"
-		setTabButtonActive(armsBtn, on)
+	local function refreshVisButtons()
+		armsBtn.Text = visState.arms and "Arms: ON" or "Arms: OFF"
+		bodyBtn.Text = visState.body and "Body: ON" or "Body: OFF"
+		legsBtn.Text = visState.legs and "Legs: ON" or "Legs: OFF"
 
-		if armsState.conn then
-			armsState.conn:Disconnect()
-			armsState.conn = nil
+		setTabButtonActive(armsBtn, visState.arms)
+		setTabButtonActive(bodyBtn, visState.body)
+		setTabButtonActive(legsBtn, visState.legs)
+	end
+
+	local function ensureVisLoop()
+		local anyOn = visState.arms or visState.body or visState.legs
+
+		if visState.conn then
+			if anyOn then
+				return
+			end
+			visState.conn:Disconnect()
+			visState.conn = nil
 		end
 
-		if not on then
+		if not anyOn then
 			return
 		end
 
-		armsState.conn = RunService.RenderStepped:Connect(function()
+		visState.conn = RunService.RenderStepped:Connect(function()
 			local char = LocalPlayer.Character
 			if not char then return end
 
-			local armParts = collectArmParts(char)
-			local armPartsSet = {}
-			for _, p in ipairs(armParts) do
-				armPartsSet[p] = true
-			end
+			local parts = collectTargetParts(char)
+			local set = buildPartSet(parts)
 
-			for _, p in ipairs(armParts) do
+			for _, p in ipairs(parts) do
 				p.LocalTransparencyModifier = 0
 			end
 
 			for _, ch in ipairs(char:GetChildren()) do
 				if ch:IsA("Accessory") then
-					if accessoryAttachedToArms(ch, armPartsSet) then
+					if accessoryAttachedToParts(ch, set) then
 						local h = ch:FindFirstChild("Handle")
 						if h and h:IsA("BasePart") then
 							h.LocalTransparencyModifier = 0
@@ -2717,15 +3225,31 @@ do
 	end
 
 	armsBtn.MouseButton1Click:Connect(function()
-		setArmVisibilityEnabled(not armsState.enabled)
+		visState.arms = not visState.arms
+		refreshVisButtons()
+		ensureVisLoop()
+	end)
+
+	bodyBtn.MouseButton1Click:Connect(function()
+		visState.body = not visState.body
+		refreshVisButtons()
+		ensureVisLoop()
+	end)
+
+	legsBtn.MouseButton1Click:Connect(function()
+		visState.legs = not visState.legs
+		refreshVisButtons()
+		ensureVisLoop()
 	end)
 
 	LocalPlayer.CharacterAdded:Connect(function()
-		if armsState.enabled then
+		if visState.conn then
 			task.wait(0.1)
-			setArmVisibilityEnabled(true)
+			ensureVisLoop()
 		end
 	end)
+
+	refreshVisButtons()
 end
 
 	----------------------------------------------------------------
