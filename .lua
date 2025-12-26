@@ -2479,7 +2479,7 @@ local function createUI()
 		setState(lastChosenState)
 	end
 
-	----------------------------------------------------------------
+----------------------------------------------------------------
 -- PLAYER TAB (with "Look Mum im a Car" toggle added)
 ----------------------------------------------------------------
 do
@@ -2569,7 +2569,7 @@ do
 	end)
 
 	----------------------------------------------------------------
-	-- Look Mum im a Car toggle (opens/closes the Car UI script)
+	-- Look Mum im a Car toggle
 	----------------------------------------------------------------
 	local carRow = Instance.new("Frame")
 	carRow.BackgroundTransparency = 1
@@ -2594,8 +2594,8 @@ do
 
 		local UI_CONFIG = {
 			BUTTON_TEXT_SIZE = 12,
-			CORNER_RADIUS = UDim.new(0, 6),
-			MAIN_CORNER_RADIUS = UDim.new(0, 10),
+			CORNER_RADIUS = UDim.new(0, 10),
+			MAIN_CORNER_RADIUS = UDim.new(0, 16),
 			ROTATION_SPEED = math.rad(30),
 			CAMERA_RADIUS = 6,
 			CAMERA_HEIGHT = 3,
@@ -2604,19 +2604,20 @@ do
 		}
 
 		local UI_COLORS = {
-			BACKGROUND = Color3.fromRGB(0, 0, 0),
-			TEXT = Color3.new(1, 1, 1),
+			BACKGROUND = Color3.fromRGB(10, 10, 12),
+			TEXT = Color3.fromRGB(245, 245, 245),
+			ACCENT = Color3.fromRGB(200, 40, 40),
 			CONFIRM_YES = Color3.fromRGB(200, 60, 60),
 			CONFIRM_NO = Color3.fromRGB(80, 80, 80)
 		}
 
 		local UI_ALPHA = {
-			MAIN_FRAME = 0.6,
-			TITLE_BAR = 0.5,
-			BUTTON = 0.7,
+			MAIN_FRAME = 0.18,
+			TITLE_BAR = 0.25,
+			BUTTON = 0.22,
 			VIEWPORT = 0.8,
-			POPUP = 0.5,
-			POPUP_BUTTON = 0.6
+			POPUP = 0.25,
+			POPUP_BUTTON = 0.25
 		}
 
 		local CAR_ANIMS = {
@@ -2646,15 +2647,98 @@ do
 
 		local ui = {}
 
+		local function makeCorner(cornerRadius)
+			local c = Instance.new("UICorner")
+			c.CornerRadius = cornerRadius or UI_CONFIG.CORNER_RADIUS
+			return c
+		end
+
+		local function applyGlassLikeSOS(frame)
+			frame.BackgroundColor3 = UI_COLORS.BACKGROUND
+			frame.BackgroundTransparency = UI_ALPHA.MAIN_FRAME
+			local grad = Instance.new("UIGradient")
+			grad.Rotation = 90
+			grad.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 18, 22)),
+				ColorSequenceKeypoint.new(0.4, Color3.fromRGB(10, 10, 12)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 6, 8))
+			})
+			grad.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.05),
+				NumberSequenceKeypoint.new(1, 0.20)
+			})
+			grad.Parent = frame
+
+			local st = Instance.new("UIStroke")
+			st.Color = UI_COLORS.ACCENT
+			st.Thickness = 2
+			st.Transparency = 0.1
+			st.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+			st.Parent = frame
+		end
+
+		local function createButton(parentGui, buttonSize, buttonPosition, buttonText, buttonTextSize)
+			local b = Instance.new("TextButton")
+			b.Parent = parentGui
+			b.Size = buttonSize
+			b.Position = buttonPosition
+			b.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+			b.BackgroundTransparency = UI_ALPHA.BUTTON
+			b.BorderSizePixel = 0
+			b.TextColor3 = UI_COLORS.TEXT
+			b.Text = buttonText
+			b.Font = Enum.Font.GothamBold
+			b.TextSize = buttonTextSize or UI_CONFIG.BUTTON_TEXT_SIZE
+			b.TextScaled = false
+			makeCorner():Clone().Parent = b
+
+			local st = Instance.new("UIStroke")
+			st.Color = UI_COLORS.ACCENT
+			st.Thickness = 1
+			st.Transparency = 0.25
+			st.Parent = b
+
+			return b
+		end
+
+		local function createFrame(parentInstance, frameSize, framePosition, backgroundAlpha)
+			local f = Instance.new("Frame")
+			f.Parent = parentInstance
+			f.Size = frameSize
+			f.Position = framePosition
+			f.BackgroundColor3 = UI_COLORS.BACKGROUND
+			f.BackgroundTransparency = backgroundAlpha or 1
+			f.BorderSizePixel = 0
+			return f
+		end
+
+		local function createLabel(labelParent, labelSize, labelPosition, labelText, labelTextSize)
+			local l = Instance.new("TextLabel")
+			l.Parent = labelParent
+			l.Size = labelSize
+			l.Position = labelPosition
+			l.BackgroundTransparency = 1
+			l.Text = labelText
+			l.Font = Enum.Font.GothamBold
+			l.TextColor3 = UI_COLORS.TEXT
+			l.TextSize = labelTextSize or UI_CONFIG.BUTTON_TEXT_SIZE
+			l.TextScaled = false
+			return l
+		end
+
+		local function attachHoverTransparency(tgt)
+			local bt = tgt.BackgroundTransparency
+			tgt.MouseEnter:Connect(function()
+				tgt.BackgroundTransparency = math.max(0, bt - 0.1)
+			end)
+			tgt.MouseLeave:Connect(function()
+				tgt.BackgroundTransparency = bt
+			end)
+		end
+
 		local function getViewportScaleHelpers()
 			local vps = workspace.CurrentCamera.ViewportSize
 			return {
-				uScale = function(xScaleFactor, yScaleFactor)
-					return UDim2.new(0, vps.X * xScaleFactor, 0, vps.Y * (yScaleFactor or xScaleFactor))
-				end,
-				uPos = function(xPosFactor, yPosFactor)
-					return UDim2.new(0, vps.X * xPosFactor, 0, vps.Y * yPosFactor)
-				end,
 				uSize = function(xSizeFactor, ySizeFactor)
 					return UDim2.new(0, vps.X * xSizeFactor, 0, vps.Y * (ySizeFactor or xSizeFactor))
 				end
@@ -2687,64 +2771,6 @@ do
 			return true
 		end
 
-		local function makeCorner(cornerRadius)
-			local c = Instance.new("UICorner")
-			c.CornerRadius = cornerRadius or UI_CONFIG.CORNER_RADIUS
-			return c
-		end
-
-		local function createButton(parentGui, buttonSize, buttonPosition, buttonText, buttonTextSize)
-			local b = Instance.new("TextButton")
-			b.Parent = parentGui
-			b.Size = buttonSize
-			b.Position = buttonPosition
-			b.BackgroundColor3 = UI_COLORS.BACKGROUND
-			b.BackgroundTransparency = UI_ALPHA.BUTTON
-			b.BorderSizePixel = 0
-			b.TextColor3 = UI_COLORS.TEXT
-			b.Text = buttonText
-			b.Font = Enum.Font.Gotham
-			b.TextSize = buttonTextSize or UI_CONFIG.BUTTON_TEXT_SIZE
-			b.TextScaled = false
-			makeCorner():Clone().Parent = b
-			return b
-		end
-
-		local function createFrame(parentInstance, frameSize, framePosition, backgroundAlpha)
-			local f = Instance.new("Frame")
-			f.Parent = parentInstance
-			f.Size = frameSize
-			f.Position = framePosition
-			f.BackgroundColor3 = UI_COLORS.BACKGROUND
-			f.BackgroundTransparency = backgroundAlpha or 1
-			f.BorderSizePixel = 0
-			return f
-		end
-
-		local function createLabel(labelParent, labelSize, labelPosition, labelText, labelTextSize)
-			local l = Instance.new("TextLabel")
-			l.Parent = labelParent
-			l.Size = labelSize
-			l.Position = labelPosition
-			l.BackgroundTransparency = 1
-			l.Text = labelText
-			l.Font = Enum.Font.Gotham
-			l.TextColor3 = UI_COLORS.TEXT
-			l.TextSize = labelTextSize or UI_CONFIG.BUTTON_TEXT_SIZE
-			l.TextScaled = false
-			return l
-		end
-
-		local function attachHoverTransparency(tgt)
-			local bt = tgt.BackgroundTransparency
-			tgt.MouseEnter:Connect(function()
-				tgt.BackgroundTransparency = math.max(0, bt - 0.1)
-			end)
-			tgt.MouseLeave:Connect(function()
-				tgt.BackgroundTransparency = bt
-			end)
-		end
-
 		local function buildRootUI()
 			local vp = getViewportScaleHelpers()
 			ui.screenGui = Instance.new("ScreenGui")
@@ -2752,45 +2778,73 @@ do
 			ui.screenGui.ResetOnSpawn = false
 			ui.screenGui.Name = "SillyCarUI"
 
-			ui.mainFrame = createFrame(ui.screenGui, vp.uSize(0.2, 0.35), UDim2.new(0.5, -120, 0.5, -105), UI_ALPHA.MAIN_FRAME)
+			ui.mainFrame = createFrame(ui.screenGui, vp.uSize(0.22, 0.38), UDim2.new(0.5, -140, 0.5, -120), UI_ALPHA.MAIN_FRAME)
 			ui.mainFrame.Active = true
 			ui.mainFrame.Draggable = true
 			makeCorner(UI_CONFIG.MAIN_CORNER_RADIUS).Parent = ui.mainFrame
+			applyGlassLikeSOS(ui.mainFrame)
+
 			return vp
 		end
 
 		local function buildTitleBar()
-			ui.titleBar = createFrame(ui.mainFrame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), UI_ALPHA.TITLE_BAR)
+			ui.titleBar = createFrame(ui.mainFrame, UDim2.new(1, 0, 0, 34), UDim2.new(0, 0, 0, 0), UI_ALPHA.TITLE_BAR)
 			makeCorner(UI_CONFIG.MAIN_CORNER_RADIUS).Parent = ui.titleBar
 
-			ui.titleText = createLabel(ui.titleBar, UDim2.new(1, -60, 1, 0), UDim2.new(0, 30, 0, 0), "CAR anims", UI_CONFIG.BUTTON_TEXT_SIZE)
+			local grad = Instance.new("UIGradient")
+			grad.Rotation = 90
+			grad.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 22, 26)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 12))
+			})
+			grad.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.05),
+				NumberSequenceKeypoint.new(1, 0.20)
+			})
+			grad.Parent = ui.titleBar
+
+			ui.titleText = createLabel(ui.titleBar, UDim2.new(1, -88, 1, 0), UDim2.new(0, 44, 0, 0), "Look Mum im a Car", 16)
 			ui.titleText.TextXAlignment = Enum.TextXAlignment.Center
 
-			ui.minBtn = createButton(ui.titleBar, UDim2.new(0, 20, 0, 20), UDim2.new(1, -45, 0, 5), "–", UI_CONFIG.BUTTON_TEXT_SIZE)
-			ui.closeBtn = createButton(ui.titleBar, UDim2.new(0, 20, 0, 20), UDim2.new(1, -22, 0, 5), "✕", UI_CONFIG.BUTTON_TEXT_SIZE)
+			ui.minBtn = createButton(ui.titleBar, UDim2.new(0, 28, 0, 24), UDim2.new(1, -62, 0, 5), "–", 14)
+			ui.closeBtn = createButton(ui.titleBar, UDim2.new(0, 28, 0, 24), UDim2.new(1, -30, 0, 5), "✕", 14)
 		end
 
 		local function buildAnimHeader()
-			ui.contentFrame = createFrame(ui.mainFrame, UDim2.new(1, -20, 1, -45), UDim2.new(0, 10, 0, 35), 1)
-			ui.animNameFrame = createFrame(ui.contentFrame, UDim2.new(1, 0, 0, 25), UDim2.new(0, 0, 0, 0), UI_ALPHA.BUTTON)
+			ui.contentFrame = createFrame(ui.mainFrame, UDim2.new(1, -20, 1, -54), UDim2.new(0, 10, 0, 44), 1)
+
+			ui.animNameFrame = createFrame(ui.contentFrame, UDim2.new(1, 0, 0, 28), UDim2.new(0, 0, 0, 0), UI_ALPHA.BUTTON)
 			makeCorner().Parent = ui.animNameFrame
 
-			ui.animNameText = createLabel(ui.animNameFrame, UDim2.new(1, -10, 1, 0), UDim2.new(0, 5, 0, 0), "Animation " .. state.currentIndex .. "/" .. #CAR_ANIMS, UI_CONFIG.BUTTON_TEXT_SIZE)
+			local st = Instance.new("UIStroke")
+			st.Color = UI_COLORS.ACCENT
+			st.Thickness = 1
+			st.Transparency = 0.35
+			st.Parent = ui.animNameFrame
+
+			ui.animNameText = createLabel(ui.animNameFrame, UDim2.new(1, -10, 1, 0), UDim2.new(0, 5, 0, 0), "Animation " .. state.currentIndex .. "/" .. #CAR_ANIMS, 13)
+			ui.animNameText.Font = Enum.Font.Gotham
 			ui.animNameText.TextXAlignment = Enum.TextXAlignment.Center
 		end
 
 		local function buildViewport()
-			ui.viewportContainer = createFrame(ui.contentFrame, UDim2.new(1, 0, 1, -105), UDim2.new(0, 0, 0, 30), UI_ALPHA.BUTTON)
-			makeCorner(UDim.new(0, 8)).Parent = ui.viewportContainer
+			ui.viewportContainer = createFrame(ui.contentFrame, UDim2.new(1, 0, 1, -118), UDim2.new(0, 0, 0, 34), UI_ALPHA.BUTTON)
+			makeCorner(UDim.new(0, 12)).Parent = ui.viewportContainer
+
+			local st = Instance.new("UIStroke")
+			st.Color = UI_COLORS.ACCENT
+			st.Thickness = 1
+			st.Transparency = 0.35
+			st.Parent = ui.viewportContainer
 
 			ui.viewport = Instance.new("ViewportFrame")
 			ui.viewport.Parent = ui.viewportContainer
-			ui.viewport.Size = UDim2.new(1, -6, 1, -6)
-			ui.viewport.Position = UDim2.new(0, 3, 0, 3)
+			ui.viewport.Size = UDim2.new(1, -8, 1, -8)
+			ui.viewport.Position = UDim2.new(0, 4, 0, 4)
 			ui.viewport.BackgroundColor3 = UI_COLORS.BACKGROUND
 			ui.viewport.BackgroundTransparency = UI_ALPHA.VIEWPORT
 			ui.viewport.BorderSizePixel = 0
-			makeCorner().Parent = ui.viewport
+			makeCorner(UDim.new(0, 10)).Parent = ui.viewport
 
 			ui.camera = Instance.new("Camera")
 			ui.camera.CameraType = Enum.CameraType.Scriptable
@@ -2798,18 +2852,15 @@ do
 		end
 
 		local function buildNavControls()
-			ui.navContainer = createFrame(ui.contentFrame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 1, -75), 1)
-			ui.prevBtn = createButton(ui.navContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0, 0, 0, 0), "◀ Previous", UI_CONFIG.BUTTON_TEXT_SIZE)
-			ui.nextBtn = createButton(ui.navContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), "Next ▶", UI_CONFIG.BUTTON_TEXT_SIZE)
+			ui.navContainer = createFrame(ui.contentFrame, UDim2.new(1, 0, 0, 34), UDim2.new(0, 0, 1, -78), 1)
+			ui.prevBtn = createButton(ui.navContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0, 0, 0, 0), "◀ Previous", 13)
+			ui.nextBtn = createButton(ui.navContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), "Next ▶", 13)
 		end
 
 		local function buildPlayStopControls()
-			ui.controlContainer = createFrame(ui.contentFrame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 1, -40), 1)
-			ui.playBtn = createButton(ui.controlContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Play Car", UI_CONFIG.BUTTON_TEXT_SIZE)
-			ui.playBtn.Font = Enum.Font.GothamBold
-
-			ui.stopBtn = createButton(ui.controlContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), "Stop Car", UI_CONFIG.BUTTON_TEXT_SIZE)
-			ui.stopBtn.Font = Enum.Font.GothamBold
+			ui.controlContainer = createFrame(ui.contentFrame, UDim2.new(1, 0, 0, 34), UDim2.new(0, 0, 1, -38), 1)
+			ui.playBtn = createButton(ui.controlContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Play Car", 13)
+			ui.stopBtn = createButton(ui.controlContainer, UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), "Stop Car", 13)
 		end
 
 		local function applyButtonHoverEffects()
@@ -2965,6 +3016,15 @@ do
 			end
 		end
 
+		local function setCameraBackToHumanoid()
+			local lp = Players.LocalPlayer
+			local ch = lp and lp.Character or nil
+			local hum = ch and ch:FindFirstChild("Humanoid") or nil
+			if workspace.CurrentCamera and hum then
+				workspace.CurrentCamera.CameraSubject = hum
+			end
+		end
+
 		local function stopActiveCarAnimation()
 			if state.activeTrack then
 				pcall(function()
@@ -2979,6 +3039,7 @@ do
 				end)
 				state.activeConn = nil
 			end
+			setCameraBackToHumanoid()
 		end
 
 		local function playCarAnimationOnCharacter(char)
@@ -3011,7 +3072,9 @@ do
 			local lastTime = os.clock()
 
 			state.activeConn = RunService.Heartbeat:Connect(function()
-				if state.carstop or not hrp.Parent or not tr.IsPlaying then return end
+				if state.carstop or not hrp.Parent or not tr.IsPlaying then
+					return
+				end
 
 				local pos = hrp.Position
 				local now = os.clock()
@@ -3039,21 +3102,24 @@ do
 			if state.confirmationgui or not ui.screenGui then return end
 			state.confirmationgui = true
 
-			local confirm = createFrame(ui.screenGui, UDim2.new(0, 250, 0, 120), UDim2.new(0.5, -125, 0.5, -60), UI_ALPHA.POPUP)
+			local confirm = createFrame(ui.screenGui, UDim2.new(0, 260, 0, 128), UDim2.new(0.5, -130, 0.5, -64), UI_ALPHA.POPUP)
 			confirm.Name = "ConfirmationDialog"
 			makeCorner(UI_CONFIG.MAIN_CORNER_RADIUS).Parent = confirm
+			applyGlassLikeSOS(confirm)
 
-			local msg = createLabel(confirm, UDim2.new(1, -20, 0, 50), UDim2.new(0, 10, 0, 10),
+			local msg = createLabel(confirm, UDim2.new(1, -20, 0, 58), UDim2.new(0, 10, 0, 10),
 				"Are you sure you want to close?\n(This will stop the current animation)", 14)
 			msg.TextWrapped = true
+			msg.Font = Enum.Font.Gotham
 
-			local btnRow = createFrame(confirm, UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 1, -45), 1)
-			local yes = createButton(btnRow, UDim2.new(0.4, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Yes", UI_CONFIG.BUTTON_TEXT_SIZE)
+			local btnRow = createFrame(confirm, UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 1, -48), 1)
+
+			local yes = createButton(btnRow, UDim2.new(0.4, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Yes", 13)
 			yes.BackgroundColor3 = UI_COLORS.CONFIRM_YES
 			yes.BackgroundTransparency = UI_ALPHA.POPUP_BUTTON
 			yes.Font = Enum.Font.GothamBold
 
-			local no = createButton(btnRow, UDim2.new(0.4, 0, 1, 0), UDim2.new(0.6, 0, 0, 0), "No", UI_CONFIG.BUTTON_TEXT_SIZE)
+			local no = createButton(btnRow, UDim2.new(0.4, 0, 1, 0), UDim2.new(0.6, 0, 0, 0), "No", 13)
 			no.BackgroundColor3 = UI_COLORS.CONFIRM_NO
 			no.BackgroundTransparency = UI_ALPHA.POPUP_BUTTON
 			no.Font = Enum.Font.GothamBold
@@ -3116,11 +3182,11 @@ do
 			ui.minBtn.MouseButton1Click:Connect(function()
 				state.minimized = not state.minimized
 				if state.minimized then
-					ui.mainFrame.Size = UDim2.new(0, ui.mainFrame.AbsoluteSize.X, 0, 30)
+					ui.mainFrame.Size = UDim2.new(0, ui.mainFrame.AbsoluteSize.X, 0, 34)
 					ui.contentFrame.Visible = false
 				else
 					local vp = getViewportScaleHelpers()
-					ui.mainFrame.Size = vp.uSize(0.2, 0.35)
+					ui.mainFrame.Size = vp.uSize(0.22, 0.38)
 					ui.contentFrame.Visible = true
 				end
 			end)
@@ -3154,19 +3220,19 @@ do
 		end
 
 		pcall(function()
-			StarterGui:SetCore("SendNotification", { Title = "Car Animations", Text = "Loading script...", Duration = 3 })
+			StarterGui:SetCore("SendNotification", { Title = "Look Mum im a Car", Text = "Loading...", Duration = 3 })
 		end)
 
 		if not isLocalPlayerR15() then
 			pcall(function()
-				StarterGui:SetCore("SendNotification", { Title = "Car Animations", Text = "This script only works with R15 characters!", Duration = 5 })
+				StarterGui:SetCore("SendNotification", { Title = "Look Mum im a Car", Text = "This only works with R15 characters!", Duration = 5 })
 			end)
 			return
 		end
 
 		if not resetExistingUIAndSingleton() then
 			pcall(function()
-				StarterGui:SetCore("SendNotification", { Title = "Car Animations", Text = "Script is already running!", Duration = 3 })
+				StarterGui:SetCore("SendNotification", { Title = "Look Mum im a Car", Text = "Already running!", Duration = 3 })
 			end)
 			return
 		end
@@ -3198,7 +3264,7 @@ do
 				if ui.screenGui then ui.screenGui:Destroy() end
 				if getgenv then getgenv().CarExecuted = false end
 				pcall(function()
-					StarterGui:SetCore("SendNotification", { Title = "Car Animations", Text = "Failed to load dummy model. Try again.", Duration = 5 })
+					StarterGui:SetCore("SendNotification", { Title = "Look Mum im a Car", Text = "Failed to load dummy. Try again.", Duration = 5 })
 				end)
 				return
 			end
@@ -3214,7 +3280,7 @@ do
 			setupRespawnAutoReplay()
 
 			pcall(function()
-				StarterGui:SetCore("SendNotification", { Title = "Car Animations", Text = "Script loaded! Press K to toggle UI", Duration = 5 })
+				StarterGui:SetCore("SendNotification", { Title = "Look Mum im a Car", Text = "Loaded. Press K to toggle the car UI.", Duration = 5 })
 			end)
 		end)
 	end
@@ -3227,6 +3293,12 @@ do
 		end
 		if getgenv then
 			getgenv().CarExecuted = false
+		end
+		local lp = game:GetService("Players").LocalPlayer
+		local ch = lp and lp.Character or nil
+		local hum = ch and ch:FindFirstChild("Humanoid") or nil
+		if workspace.CurrentCamera and hum then
+			workspace.CurrentCamera.CameraSubject = hum
 		end
 	end
 
