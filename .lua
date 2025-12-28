@@ -37,16 +37,15 @@ local DEFAULT_FLY_ID   = "rbxassetid://131217573719045"
 local FLOAT_ID = DEFAULT_FLOAT_ID
 local FLY_ID   = DEFAULT_FLY_ID
 
-local menuToggleKey = Enum.KeyCode.H
 local flightToggleKey = Enum.KeyCode.F
 
-local flySpeed = 200
+local flySpeed = 150
 local maxFlySpeed = 1000
 local minFlySpeed = 1
 
 local velocityLerpRate = 7.0
 local rotationLerpRate = 7.0
-local idleSlowdownRate = 2.6
+local idleSlowdownRate = 4
 
 local MOVING_TILT_DEG = 85
 local IDLE_TILT_DEG = 10
@@ -59,7 +58,7 @@ local MICUP_PLACE_IDS = {
 	["15546218972"] = true,
 }
 
-local DISCORD_LINK = "https://discord.gg/cacg7kvX"
+local DISCORD_LINK = "https://discord.gg/EfJC9ZYSxB"
 
 local INTRO_SOUND_ID = "rbxassetid://1843492223"
 
