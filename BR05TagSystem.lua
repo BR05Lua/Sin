@@ -104,6 +104,7 @@ local OgProfiles = {
 
 local CustomTags = {
 	[2630250935] = { TagText = "Co-Owner", Color = Color3.fromRGB(245, 245, 245) },
+	[8299334811] = { TagText = "Fake Cinny", Color = Color3.fromRGB(6, 255, 169) },
 }
 
 --------------------------------------------------------------------
