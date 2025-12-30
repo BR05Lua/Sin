@@ -94,6 +94,7 @@ local SinProfiles = {
 	[118170824]  = { SinName = "Security" },
 	[7870252435] = { SinName = "Security" },
 	[7452991350] = { SinName = "XTCY", Color = Color3.fromRGB(0, 220, 0) },
+	[9072904295] = { SinName = "XTCY", Color = Color3.fromRGB(0, 220, 0) },
 	[7444930172] = { SinName = "XTCY", Color = Color3.fromRGB(0, 220, 0) },
 	[3600244479] = { SinName = "PAWS", Color = Color3.fromRGB(180, 1, 64) },
 	[8956134409] = { SinName = "Cars", Color = Color3.fromRGB(0, 255, 0) },
