@@ -1,4 +1,3 @@
-safeLoad("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
 -- SOS TAGS Standalone LocalScript
 -- Put in StarterPlayerScripts
 
