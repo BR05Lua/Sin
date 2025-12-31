@@ -40,7 +40,7 @@ local FLY_ID   = DEFAULT_FLY_ID
 local menuToggleKey = Enum.KeyCode.H
 local flightToggleKey = Enum.KeyCode.F
 
-local flySpeed = 200
+local flySpeed = 150
 local maxFlySpeed = 1000
 local minFlySpeed = 1
 
