@@ -1,21 +1,7 @@
 -- SOS HUD (The Sins Of Scripting)
--- Clean, modularised layout (behaviour preserved)
---
--- How to edit quickly
--- 1) Search: "EDIT ZONE" for the main configuration block.
--- 2) Search: "TAB: Player" or "TAB: Fly" etc to jump to UI sections.
--- 3) Search: "SYSTEM:" to jump to core systems (Flight, Camera, Lighting, Save, Anim Packs).
---
--- Notes
--- This file is intentionally kept as a single LocalScript.
--- Changes are organisational only: no gameplay behaviour changes intended.
---
--- Original banner preserved below for reference:
--- -- SOS HUD (The Sins Of Scripting)
--- -- Single LocalScript (StarterPlayerScripts recommended)
--- -- Update: Added mini Animations sub-tab inside Sins and Co/Owners tabs (Idle + Run only)
--- -- Future-proof: Added empty tables for Sins/CoOwners custom idles/runs so you can tell me later what to add where
-
+-- Single LocalScript (StarterPlayerScripts recommended)
+-- Update: Added mini Animations sub-tab inside Sins and Co/Owners tabs (Idle + Run only)
+-- Future-proof: Added empty tables for Sins/CoOwners custom idles/runs so you can tell me later what to add where
 
 --------------------------------------------------------------------
 -- SERVICES
@@ -51,6 +37,7 @@ local DEFAULT_FLY_ID   = "rbxassetid://131217573719045"
 local FLOAT_ID = DEFAULT_FLOAT_ID
 local FLY_ID   = DEFAULT_FLY_ID
 
+local menuToggleKey = Enum.KeyCode.H
 local flightToggleKey = Enum.KeyCode.F
 
 local flySpeed = 150
@@ -59,7 +46,7 @@ local minFlySpeed = 1
 
 local velocityLerpRate = 7.0
 local rotationLerpRate = 7.0
-local idleSlowdownRate = 4
+local idleSlowdownRate = 2.6
 
 local MOVING_TILT_DEG = 85
 local IDLE_TILT_DEG = 10
@@ -72,7 +59,7 @@ local MICUP_PLACE_IDS = {
 	["15546218972"] = true,
 }
 
-local DISCORD_LINK = "https://discord.gg/EfJC9ZYSxB"
+local DISCORD_LINK = "https://discord.gg/cacg7kvX"
 
 local INTRO_SOUND_ID = "rbxassetid://1843492223"
 
@@ -97,8 +84,9 @@ local VIP_GAMEPASSES = {
 -- ROLE GATES FOR TABS
 --------------------------------------------------------------------
 local OWNER_USERIDS = {
-	-- Add your UserId(s) here if needed, example:
-	-- [123456789] = true,
+    [433636433] = true,
+	[196988708] = true,
+	[4926923208] = true,
 }
 
 local function isOwnerUser()
@@ -844,14 +832,16 @@ local CustomRun = {
 	["Tall"] = 134010853417610,
 	["Officer Earl"] = 104646820775114,
 	["AOT Titan"] = 95363958550738,
+	["TF2"] = 122588181027551,
 	["Captain JS"] = 87806542116815,
 	["Ninja Sprint"] = 123763532572423,
-	["IDK"] = 101293881003047,
+	["IDEK"] = 101293881003047,
 	["Honored One"] = 82260970223217,
 	["Head Hold"] = 92715775326925,
 
 	["Springtrap Sturdy"] = 80927378599036,
 	["UFO"] = 118703314621593,
+	["Closed Eyes Vibe"] = 117991470645633,
 	["Wally West"] = 102622695004986,
 	["Squidward"] = 82365330773489,
 	["On A Mission"] = 113718116290824,
@@ -1925,7 +1915,7 @@ local function createUI()
 	arrowButton.BackgroundTransparency = 1
 	arrowButton.Size = UDim2.new(0, 40, 0, 40)
 	arrowButton.Position = UDim2.new(0, 8, 0, 1)
-	arrowButton.Text = ""
+	arrowButton.Text = "˄"
 	arrowButton.Font = Enum.Font.GothamBold
 	arrowButton.TextSize = 22
 	arrowButton.TextColor3 = Color3.fromRGB(240, 240, 240)
@@ -2107,26 +2097,52 @@ local function createUI()
 		)
 		info.Size = UDim2.new(1, 0, 0, 130)
 
-		
-		-- (Keybind changer removed: fixed hotkeys are used.)
+		local bindRow = Instance.new("Frame")
+		bindRow.BackgroundTransparency = 1
+		bindRow.Size = UDim2.new(1, 0, 0, 74)
+		bindRow.Parent = controlsScroll
 
--- FLY TAB
+		local function makeBindLine(labelText, getKeyFn, setKeyFn)
+			local line = Instance.new("Frame")
+			line.BackgroundTransparency = 1
+			line.Size = UDim2.new(1, 0, 0, 32)
+			line.Parent = bindRow
 
-		-- Flight toggle button (UI-only, hotkey still works)
-		local flyToggleBtn = makeButton(flyScroll, "", UDim2.new(1, -20, 0, 34), UDim2.new(0, 10, 0, 10))
-		local function refreshFlyToggleBtn()
-			flyToggleBtn.Text = flying and "Stop Flight" or "Start Flight"
+			local l = makeText(line, labelText, 14, true)
+			l.Size = UDim2.new(0, 170, 1, 0)
+
+			local btn = makeButton(line, getKeyFn().Name)
+			btn.Size = UDim2.new(0, 110, 0, 30)
+			btn.Position = UDim2.new(0, 180, 0, 1)
+
+			local hint = makeText(line, "Click then press a key", 12, false)
+			hint.Size = UDim2.new(1, -300, 1, 0)
+			hint.Position = UDim2.new(0, 300, 0, 0)
+			hint.TextColor3 = Color3.fromRGB(190, 190, 190)
+
+			local waiting = false
+			btn.MouseButton1Click:Connect(function()
+				waiting = true
+				btn.Text = "..."
+			end)
+
+			UserInputService.InputBegan:Connect(function(input, gp)
+				if gp then return end
+				if not waiting then return end
+				if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+				waiting = false
+				setKeyFn(input.KeyCode)
+				btn.Text = getKeyFn().Name
+				scheduleSave()
+			end)
 		end
-		refreshFlyToggleBtn()
-		flyToggleBtn.MouseButton1Click:Connect(function()
-			if flying then
-				stopFly()
-			else
-				startFly()
-			end
-			refreshFlyToggleBtn()
-		end)
 
+		makeBindLine("Flight Toggle Key:", function() return flightToggleKey end, function(k) flightToggleKey = k end)
+		makeBindLine("Menu Toggle Key:", function() return menuToggleKey end, function(k) menuToggleKey = k end)
+	end
+
+	----------------------------------------------------------------
+	-- FLY TAB
 	----------------------------------------------------------------
 	do
 		local header = makeText(flyScroll, "Flight Emotes", 16, true)
@@ -2860,7 +2876,7 @@ do
 		bhopArrow.BackgroundTransparency = 1
 		bhopArrow.Size = UDim2.new(0, 40, 0, 40)
 		bhopArrow.Position = UDim2.new(0, 8, 0, 1)
-		bhopArrow.Text = ""
+		bhopArrow.Text = "˄"
 		bhopArrow.Font = Enum.Font.GothamBold
 		bhopArrow.TextSize = 22
 		bhopArrow.TextColor3 = Color3.fromRGB(240, 240, 240)
@@ -3040,7 +3056,7 @@ do
 
 		local function setMenuVisible(visible, instant)
 			bhopOpen = visible
-			bhopArrow.Text = visible and "" or ""
+			bhopArrow.Text = visible and "˅" or "˄"
 
 			if bhopTween then
 				pcall(function() bhopTween:Cancel() end)
@@ -3430,7 +3446,7 @@ end
 		header.Size = UDim2.new(1, 0, 0, 22)
 
 		local msg = makeText(micupScroll,
-			"For those of you who play this game hopefully your not a PD0 also dont be weird and enjoy this tab\n(Some Stuff Will Be Added Soon)",
+			"For those of you who play this game hopefully your not a P£D0 also dont be weird and enjoy this tab\n(Some Stuff Will Be Added Soon)",
 			14, false
 		)
 		msg.Size = UDim2.new(1, 0, 0, 120)
@@ -3646,14 +3662,14 @@ end
 	----------------------------------------------------------------
 	menuOpen = false
 	menuFrame.Visible = false
-	arrowButton.Text = ""
+	arrowButton.Text = "˄"
 
 	local openPos = menuFrame.Position
 	local closedPos = UDim2.new(openPos.X.Scale, openPos.X.Offset, openPos.Y.Scale, openPos.Y.Offset - (menuFrame.Size.Y.Offset + 10))
 
 	local function setMenu(open, instant)
 		menuOpen = open
-		arrowButton.Text = open and "" or ""
+		arrowButton.Text = open and "˅" or "˄"
 
 		if menuTween then
 			pcall(function() menuTween:Cancel() end)
