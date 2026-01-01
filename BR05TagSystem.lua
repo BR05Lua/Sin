@@ -96,7 +96,7 @@ local SinProfiles = {
 	[9159968275] = { SinName = "Music" },
 	[4659279349] = { SinName = "Trial" },
 	[4495710706] = { SinName = "Games Design" },
-	[1575141882] = { SinName = "Heart", Color = Color3.fromRGB(255, 120, 210) },
+	[1575141882] = { SinName = "Heart" },
 	[118170824]  = { SinName = "Security" },
 	[7870252435] = { SinName = "Security" },
 	[3600244479] = { SinName = "PAWS" },
@@ -111,7 +111,7 @@ local OgProfiles = {
 }
 
 local CustomTags = {
-	[8299334811] = { TagText = "OG Fake Cinny", Color = Color3.fromRGB(6, 255, 169) },
+	[8299334811] = { TagText = "OG Fake Cinny" },
 	[7452991350] = { TagText = "OG XTCY" },
 	[9072904295] = { TagText = "OG XTCY" },
 	[7444930172] = { TagText = "OG XTCY" },
