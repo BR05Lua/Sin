@@ -53,9 +53,7 @@ local SOS_JOIN_PING_VOLUME = 0.10 -- 10 percent volume
 -- Optional per user intros (text popup, glitchy)
 -- CustomUserIntros[UserId] = { Text = "Hello", SoundId = "rbxassetid://123", TextColor = Color3.fromRGB(255,255,255) }
 local CustomUserIntros = {
-CustomUserIntros[7452991350] = { Text = "Whats His Name Spell hmmm ?", SoundId = "rbxassetid://7452991350", TextColor = Color3.fromRGB(255,0,0) }
-CustomUserIntros[7452991350] = { Text = "Whats His Name Spell hmmm ?", SoundId = "rbxassetid://7452991350", TextColor = Color3.fromRGB(255,0,0) }
-CustomUserIntros[7452991350] = { Text = "Whats His Name Spell hmmm ?", SoundId = "rbxassetid://7452991350", TextColor = Color3.fromRGB(255,0,0) }
+
 
 }
 
