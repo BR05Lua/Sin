@@ -153,13 +153,18 @@ local TagEffectProfiles = {
 	-- Pulse + Scanlines
 	-- Gradient affects outline too
 	[754232813] = {
-		Gradient1 = Color3.fromRGB(140, 0, 255),
-		Gradient2 = Color3.fromRGB(0, 0, 0),
-		Gradient3 = Color3.fromRGB(255, 255, 255),
-		SpinGradient = false,
-		ScrollGradient = false,
-		Effects = { "Pulse", "Scanline", "YellowText" },
-	},
+	Gradient1 = Color3.fromRGB(255, 0, 0),
+	Gradient2 = Color3.fromRGB(0, 0, 0),
+	Gradient3 = Color3.fromRGB(255, 0, 0),
+
+	SpinGradient = false,
+	ScrollGradient = true, -- makes it slide like the example
+
+	TopTextColor = Color3.fromRGB(255, 0, 0),      -- you can change this freely
+	BottomTextColor = Color3.fromRGB(255, 255, 255), -- and this too
+
+	Effects = { "Scanline" }, -- optional
+},
 }
 
 local RoleEffectPresets = {
