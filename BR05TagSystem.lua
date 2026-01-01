@@ -284,9 +284,10 @@ local TagEffectProfiles = {
 		BottomTextColor = Color3.fromRGB(240, 240, 240),
 		Effects = { "Scanline", "Shimmer" },
 	},
-		[4689208231] = {
-		Gradient1 = DARK_BLUE,
-		Gradient2 = DARK_PURPLE,
+-- Sam (7452991350): red, dark red, red
+	[4689208231] = {
+		Gradient1 = BLUE,
+		Gradient2 = PURPLE,
 		Gradient3 = BLACK,
 		SpinGradient = false,
 		ScrollGradient = true,
