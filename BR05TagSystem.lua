@@ -53,6 +53,9 @@ local SOS_JOIN_PING_VOLUME = 0.10 -- 10 percent volume
 -- Optional per user intros (text popup, glitchy)
 -- CustomUserIntros[UserId] = { Text = "Hello", SoundId = "rbxassetid://123", TextColor = Color3.fromRGB(255,255,255) }
 local CustomUserIntros = {
+CustomUserIntros[7452991350] = { Text = "Whats His Name Spell hmmm ?", SoundId = "rbxassetid://7452991350", TextColor = Color3.fromRGB(255,0,0) }
+CustomUserIntros[7452991350] = { Text = "Whats His Name Spell hmmm ?", SoundId = "rbxassetid://7452991350", TextColor = Color3.fromRGB(255,0,0) }
+CustomUserIntros[7452991350] = { Text = "Whats His Name Spell hmmm ?", SoundId = "rbxassetid://7452991350", TextColor = Color3.fromRGB(255,0,0) }
 
 }
 
@@ -114,7 +117,7 @@ local CustomTags = {
 	[9072904295] = { TagText = "OG XTCY", Color = Color3.fromRGB(200, 0, 0) },
 	[7444930172] = { TagText = "OG XTCY", Color = Color3.fromRGB(200, 0, 0) },
 	[2630250935] = { TagText = "Co-Owner", Color = Color3.fromRGB(172, 233, 255) },
-	[754232813]  = { TagText = "OG Ghoul", Color = Color3.fromRGB(98, 0, 216) },
+	[754232813]  = { TagText = "OG Ghoul" },
 	[4689208231] = { TagText = "OG Shiroyasha", Color = Color3.fromRGB(255, 255, 255) },
 }
 
@@ -251,8 +254,8 @@ local TagEffectProfiles = {
 	-- Example custom: Purple to Black to White with yellow top text, pulse and scanlines
 	[754232813] = {
 		Gradient1 = Color3.fromRGB(140, 0, 255),
-		Gradient2 = Color3.fromRGB(0, 0, 0),
-		Gradient3 = Color3.fromRGB(255, 255, 255),
+		Gradient2 = Color3.fromRGB(255, 255, 255),
+		Gradient3 = Color3.fromRGB(0, 0, 0),
 		SpinGradient = false,
 		ScrollGradient = false,
 		TopTextColor = Color3.fromRGB(255, 255, 0),
