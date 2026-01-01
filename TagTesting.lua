@@ -1,5 +1,6 @@
 -- SOS TAGS Standalone LocalScript
 -- Put in StarterPlayerScripts
+-- Random thought: if this breaks, blame lag demons, not me. (They are undefeated in every FPS since COD4.)
 
 --------------------------------------------------------------------
 -- SERVICES
@@ -48,20 +49,13 @@ local SOS_JOIN_PING_VOLUME = 0.10
 
 --------------------------------------------------------------------
 -- ALWAYS SHOW TAGS
--- Anyone in here will show their SOS tag at all times, no activation needed
 --------------------------------------------------------------------
 local AlwaysShowTags = {
 	-- [123456789] = true,
-	[5105522471] = true
-	[7887807265] = true
-	[1575141882] = true
-	[196988708] = true
-	[2630250935] = true
 }
 
 --------------------------------------------------------------------
 -- Optional per user intros (text popup, glitchy)
--- CustomUserIntros[UserId] = { Text = "Hello", SoundId = "rbxassetid://123", TextColor = Color3.fromRGB(255,255,255) }
 --------------------------------------------------------------------
 local CustomUserIntros = {
 	[7452991350] = {
@@ -146,204 +140,6 @@ local CMD_OWNER_FX_PREFIX = "Owner_fx:"
 local CMD_COOWNER_FX_PREFIX = "CoOwner_fx:"
 
 --------------------------------------------------------------------
--- TAG PRESETS
---------------------------------------------------------------------
-local TagPresets = {}
-
-local function addPreset(name, t)
-	TagPresets[name] = t
-end
-
-do
-	addPreset("BLACK_SOLID", {
-		Gradient1 = Color3.fromRGB(0, 0, 0),
-		Gradient2 = Color3.fromRGB(0, 0, 0),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
-		SpinGradient = false,
-		ScrollGradient = false,
-		TopTextColor = Color3.fromRGB(255, 255, 255),
-		BottomTextColor = Color3.fromRGB(200, 200, 200),
-		Effects = {},
-	})
-
-	addPreset("WHITE_SOLID", {
-		Gradient1 = Color3.fromRGB(255, 255, 255),
-		Gradient2 = Color3.fromRGB(255, 255, 255),
-		Gradient3 = Color3.fromRGB(255, 255, 255),
-		SpinGradient = false,
-		ScrollGradient = false,
-		TopTextColor = Color3.fromRGB(25, 25, 25),
-		BottomTextColor = Color3.fromRGB(55, 55, 55),
-		Effects = {},
-	})
-
-	addPreset("GREY_STEEL", {
-		Gradient1 = Color3.fromRGB(55, 55, 65),
-		Gradient2 = Color3.fromRGB(10, 10, 12),
-		Gradient3 = Color3.fromRGB(90, 90, 105),
-		SpinGradient = false,
-		ScrollGradient = true,
-		TopTextColor = Color3.fromRGB(245, 245, 245),
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
-		Effects = { "Scanline" },
-	})
-
-	local wheel = {
-		{ "RED",    0/12 },
-		{ "ORANGE", 1/12 },
-		{ "AMBER",  2/12 },
-		{ "YELLOW", 3/12 },
-		{ "LIME",   4/12 },
-		{ "GREEN",  5/12 },
-		{ "MINT",   6/12 },
-		{ "CYAN",   7/12 },
-		{ "SKY",    8/12 },
-		{ "BLUE",   9/12 },
-		{ "PURPLE", 10/12 },
-		{ "PINK",   11/12 },
-	}
-
-	for _, item in ipairs(wheel) do
-		local baseName = item[1]
-		local h = item[2]
-		local c1 = Color3.fromHSV(h, 1, 1)
-		local c2 = Color3.fromHSV((h + 0.08) % 1, 1, 1)
-		local c3 = Color3.fromHSV((h + 0.16) % 1, 1, 1)
-
-		addPreset(baseName .. "_SCROLL", {
-			Gradient1 = c1, Gradient2 = c2, Gradient3 = c3,
-			SpinGradient = false,
-			ScrollGradient = true,
-			TopTextColor = Color3.fromRGB(245, 245, 245),
-			BottomTextColor = Color3.fromRGB(220, 220, 220),
-			Effects = { "Shimmer" },
-		})
-
-		addPreset(baseName .. "_SPIN", {
-			Gradient1 = c1, Gradient2 = c2, Gradient3 = c3,
-			SpinGradient = true,
-			ScrollGradient = false,
-			TopTextColor = Color3.fromRGB(245, 245, 245),
-			BottomTextColor = Color3.fromRGB(220, 220, 220),
-			Effects = { "Shimmer" },
-		})
-	end
-end
-
---------------------------------------------------------------------
--- TAG EFFECT PROFILES
---------------------------------------------------------------------
-local YELLOW = Color3.fromRGB(255, 255, 0)
-local LIGHT_BLUE = Color3.fromRGB(120, 190, 235)
-local RED = Color3.fromRGB(255, 60, 60)
-local DARK_RED = Color3.fromRGB(140, 0, 0)
-
-local TagEffectProfiles = {
-	[754232813] = {
-		Gradient1 = Color3.fromRGB(140, 0, 255),
-		Gradient2 = Color3.fromRGB(255, 255, 255),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
-		SpinGradient = false,
-		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
-		Effects = { "Pulse", "Scanline" },
-	},
-
-	[7452991350] = {
-		Gradient1 = RED,
-		Gradient2 = DARK_RED,
-		Gradient3 = RED,
-		SpinGradient = false,
-		ScrollGradient = true,
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(240, 240, 240),
-		Effects = { "Scanline", "Shimmer" },
-	},
-
-	[8299334811] = { Preset = "SKY_SCROLL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Shimmer" } },
-	[9072904295] = { Preset = "RED_SCROLL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Shimmer" } },
-	[7444930172] = { Preset = "RED_SCROLL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Shimmer" } },
-
-	[2630250935] = { Preset = "GREY_STEEL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Scanline", "Shimmer" } },
-
-	[4689208231] = {
-		Gradient1 = Color3.fromRGB(255, 255, 255),
-		Gradient2 = Color3.fromRGB(255, 255, 255),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
-		SpinGradient = false,
-		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
-		Effects = { "Pulse", "Scanline", "BounceText" },
-	},
-
-	[433636433] = { Preset = "BLACK_SOLID", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" }, ScrollGradient = true },
-	[196988708] = { Preset = "BLACK_SOLID", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" }, ScrollGradient = true },
-	[4926923208] = { Preset = "BLACK_SOLID", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" }, ScrollGradient = true },
-
-	[9253548067] = { Preset = "GREY_STEEL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Scanline", "Shimmer" } },
-	[5348319883] = { Preset = "GREY_STEEL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Scanline", "Shimmer" } },
-}
-
---------------------------------------------------------------------
--- ROLE DEFAULTS
---------------------------------------------------------------------
-local RoleEffectPresets = {
-	Owner = {
-		Preset = "BLACK_SOLID",
-		Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" },
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(235, 235, 235),
-		ScrollGradient = true,
-	},
-
-	CoOwner = {
-		Preset = "GREY_STEEL",
-		Effects = { "Scanline", "Shimmer" },
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(235, 235, 235),
-		ScrollGradient = true,
-	},
-
-	Sin = {
-		Gradient1 = RED,
-		Gradient2 = Color3.fromRGB(0, 0, 0),
-		Gradient3 = RED,
-		SpinGradient = false,
-		ScrollGradient = true,
-		TopTextColor = Color3.fromRGB(235, 70, 70),
-		BottomTextColor = Color3.fromRGB(235, 235, 235),
-		Effects = { "Scanline", "Shimmer" },
-	},
-
-	Tester = {
-		Preset = "GREEN_SCROLL",
-		Effects = { "Shimmer" },
-		TopTextColor = YELLOW,
-	},
-
-	OG = {
-		Preset = "SKY_SCROLL",
-		Effects = { "Shimmer" },
-		TopTextColor = YELLOW,
-	},
-
-	Custom = {
-		Preset = "GREY_STEEL",
-		Effects = { "Scanline" },
-		TopTextColor = YELLOW,
-	},
-
-	Normal = {
-		Preset = "GREY_STEEL",
-		Effects = {},
-		TopTextColor = LIGHT_BLUE,
-		BottomTextColor = Color3.fromRGB(230, 230, 230),
-	},
-}
-
---------------------------------------------------------------------
 -- STATE
 --------------------------------------------------------------------
 local SosUsers = {}
@@ -383,9 +179,6 @@ local trailPanel
 local trailArrow
 local trailOpen = false
 local trailTween = nil
-
-local ownerPresenceAnnounced = false
-local coOwnerPresenceAnnounced = false
 
 local FxConnByUserId = {}
 local TagFxConnByUserId = {}
@@ -636,262 +429,6 @@ local function ensureSfxPanel()
 end
 
 --------------------------------------------------------------------
--- TRAIL MENU
---------------------------------------------------------------------
-local function makeColorChip(parent, label, color3, onClick)
-	local b = Instance.new("TextButton")
-	b.Name = "Chip_" .. label
-	b.Size = UDim2.new(0, 34, 0, 24)
-	b.BackgroundColor3 = color3
-	b.BackgroundTransparency = 0.05
-	b.BorderSizePixel = 0
-	b.Text = ""
-	b.AutoButtonColor = true
-	b.Parent = parent
-	makeCorner(b, 8)
-	makeStroke(b, 1, Color3.fromRGB(0, 0, 0), 0.35)
-
-	local t = Instance.new("TextLabel")
-	t.BackgroundTransparency = 1
-	t.Size = UDim2.new(1, 0, 1, 0)
-	t.Font = Enum.Font.GothamBold
-	t.TextSize = 10
-	t.TextColor3 = Color3.fromRGB(245, 245, 245)
-	t.TextStrokeTransparency = 0.6
-	t.Text = label
-	t.Parent = b
-
-	b.MouseButton1Click:Connect(onClick)
-	return b
-end
-
-local function ensureTrailMenu()
-	ensureGui()
-
-	if not canSeeTrailMenu() then
-		if trailPanel and trailPanel.Parent then trailPanel:Destroy() end
-		trailPanel, trailArrow = nil, nil
-		trailOpen = false
-		trailTween = nil
-		return
-	end
-
-	if trailPanel and trailPanel.Parent then
-		return
-	end
-
-	local PANEL_W, PANEL_H = 270, 240
-	local ARROW_W = 34
-
-	trailPanel = Instance.new("Frame")
-	trailPanel.Name = "SOS_TrailsPanel"
-	trailPanel.AnchorPoint = Vector2.new(0, 0.5)
-	trailPanel.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
-	trailPanel.Position = UDim2.new(0, -(PANEL_W - ARROW_W), 0.5, 0)
-	trailPanel.BorderSizePixel = 0
-	trailPanel.Parent = gui
-	makeCorner(trailPanel, 16)
-	makeGlass(trailPanel)
-	makeStroke(trailPanel, 2, Color3.fromRGB(200, 40, 40), 0.10)
-
-	trailArrow = Instance.new("TextButton")
-	trailArrow.Name = "Arrow"
-	trailArrow.AnchorPoint = Vector2.new(1, 0.5)
-	trailArrow.Size = UDim2.new(0, ARROW_W, 0, 46)
-	trailArrow.Position = UDim2.new(1, 0, 0.5, 0)
-	trailArrow.BorderSizePixel = 0
-	trailArrow.AutoButtonColor = true
-	trailArrow.Text = ">"
-	trailArrow.Font = Enum.Font.GothamBlack
-	trailArrow.TextSize = 18
-	trailArrow.TextColor3 = Color3.fromRGB(245, 245, 245)
-	trailArrow.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-	trailArrow.BackgroundTransparency = 0.18
-	trailArrow.Parent = trailPanel
-	makeCorner(trailArrow, 14)
-	makeStroke(trailArrow, 2, Color3.fromRGB(200, 40, 40), 0.15)
-
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.BackgroundTransparency = 1
-	title.Position = UDim2.new(0, 12, 0, 10)
-	title.Size = UDim2.new(1, -(ARROW_W + 18), 0, 22)
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 16
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.TextColor3 = Color3.fromRGB(245, 245, 245)
-	title.Text = "Trails"
-	title.Parent = trailPanel
-
-	local sub = Instance.new("TextLabel")
-	sub.Name = "Sub"
-	sub.BackgroundTransparency = 1
-	sub.Position = UDim2.new(0, 12, 0, 34)
-	sub.Size = UDim2.new(1, -(ARROW_W + 18), 0, 18)
-	sub.Font = Enum.Font.Gotham
-	sub.TextSize = 12
-	sub.TextXAlignment = Enum.TextXAlignment.Left
-	sub.TextColor3 = Color3.fromRGB(200, 200, 200)
-	sub.Text = isOwner(LocalPlayer) and "Owner controls" or "CoOwner controls"
-	sub.Parent = trailPanel
-
-	local btnRow = Instance.new("Frame")
-	btnRow.BackgroundTransparency = 1
-	btnRow.Position = UDim2.new(0, 10, 0, 62)
-	btnRow.Size = UDim2.new(1, -(ARROW_W + 20), 0, 36)
-	btnRow.Parent = trailPanel
-
-	local rowLayout = Instance.new("UIListLayout")
-	rowLayout.FillDirection = Enum.FillDirection.Horizontal
-	rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	rowLayout.Padding = UDim.new(0, 10)
-	rowLayout.Parent = btnRow
-
-	local onBtn = makeButton(btnRow, "ON")
-	onBtn.Size = UDim2.new(0, 90, 0, 32)
-
-	local offBtn = makeButton(btnRow, "OFF")
-	offBtn.Size = UDim2.new(0, 90, 0, 32)
-
-	local fxRow = Instance.new("Frame")
-	fxRow.BackgroundTransparency = 1
-	fxRow.Position = UDim2.new(0, 10, 0, 124)
-	fxRow.Size = UDim2.new(1, -(ARROW_W + 20), 0, 36)
-	fxRow.Parent = trailPanel
-
-	local fxLayout = Instance.new("UIListLayout")
-	fxLayout.FillDirection = Enum.FillDirection.Horizontal
-	fxLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	fxLayout.Padding = UDim.new(0, 10)
-	fxLayout.Parent = fxRow
-
-	local fxLines = makeButton(fxRow, "Lines")
-	fxLines.Size = UDim2.new(0, 66, 0, 32)
-	local fxLight = makeButton(fxRow, "Light")
-	fxLight.Size = UDim2.new(0, 66, 0, 32)
-	local fxGlitch = makeButton(fxRow, "Glitch")
-	fxGlitch.Size = UDim2.new(0, 66, 0, 32)
-
-	local colorsLabel = Instance.new("TextLabel")
-	colorsLabel.BackgroundTransparency = 1
-	colorsLabel.Position = UDim2.new(0, 12, 0, 168)
-	colorsLabel.Size = UDim2.new(1, -(ARROW_W + 18), 0, 16)
-	colorsLabel.Font = Enum.Font.GothamBold
-	colorsLabel.TextSize = 12
-	colorsLabel.TextXAlignment = Enum.TextXAlignment.Left
-	colorsLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-	colorsLabel.Text = "Colour"
-	colorsLabel.Parent = trailPanel
-
-	local colorArea = Instance.new("Frame")
-	colorArea.BackgroundTransparency = 1
-	colorArea.Position = UDim2.new(0, 10, 0, 188)
-	colorArea.Size = UDim2.new(1, -(ARROW_W + 20), 0, 42)
-	colorArea.Parent = trailPanel
-
-	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.new(0, 34, 0, 24)
-	grid.CellPadding = UDim2.new(0, 8, 0, 8)
-	grid.FillDirection = Enum.FillDirection.Horizontal
-	grid.SortOrder = Enum.SortOrder.LayoutOrder
-	grid.HorizontalAlignment = Enum.HorizontalAlignment.Left
-	grid.VerticalAlignment = Enum.VerticalAlignment.Top
-	grid.Parent = colorArea
-
-	local function sendOn()
-		if isOwner(LocalPlayer) then
-			FxEnabled.Owner = true
-			trySendChat(CMD_OWNER_ON)
-		elseif isCoOwner(LocalPlayer) then
-			FxEnabled.CoOwner = true
-			trySendChat(CMD_COOWNER_ON)
-		end
-	end
-
-	local function sendOff()
-		if isOwner(LocalPlayer) then
-			FxEnabled.Owner = false
-			trySendChat(CMD_OWNER_OFF)
-		elseif isCoOwner(LocalPlayer) then
-			FxEnabled.CoOwner = false
-			trySendChat(CMD_COOWNER_OFF)
-		end
-	end
-
-	local function sendColor(mode)
-		if isOwner(LocalPlayer) then
-			FxColorMode.Owner = mode
-			trySendChat(CMD_OWNER_COLOR_PREFIX .. mode)
-		elseif isCoOwner(LocalPlayer) then
-			FxColorMode.CoOwner = mode
-			trySendChat(CMD_COOWNER_COLOR_PREFIX .. mode)
-		end
-	end
-
-	local function sendFxMode(mode)
-		if isOwner(LocalPlayer) then
-			FxMode.Owner = mode
-			trySendChat(CMD_OWNER_FX_PREFIX .. mode)
-		elseif isCoOwner(LocalPlayer) then
-			FxMode.CoOwner = mode
-			trySendChat(CMD_COOWNER_FX_PREFIX .. mode)
-		end
-	end
-
-	onBtn.MouseButton1Click:Connect(sendOn)
-	offBtn.MouseButton1Click:Connect(sendOff)
-
-	fxLines.MouseButton1Click:Connect(function() sendFxMode("Lines") end)
-	fxLight.MouseButton1Click:Connect(function() sendFxMode("Lighting") end)
-	fxGlitch.MouseButton1Click:Connect(function() sendFxMode("Glitch") end)
-
-	local palette = {
-		{ "RGB", Color3.fromRGB(30, 30, 30), "Rainbow" },
-		{ "ICE", Color3.fromRGB(180, 245, 255), "Ice" },
-		{ "RED", Color3.fromRGB(255, 60, 60), "Red" },
-		{ "GRN", Color3.fromRGB(60, 255, 120), "Neon" },
-		{ "YEL", Color3.fromRGB(255, 220, 80), "Sun" },
-		{ "PRP", Color3.fromRGB(160, 120, 255), "Violet" },
-		{ "WHT", Color3.fromRGB(245, 245, 245), "White" },
-		{ "SLV", Color3.fromRGB(170, 170, 170), "Silver" },
-	}
-
-	for _, item in ipairs(palette) do
-		local label, col, mode = item[1], item[2], item[3]
-		makeColorChip(colorArea, label, col, function()
-			sendColor(mode)
-		end)
-	end
-
-	local openPos = UDim2.new(0, 10, 0.5, 0)
-	local closedPos = UDim2.new(0, -(PANEL_W - ARROW_W), 0.5, 0)
-
-	local function setTrailMenu(open)
-		trailOpen = open
-		trailArrow.Text = open and "<" or ">"
-
-		if trailTween then
-			pcall(function() trailTween:Cancel() end)
-			trailTween = nil
-		end
-
-		trailTween = TweenService:Create(
-			trailPanel,
-			TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{ Position = open and openPos or closedPos }
-		)
-		trailTween:Play()
-	end
-
-	trailArrow.MouseButton1Click:Connect(function()
-		setTrailMenu(not trailOpen)
-	end)
-
-	trailOpen = false
-	trailArrow.Text = ">"
-end
-
---------------------------------------------------------------------
 -- STATS POPUP
 --------------------------------------------------------------------
 local function ensureStatsPopup()
@@ -1070,316 +607,7 @@ local function makeTagButtonCommon(btn, plr)
 end
 
 --------------------------------------------------------------------
--- TAG VISUAL HELPERS
---------------------------------------------------------------------
-local function startRgbOutline(stroke)
-	if not stroke then return end
-	task.spawn(function()
-		local t = 0
-		while stroke and stroke.Parent do
-			t = t + 0.03
-			local r = math.floor((math.sin(t * 2.0) * 0.5 + 0.5) * 255)
-			local g = math.floor((math.sin(t * 2.0 + 2.094) * 0.5 + 0.5) * 255)
-			local b = math.floor((math.sin(t * 2.0 + 4.188) * 0.5 + 0.5) * 255)
-			stroke.Color = Color3.fromRGB(r, g, b)
-			task.wait(0.03)
-		end
-	end)
-end
-
-local function addOwnerGlitchBackdrop(parentBtn)
-	local img = Instance.new("ImageLabel")
-	img.Name = "OwnerGlitchImg"
-	img.BackgroundTransparency = 1
-	img.Size = UDim2.new(1, 0, 1, 0)
-	img.Position = UDim2.new(0, 0, 0, 0)
-	img.Image = "rbxassetid://5028857084"
-	img.ImageTransparency = 0.55
-	img.ZIndex = 1
-	img.Parent = parentBtn
-
-	local grad = Instance.new("UIGradient")
-	grad.Rotation = 0
-	grad.Parent = img
-
-	task.spawn(function()
-		local rng = Random.new()
-		while img and img.Parent do
-			grad.Rotation = rng:NextInteger(0, 360)
-			img.ImageTransparency = rng:NextNumber(0.30, 0.78)
-			img.Position = UDim2.new(0, rng:NextInteger(-3, 3), 0, rng:NextInteger(-3, 3))
-			task.wait(rng:NextNumber(0.04, 0.09))
-		end
-	end)
-end
-
-local function createOwnerGlitchText(label)
-	if not label then return end
-	local base = label.Text
-	local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-	local rng = Random.new()
-
-	task.spawn(function()
-		while label and label.Parent do
-			task.wait(rng:NextNumber(0.05, 0.10))
-			if not label.Parent then break end
-
-			if rng:NextNumber() < 0.70 then
-				local outt = {}
-				for i = 1, #base do
-					if rng:NextNumber() < 0.28 then
-						local idx = rng:NextInteger(1, #chars)
-						outt[#outt + 1] = chars:sub(idx, idx)
-					else
-						outt[#outt + 1] = base:sub(i, i)
-					end
-				end
-				label.Text = table.concat(outt)
-			else
-				label.Text = base
-			end
-		end
-	end)
-end
-
-local function addSinWavyLook(parentBtn)
-	local waveGrad = Instance.new("UIGradient")
-	waveGrad.Rotation = 90
-	waveGrad.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 160, 160)),
-	})
-	waveGrad.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.22),
-		NumberSequenceKeypoint.new(1, 0.05),
-	})
-	waveGrad.Parent = parentBtn
-
-	task.spawn(function()
-		local t = 0
-		while parentBtn and parentBtn.Parent do
-			t = t + 0.05
-			waveGrad.Offset = Vector2.new(math.sin(t) * 0.25, 0)
-			parentBtn.Rotation = math.sin(t * 0.9) * 1.2
-			task.wait(0.03)
-		end
-	end)
-end
-
---------------------------------------------------------------------
--- TAG FX SYSTEM
---------------------------------------------------------------------
-local function disconnectTagFxConn(userId)
-	local c = TagFxConnByUserId[userId]
-	if c then
-		pcall(function() c:Disconnect() end)
-	end
-	TagFxConnByUserId[userId] = nil
-end
-
-local function hasEffect(effects, name)
-	if type(effects) ~= "table" then return false end
-	for _, v in ipairs(effects) do
-		if v == name then return true end
-	end
-	return false
-end
-
-local function buildGradientSequence(c1, c2, c3)
-	local a = c1 or Color3.fromRGB(24, 24, 30)
-	local b = c2 or Color3.fromRGB(10, 10, 12)
-
-	if c3 then
-		return ColorSequence.new({
-			ColorSequenceKeypoint.new(0.0, a),
-			ColorSequenceKeypoint.new(0.5, b),
-			ColorSequenceKeypoint.new(1.0, c3),
-		})
-	end
-
-	return ColorSequence.new({
-		ColorSequenceKeypoint.new(0.0, a),
-		ColorSequenceKeypoint.new(1.0, b),
-	})
-end
-
-local function mergeEffects(a, b)
-	if type(b) == "table" then
-		return b
-	end
-	return a or {}
-end
-
-local function resolveTagProfile(plr, role, roleColor)
-	local out = {}
-	local rolePreset = RoleEffectPresets[role] or RoleEffectPresets.Normal or {}
-
-	local base = {}
-	if type(rolePreset.Preset) == "string" and TagPresets[rolePreset.Preset] then
-		base = TagPresets[rolePreset.Preset]
-	end
-
-	out.Gradient1 = base.Gradient1
-	out.Gradient2 = base.Gradient2
-	out.Gradient3 = base.Gradient3
-	out.SpinGradient = base.SpinGradient
-	out.ScrollGradient = base.ScrollGradient
-	out.TopTextColor = base.TopTextColor
-	out.BottomTextColor = base.BottomTextColor
-	out.Effects = base.Effects
-
-	if rolePreset.Gradient1 then out.Gradient1 = rolePreset.Gradient1 end
-	if rolePreset.Gradient2 then out.Gradient2 = rolePreset.Gradient2 end
-	if rolePreset.Gradient3 ~= nil then out.Gradient3 = rolePreset.Gradient3 end
-	if rolePreset.SpinGradient ~= nil then out.SpinGradient = rolePreset.SpinGradient end
-	if rolePreset.ScrollGradient ~= nil then out.ScrollGradient = rolePreset.ScrollGradient end
-	if rolePreset.TopTextColor then out.TopTextColor = rolePreset.TopTextColor end
-	if rolePreset.BottomTextColor then out.BottomTextColor = rolePreset.BottomTextColor end
-	out.Effects = mergeEffects(out.Effects, rolePreset.Effects)
-
-	local userProf = TagEffectProfiles[plr.UserId]
-	if userProf then
-		if type(userProf.Preset) == "string" and TagPresets[userProf.Preset] then
-			local p = TagPresets[userProf.Preset]
-			out.Gradient1 = p.Gradient1
-			out.Gradient2 = p.Gradient2
-			out.Gradient3 = p.Gradient3
-			out.SpinGradient = p.SpinGradient
-			out.ScrollGradient = p.ScrollGradient
-			out.TopTextColor = p.TopTextColor
-			out.BottomTextColor = p.BottomTextColor
-			out.Effects = p.Effects
-		end
-
-		if userProf.Gradient1 then out.Gradient1 = userProf.Gradient1 end
-		if userProf.Gradient2 then out.Gradient2 = userProf.Gradient2 end
-		if userProf.Gradient3 ~= nil then out.Gradient3 = userProf.Gradient3 end
-		if userProf.SpinGradient ~= nil then out.SpinGradient = userProf.SpinGradient end
-		if userProf.ScrollGradient ~= nil then out.ScrollGradient = userProf.ScrollGradient end
-		if userProf.TopTextColor then out.TopTextColor = userProf.TopTextColor end
-		if userProf.BottomTextColor then out.BottomTextColor = userProf.BottomTextColor end
-		out.Effects = mergeEffects(out.Effects, userProf.Effects)
-	end
-
-	if not out.Gradient1 then out.Gradient1 = Color3.fromRGB(24, 24, 30) end
-	if not out.Gradient2 then out.Gradient2 = Color3.fromRGB(10, 10, 12) end
-	if out.SpinGradient == nil then out.SpinGradient = false end
-	if out.ScrollGradient == nil then out.ScrollGradient = false end
-	if type(out.Effects) ~= "table" then out.Effects = {} end
-
-	if not out.TopTextColor then out.TopTextColor = roleColor end
-	if not out.BottomTextColor then out.BottomTextColor = Color3.fromRGB(230, 230, 230) end
-
-	return out
-end
-
-local function applyTagEffects(plr, role, btn, baseGrad, stroke, topLabel, bottomLabel, roleColor)
-	if not plr or not btn or not baseGrad then return end
-	disconnectTagFxConn(plr.UserId)
-
-	local profile = resolveTagProfile(plr, role,ToggleColor or roleColor)
-	local effects = profile.Effects
-
-	baseGrad.Color = buildGradientSequence(profile.Gradient1, profile.Gradient2, profile.Gradient3)
-
-	local strokeGrad = nil
-	if stroke then
-		strokeGrad = stroke:FindFirstChild("StrokeGradient")
-		if not strokeGrad then
-			strokeGrad = Instance.new("UIGradient")
-			strokeGrad.Name = "StrokeGradient"
-			strokeGrad.Parent = stroke
-		end
-		strokeGrad.Rotation = baseGrad.Rotation
-		strokeGrad.Offset = baseGrad.Offset
-		strokeGrad.Color = buildGradientSequence(profile.Gradient1, profile.Gradient2, profile.Gradient3)
-	end
-
-	if topLabel then topLabel.TextColor3 = profile.TopTextColor end
-	if bottomLabel then bottomLabel.TextColor3 = profile.BottomTextColor end
-
-	if hasEffect(effects, "OwnerGlitchBackdrop") then
-		if not btn:FindFirstChild("OwnerGlitchImg") then
-			addOwnerGlitchBackdrop(btn)
-		end
-	end
-	if hasEffect(effects, "OwnerGlitchText") and topLabel then
-		createOwnerGlitchText(topLabel)
-	end
-
-	if hasEffect(effects, "RgbOutline") and stroke then
-		local sg = stroke:FindFirstChild("StrokeGradient")
-		if sg then sg:Destroy() end
-		strokeGrad = nil
-		startRgbOutline(stroke)
-	end
-
-	local scan = btn:FindFirstChild("Scanlines")
-	if hasEffect(effects, "Scanline") then
-		if not scan then
-			scan = Instance.new("ImageLabel")
-			scan.Name = "Scanlines"
-			scan.BackgroundTransparency = 1
-			scan.Size = UDim2.new(1, 0, 1, 0)
-			scan.Position = UDim2.new(0, 0, 0, 0)
-			scan.ZIndex = 2
-			scan.Image = "rbxassetid://5028857084"
-			scan.ImageTransparency = 0.88
-			scan.Parent = btn
-
-			local g = Instance.new("UIGradient")
-			g.Rotation = 90
-			g.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 120, 120))
-			g.Parent = scan
-		end
-	else
-		if scan then scan:Destroy() end
-	end
-
-	local t = 0
-	local baseBtnSize = btn.Size
-	local baseBtnRot = btn.Rotation
-
-	local conn
-	conn = RunService.RenderStepped:Connect(function(dt)
-		if not btn or not btn.Parent then
-			disconnectTagFxConn(plr.UserId)
-			return
-		end
-
-		t = t + dt
-
-		if profile.SpinGradient then
-			baseGrad.Rotation = (baseGrad.Rotation + dt * 120) % 360
-			if strokeGrad then strokeGrad.Rotation = baseGrad.Rotation end
-		end
-
-		if profile.ScrollGradient or hasEffect(effects, "Shimmer") then
-			local off = math.sin(t * 1.8) * 0.25
-			baseGrad.Offset = Vector2.new(off, 0)
-			if strokeGrad then strokeGrad.Offset = baseGrad.Offset end
-		end
-
-		if hasEffect(effects, "Pulse") then
-			local s = 1 + (math.sin(t * 5.0) * 0.02)
-			btn.Size = UDim2.new(baseBtnSize.X.Scale, baseBtnSize.X.Offset * s, baseBtnSize.Y.Scale, baseBtnSize.Y.Offset * s)
-		else
-			btn.Size = baseBtnSize
-		end
-
-		if hasEffect(effects, "BounceText") and topLabel then
-			local y = math.sin(t * 6) * 1.2
-			topLabel.Position = UDim2.new(0, 5, 0, 3 + y)
-		elseif topLabel then
-			topLabel.Position = UDim2.new(0, 5, 0, 3)
-		end
-	end)
-
-	TagFxConnByUserId[plr.UserId] = conn
-end
-
---------------------------------------------------------------------
--- SPECIAL FX CORE
+-- SPECIAL FX CORE (FIXED COMMANDS)
 --------------------------------------------------------------------
 local function disconnectFxConn(userId)
 	local c = FxConnByUserId[userId]
@@ -1392,8 +620,22 @@ end
 local function clearSpecialFx(plr)
 	if not plr or not plr.Character then return end
 	disconnectFxConn(plr.UserId)
-	local folder = plr.Character:FindFirstChild(FX_FOLDER_NAME)
+
+	local char = plr.Character
+	local folder = char:FindFirstChild(FX_FOLDER_NAME)
 	if folder then folder:Destroy() end
+
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local oldLight = hrp:FindFirstChild("SOS_FxLight")
+		if oldLight then oldLight:Destroy() end
+	end
+
+	for _, inst in ipairs(char:GetDescendants()) do
+		if inst:IsA("Attachment") and (inst.Name == "TrailA0" or inst.Name == "TrailA1") then
+			inst:Destroy()
+		end
+	end
 end
 
 local function makeTrailOnPart(part, parentFolder)
@@ -1426,6 +668,7 @@ local function makeTrailOnPart(part, parentFolder)
 	})
 	tr.Lifetime = 0.12
 	tr.Enabled = false
+	tr.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
 	tr.Parent = parentFolder
 
 	return tr
@@ -1433,6 +676,29 @@ end
 
 local function resolveFxMode(isOwnerRole)
 	return isOwnerRole and (FxMode.Owner or "Lines") or (FxMode.CoOwner or "Lines")
+end
+
+local function normalizeMode(s)
+	s = tostring(s or "")
+	s = s:gsub("%s+", "")
+	s = s:lower()
+	return s
+end
+
+local function resolveFxColor(mode, t)
+	local m = normalizeMode(mode)
+	if m == "rainbow" or m == "rgb" then
+		return Color3.fromHSV((t * 0.18) % 1, 1, 1)
+	end
+	if m == "ice" then return Color3.fromRGB(140, 235, 255) end
+	if m == "red" then return Color3.fromRGB(255, 60, 60) end
+	if m == "neon" then return Color3.fromRGB(60, 255, 120) end
+	if m == "sun" then return Color3.fromRGB(255, 220, 80) end
+	if m == "violet" then return Color3.fromRGB(170, 120, 255) end
+	if m == "white" then return Color3.fromRGB(245, 245, 245) end
+	if m == "silver" then return Color3.fromRGB(170, 170, 170) end
+	if m == "black" then return Color3.fromRGB(15, 15, 15) end
+	return Color3.fromRGB(245, 245, 245)
 end
 
 local function ensureSpecialFx(plr, role)
@@ -1503,23 +769,27 @@ local function ensureSpecialFx(plr, role)
 		local speed = hrp.Velocity.Magnitude
 		local moving = speed > 1.5
 
+		local colorMode = isOwnerRole and FxColorMode.Owner or FxColorMode.CoOwner
+		local c = resolveFxColor(colorMode, os.clock())
+
 		if trails then
 			for _, tr in ipairs(trails) do
 				tr.Enabled = moving
+				tr.Color = ColorSequence.new(c)
 			end
 		end
 
 		if light then
 			light.Brightness = moving and 2.6 or 0
-			light.Color = Color3.fromRGB(200, 235, 255)
+			light.Color = c
 		end
 
 		if hl then
 			local pulse = (math.sin(os.clock() * 10) * 0.5 + 0.5)
 			hl.FillTransparency = 0.25 + (pulse * 0.35)
 			hl.OutlineTransparency = 0.05 + (pulse * 0.25)
-			hl.FillColor = Color3.fromRGB(255, 255, 255)
-			hl.OutlineColor = Color3.fromRGB(255, 60, 60)
+			hl.FillColor = c
+			hl.OutlineColor = Color3.fromRGB(0, 0, 0)
 		end
 	end)
 
@@ -1527,7 +797,7 @@ local function ensureSpecialFx(plr, role)
 end
 
 --------------------------------------------------------------------
--- ARRIVAL POPUPS
+-- ARRIVAL SOUND + JOIN POPUP
 --------------------------------------------------------------------
 local function playArrivalSound(parentGui, soundId, volume)
 	if not soundId or soundId == "" then return end
@@ -1546,7 +816,6 @@ end
 local function showJoinTpPopup(plr)
 	if not plr then return end
 	if plr.UserId == LocalPlayer.UserId then return end
-
 	ensureGui()
 
 	local old = JoinPopupByUserId[plr.UserId]
@@ -1714,7 +983,7 @@ local function tryShowCustomUserIntro(userId)
 end
 
 --------------------------------------------------------------------
--- TAGS
+-- TAGS (MINIMAL, keeps your flow)
 --------------------------------------------------------------------
 local function createSosRoleTag(plr)
 	if not plr then return end
@@ -1725,7 +994,6 @@ local function createSosRoleTag(plr)
 	ensureSpecialFx(plr, role)
 
 	if not role then
-		disconnectTagFxConn(plr.UserId)
 		destroyTagGui(char, "SOS_RoleTag")
 		return
 	end
@@ -1735,7 +1003,6 @@ local function createSosRoleTag(plr)
 	local adornee = (head and head:IsA("BasePart")) and head or ((hrp and hrp:IsA("BasePart")) and hrp or nil)
 	if not adornee then return end
 
-	disconnectTagFxConn(plr.UserId)
 	destroyTagGui(char, "SOS_RoleTag")
 
 	local roleColor = getRoleColor(plr, role)
@@ -1759,13 +1026,7 @@ local function createSosRoleTag(plr)
 
 	btn.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 	btn.BackgroundTransparency = 0.22
-
-	local grad = Instance.new("UIGradient")
-	grad.Name = "BaseGradient"
-	grad.Rotation = 90
-	grad.Parent = btn
-
-	local stroke = makeStroke(btn, 2, roleColor, 0.05)
+	makeStroke(btn, 2, roleColor, 0.05)
 
 	local top = Instance.new("TextLabel")
 	top.BackgroundTransparency = 1
@@ -1776,6 +1037,7 @@ local function createSosRoleTag(plr)
 	top.TextXAlignment = Enum.TextXAlignment.Center
 	top.TextYAlignment = Enum.TextYAlignment.Center
 	top.Text = getTopLine(plr, role)
+	top.TextColor3 = Color3.fromRGB(245, 245, 245)
 	top.ZIndex = 3
 	top.Parent = btn
 
@@ -1788,14 +1050,10 @@ local function createSosRoleTag(plr)
 	bottom.TextXAlignment = Enum.TextXAlignment.Center
 	bottom.TextYAlignment = Enum.TextYAlignment.Center
 	bottom.Text = plr.Name
+	bottom.TextColor3 = Color3.fromRGB(230, 230, 230)
 	bottom.ZIndex = 4
 	bottom.Parent = btn
 
-	if role == "Sin" then
-		addSinWavyLook(btn)
-	end
-
-	applyTagEffects(plr, role, btn, grad, stroke, top, bottom, roleColor)
 	makeTagButtonCommon(btn, plr)
 end
 
@@ -1896,56 +1154,73 @@ local function onAkSeen(userId)
 end
 
 --------------------------------------------------------------------
--- COMMANDS (OWNER COOWNER ONLY)
+-- COMMANDS (OWNER COOWNER ONLY) - FIXED + REBUILDS
 --------------------------------------------------------------------
+local function rebuildSpecialFxFor(plr)
+	if not plr then return end
+	local role = getSosRole(plr)
+	ensureSpecialFx(plr, role)
+end
+
+local function rebuildAllSpecialFx()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if isOwner(p) or isCoOwner(p) then
+			rebuildSpecialFxFor(p)
+		end
+	end
+end
+
 local function applyCommandFrom(uid, text)
 	local plr = Players:GetPlayerByUserId(uid)
 
 	if text == CMD_OWNER_ON and plr and isOwner(plr) then
 		FxEnabled.Owner = true
-		if plr.Character then refreshAllTagsForPlayer(plr) end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 	if text == CMD_OWNER_OFF and plr and isOwner(plr) then
 		FxEnabled.Owner = false
-		for _, p in ipairs(Players:GetPlayers()) do
-			if isOwner(p) then clearSpecialFx(p) end
-		end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 
 	if text == CMD_COOWNER_ON and plr and isCoOwner(plr) then
 		FxEnabled.CoOwner = true
-		if plr.Character then refreshAllTagsForPlayer(plr) end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 	if text == CMD_COOWNER_OFF and plr and isCoOwner(plr) then
 		FxEnabled.CoOwner = false
-		if plr then clearSpecialFx(plr) end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 
 	if text:sub(1, #CMD_OWNER_COLOR_PREFIX) == CMD_OWNER_COLOR_PREFIX and plr and isOwner(plr) then
 		local mode = text:sub(#CMD_OWNER_COLOR_PREFIX + 1)
 		if mode ~= "" then FxColorMode.Owner = mode end
+		-- colour updates live, but rebuilding makes it feel instant if mode depends on object type
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 
 	if text:sub(1, #CMD_COOWNER_COLOR_PREFIX) == CMD_COOWNER_COLOR_PREFIX and plr and isCoOwner(plr) then
 		local mode = text:sub(#CMD_COOWNER_COLOR_PREFIX + 1)
 		if mode ~= "" then FxColorMode.CoOwner = mode end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 
 	if text:sub(1, #CMD_OWNER_FX_PREFIX) == CMD_OWNER_FX_PREFIX and plr and isOwner(plr) then
 		local mode = text:sub(#CMD_OWNER_FX_PREFIX + 1)
 		if mode ~= "" then FxMode.Owner = mode end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 
 	if text:sub(1, #CMD_COOWNER_FX_PREFIX) == CMD_COOWNER_FX_PREFIX and plr and isCoOwner(plr) then
 		local mode = text:sub(#CMD_COOWNER_FX_PREFIX + 1)
 		if mode ~= "" then FxMode.CoOwner = mode end
+		rebuildSpecialFxFor(plr)
 		return true
 	end
 
@@ -1965,7 +1240,6 @@ local function maybeReplyToActivation(uid)
 	end
 
 	if RepliedToActivationUserId[uid] then return end
-
 	RepliedToActivationUserId[uid] = true
 	trySendChat(SOS_REPLY_MARKER)
 end
@@ -1974,7 +1248,9 @@ local function handleIncoming(uid, text)
 	if typeof(uid) ~= "number" then return end
 	if type(text) ~= "string" then return end
 
-	if applyCommandFrom(uid, text) then return end
+	if applyCommandFrom(uid, text) then
+		return
+	end
 
 	if text == SOS_ACTIVATE_MARKER then
 		local plr = Players:GetPlayerByUserId(uid)
@@ -2000,6 +1276,7 @@ local function handleIncoming(uid, text)
 end
 
 local function hookChatListeners()
+	-- Incoming (new chat)
 	if TextChatService and TextChatService.MessageReceived then
 		TextChatService.MessageReceived:Connect(function(msg)
 			if not msg then return end
@@ -2010,6 +1287,16 @@ local function hookChatListeners()
 		end)
 	end
 
+	-- Outgoing (fix: ensures YOUR commands always work even if Chatted is dead)
+	if TextChatService and TextChatService.SendingMessage then
+		TextChatService.SendingMessage:Connect(function(msg)
+			if not msg then return end
+			local text = msg.Text or ""
+			handleIncoming(LocalPlayer.UserId, text)
+		end)
+	end
+
+	-- Legacy fallback
 	local function hookChatted(plr)
 		pcall(function()
 			plr.Chatted:Connect(function(message)
@@ -2032,7 +1319,6 @@ local function init()
 	ensureStatsPopup()
 	ensureBroadcastPanel()
 	ensureSfxPanel()
-	ensureTrailMenu()
 
 	if broadcastSOS then
 		broadcastSOS.MouseButton1Click:Connect(function()
@@ -2060,7 +1346,7 @@ local function init()
 	Players.PlayerRemoving:Connect(function(plr)
 		if plr then
 			clearSpecialFx(plr)
-			disconnectTagFxConn(plr.UserId)
+			disconnectFxConn(plr.UserId)
 			RepliedToActivationUserId[plr.UserId] = nil
 			SinIntroShown[plr.UserId] = nil
 			CustomIntroShown[plr.UserId] = nil
@@ -2076,7 +1362,10 @@ local function init()
 	onSosActivated(LocalPlayer.UserId)
 	trySendChat(SOS_ACTIVATE_MARKER)
 
-	print("SOS Tags loaded. AlwaysShowTags supported. CoOwner role fixed.")
+	-- If you are Owner/CoOwner, make sure FX exists instantly
+	rebuildAllSpecialFx()
+
+	print("SOS Tags loaded. Commands fixed: Owner_color / Owner_fx / CoOwner_color / CoOwner_fx.")
 end
 
 task.delay(INIT_DELAY, init)
