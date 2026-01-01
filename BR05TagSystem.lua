@@ -126,6 +126,7 @@ local CustomTags = {
 	[754232813]  = { TagText = "OG Ghoul" },
 	[4689208231] = { TagText = "OG Shiroyasha" },
 	[4689208231] = { TagText = "OG Audio Sam" },
+	[2440542440] = { TagText = "Maze" },
 }
 
 --------------------------------------------------------------------
@@ -291,6 +292,18 @@ local TagEffectProfiles = {
 		Gradient2 = PURPLE,
 		Gradient3 = BLACK,
 		SpinGradient = false,
+		ScrollGradient = true,
+		TopTextColor = YELLOW,
+		BottomTextColor = Color3.fromRGB(240, 240, 240),
+		Effects = { "Scanline", "Shimmer" },
+	},
+
+	-- Maze (4689208231): whatever style
+	[2440542440] = {
+		Gradient1 = AMBER,
+		Gradient2 = BLACK,
+		Gradient3 = AMBER,
+		SpinGradient = true,
 		ScrollGradient = true,
 		TopTextColor = YELLOW,
 		BottomTextColor = Color3.fromRGB(240, 240, 240),
