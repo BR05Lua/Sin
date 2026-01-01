@@ -124,7 +124,7 @@ local CustomTags = {
 	-- If you define a key twice, the last one wins.
 	[2630250935] = { TagText = "Co-Owner", Color = Color3.fromRGB(172, 233, 255) },
 
-	[754232813] = { TagText = "OG Ghoul", Color = Color3.fromRGB(98, 0, 216) },
+	[754232813] = { TagText = "OG Ghoul" },
 	[4689208231] = { TagText = "OG Shiroyasha", Color = Color3.fromRGB(255, 255, 255) },
 }
 
