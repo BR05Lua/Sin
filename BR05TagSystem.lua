@@ -283,7 +283,7 @@ local TagEffectProfiles = {
 		TopTextColor = YELLOW,
 		BottomTextColor = Color3.fromRGB(240, 240, 240),
 		Effects = { "Scanline", "Shimmer" },
-		
+	},
 		[4689208231] = {
 		Gradient1 = DARK_BLUE,
 		Gradient2 = DARK_PURPLE,
@@ -293,6 +293,7 @@ local TagEffectProfiles = {
 		TopTextColor = YELLOW,
 		BottomTextColor = Color3.fromRGB(240, 240, 240),
 		Effects = { "Scanline", "Shimmer" },
+	},
 	},
 
 	-- Other current CustomTags IDs: yellow text
