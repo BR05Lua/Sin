@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:FindService("TextChatService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -112,12 +113,12 @@ local SinProfiles = {
 	-- [123] = { SinName = "Chaos", ArrivalText = "Chaos Walks In", ArrivalSoundId = "rbxassetid://123" },
 }
 
+-- Can be: true OR { OgName = "Something", Color = Color3.fromRGB(...) }
 local OgProfiles = {
-	-- keep blank unless you use it
 	[2440542440] = true,
 }
 
--- Current CustomTags userIds you asked to keep
+-- Custom tags (NOTE: duplicate keys removed so the script does not explode quietly)
 local CustomTags = {
 	[8299334811] = { TagText = "OG Fake Cinny" },
 	[7452991350] = { TagText = "OG XTCY" },
@@ -125,7 +126,6 @@ local CustomTags = {
 	[7444930172] = { TagText = "OG XTCY" },
 	[2630250935] = { TagText = "Co-Owner" },
 	[754232813]  = { TagText = "OG Ghoul" },
-	[4689208231] = { TagText = "OG Shiroyasha" },
 	[4689208231] = { TagText = "OG Audio Sam" },
 	[2440542440] = { TagText = "Maze" },
 }
@@ -190,28 +190,6 @@ do
 		Effects = { "Scanline" },
 	})
 
-	addPreset("RAINBOW_SPIN", {
-		Gradient1 = Color3.fromRGB(255, 0, 0),
-		Gradient2 = Color3.fromRGB(0, 255, 0),
-		Gradient3 = Color3.fromRGB(0, 140, 255),
-		SpinGradient = true,
-		ScrollGradient = false,
-		TopTextColor = Color3.fromRGB(245, 245, 245),
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
-		Effects = { "Shimmer" },
-	})
-
-	addPreset("RAINBOW_SCROLL", {
-		Gradient1 = Color3.fromRGB(255, 0, 0),
-		Gradient2 = Color3.fromRGB(0, 255, 0),
-		Gradient3 = Color3.fromRGB(0, 140, 255),
-		SpinGradient = false,
-		ScrollGradient = true,
-		TopTextColor = Color3.fromRGB(245, 245, 245),
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
-		Effects = { "Scanline" },
-	})
-
 	local wheel = {
 		{ "RED",    0/12 },
 		{ "ORANGE", 1/12 },
@@ -255,12 +233,19 @@ do
 end
 
 --------------------------------------------------------------------
--- TAG EFFECT PROFILES
+-- TAG EFFECT PROFILES (FIXED: no undefined colors, no duplicate keys)
 --------------------------------------------------------------------
 local YELLOW = Color3.fromRGB(255, 255, 0)
 local LIGHT_BLUE = Color3.fromRGB(120, 190, 235)
 local RED = Color3.fromRGB(255, 60, 60)
 local DARK_RED = Color3.fromRGB(140, 0, 0)
+
+local SAM_BLUE = Color3.fromRGB(70, 120, 255)
+local SAM_PURPLE = Color3.fromRGB(170, 80, 255)
+local SAM_BLACK = Color3.fromRGB(0, 0, 0)
+
+local AMBER = Color3.fromRGB(255, 190, 70)
+local BLACK = Color3.fromRGB(0, 0, 0)
 
 local TagEffectProfiles = {
 	-- Ghoul (754232813): purple, white, black
@@ -286,12 +271,12 @@ local TagEffectProfiles = {
 		BottomTextColor = Color3.fromRGB(240, 240, 240),
 		Effects = { "Scanline", "Shimmer" },
 	},
-	
-	-- Sam (4689208231): whatever style
+
+	-- Audio Sam (4689208231)
 	[4689208231] = {
-		Gradient1 = BLUE,
-		Gradient2 = PURPLE,
-		Gradient3 = BLACK,
+		Gradient1 = SAM_BLUE,
+		Gradient2 = SAM_PURPLE,
+		Gradient3 = SAM_BLACK,
 		SpinGradient = false,
 		ScrollGradient = true,
 		TopTextColor = YELLOW,
@@ -299,7 +284,7 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 
-	-- Maze (4689208231): whatever style
+	-- Maze (2440542440)
 	[2440542440] = {
 		Gradient1 = AMBER,
 		Gradient2 = BLACK,
@@ -311,7 +296,6 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 
-
 	-- Other current CustomTags IDs: yellow text
 	[8299334811] = { Preset = "SKY_SCROLL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Shimmer" } },
 	[9072904295] = { Preset = "RED_SCROLL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Shimmer" } },
@@ -319,18 +303,6 @@ local TagEffectProfiles = {
 
 	-- CoOwner (2630250935)
 	[2630250935] = { Preset = "GREY_STEEL", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "Scanline", "Shimmer" } },
-
-	-- Shiroyasha (4689208231)
-	[4689208231] = {
-		Gradient1 = Color3.fromRGB(255, 255, 255),
-		Gradient2 = Color3.fromRGB(255, 255, 255),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
-		SpinGradient = false,
-		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
-		Effects = { "Pulse", "Scanline", "BounceText" },
-	},
 
 	-- Owners explicit
 	[433636433] = { Preset = "BLACK_SOLID", TopTextColor = YELLOW, BottomTextColor = Color3.fromRGB(235, 235, 235), Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" }, ScrollGradient = true },
@@ -411,8 +383,13 @@ local FxMode = {
 }
 
 local gui
+
+-- Stats popup (expanded)
 local statsPopup
 local statsPopupLabel
+local statsUserIdBox
+local statsWorthBox
+local statsWorthStatusLabel
 
 local broadcastPanel
 local broadcastSOS
@@ -422,8 +399,10 @@ local sfxPanel
 local sfxOnBtn
 local sfxOffBtn
 
+-- Owner/CoOwner dropdown menu that opens DOWN into the square area
 local trailPanel
-local trailArrow
+local trailToggleBtn
+local trailContent
 local trailOpen = false
 local trailTween = nil
 
@@ -441,6 +420,10 @@ local SinIntroShown = {}
 local CustomIntroShown = {}
 
 local JoinPopupByUserId = {}
+
+-- Avatar worth cache
+local AvatarWorthCache = {}
+local AvatarWorthInFlight = {}
 
 --------------------------------------------------------------------
 -- UI HELPERS
@@ -568,6 +551,104 @@ local function trySendChat(text)
 
 	return false
 end
+--------------------------------------------------------------------
+-- AVATAR WORTH HELPERS (FIXED + CACHED)
+--------------------------------------------------------------------
+local function parseAssetIdList(strValue, out)
+	if type(strValue) ~= "string" or strValue == "" then return end
+	for token in string.gmatch(strValue, "[^,]+") do
+		local n = tonumber((token:gsub("%s+", "")))
+		if n and n > 0 then
+			out[n] = true
+		end
+	end
+end
+
+local function collectAssetIdsFromDescription(desc)
+	local out = {}
+
+	local singleProps = {
+		"Shirt", "Pants", "GraphicTShirt", "Face",
+		"Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg",
+		"ClimbAnimation", "FallAnimation", "IdleAnimation", "JumpAnimation", "RunAnimation", "SwimAnimation", "WalkAnimation",
+	}
+
+	for _, prop in ipairs(singleProps) do
+		local ok, v = pcall(function()
+			return desc[prop]
+		end)
+		if ok and typeof(v) == "number" and v > 0 then
+			out[v] = true
+		end
+	end
+
+	local listProps = {
+		"HatAccessory", "HairAccessory", "FaceAccessory", "NeckAccessory",
+		"ShoulderAccessory", "FrontAccessory", "BackAccessory", "WaistAccessory",
+	}
+
+	for _, prop in ipairs(listProps) do
+		local ok, v = pcall(function()
+			return desc[prop]
+		end)
+		if ok then
+			parseAssetIdList(v, out)
+		end
+	end
+
+	return out
+end
+
+local function getAvatarWorthRobux(userId)
+	if AvatarWorthCache[userId] then
+		return AvatarWorthCache[userId]
+	end
+	if AvatarWorthInFlight[userId] then
+		return nil
+	end
+	AvatarWorthInFlight[userId] = true
+
+	local total = 0
+	local counted = 0
+	local skipped = 0
+
+	local desc
+	local okDesc = pcall(function()
+		desc = Players:GetHumanoidDescriptionFromUserId(userId)
+	end)
+
+	if not okDesc or not desc then
+		AvatarWorthInFlight[userId] = nil
+		AvatarWorthCache[userId] = { Total = nil, Counted = 0, Skipped = 0, Error = "NoDescription" }
+		return AvatarWorthCache[userId]
+	end
+
+	local assetSet = collectAssetIdsFromDescription(desc)
+
+	for assetId in pairs(assetSet) do
+		local okInfo, info = pcall(function()
+			return MarketplaceService:GetProductInfo(assetId, Enum.InfoType.Asset)
+		end)
+
+		if okInfo and type(info) == "table" then
+			local price = info.PriceInRobux
+			if typeof(price) == "number" and price > 0 then
+				total = total + price
+				counted = counted + 1
+			else
+				skipped = skipped + 1
+			end
+		else
+			skipped = skipped + 1
+		end
+
+		task.wait(0.05)
+	end
+
+	AvatarWorthInFlight[userId] = nil
+	AvatarWorthCache[userId] = { Total = total, Counted = counted, Skipped = skipped }
+	return AvatarWorthCache[userId]
+end
 
 --------------------------------------------------------------------
 -- REFRESH EVENT + BUTTON (TOP RIGHT ABOVE PLAYERLIST)
@@ -575,24 +656,12 @@ end
 local function findRefreshEvent()
 	local inst = ReplicatedStorage:FindFirstChild(REFRESH_EVENT_NAME)
 	if inst then return inst end
-	-- fallback search
 	for _, d in ipairs(ReplicatedStorage:GetDescendants()) do
 		if d.Name == REFRESH_EVENT_NAME then
 			return d
 		end
 	end
 	return nil
-end
-
-local function refreshAllTags()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p and p.Character then
-			-- refresh tags after server refresh so they do not vanish
-			task.defer(function()
-				-- this function exists later, but defer is fine
-			end)
-		end
-	end
 end
 
 local function ensureRefreshTooltip()
@@ -612,8 +681,8 @@ local function ensureRefreshTooltip()
 	refreshTip.TextStrokeTransparency = 0.65
 	refreshTip.TextXAlignment = Enum.TextXAlignment.Left
 	refreshTip.TextYAlignment = Enum.TextYAlignment.Center
-	refreshTip.Text = "Tip: you can also trigger it with ctrl"
-	refreshTip.Size = UDim2.new(0, 260, 0, 22)
+	refreshTip.Text = "Tip: you can also trigger it with Right Ctrl"
+	refreshTip.Size = UDim2.new(0, 290, 0, 22)
 	refreshTip.Parent = gui
 
 	makeCorner(refreshTip, 10)
@@ -668,12 +737,10 @@ local function doRefresh()
 		end
 	end
 
-	-- Rebuild tags shortly after refresh so they do not go invisible.
 	task.delay(0.15, function()
 		for _, p in ipairs(Players:GetPlayers()) do
 			if p and p.Character then
 				task.defer(function()
-					-- refreshAllTagsForPlayer exists later, this closure will run after it's defined
 					if _G.__SOS_REFRESH_TAGS_FOR_PLAYER then
 						_G.__SOS_REFRESH_TAGS_FOR_PLAYER(p)
 					end
@@ -691,7 +758,6 @@ local function ensureRefreshButton()
 	refreshBtn = Instance.new("TextButton")
 	refreshBtn.Name = "RefreshButton"
 	refreshBtn.AnchorPoint = Vector2.new(1, 0)
-	-- This sits top right, above the PlayerList area
 	refreshBtn.Position = UDim2.new(1, -18, 0, 20)
 	refreshBtn.Size = UDim2.new(0, 140, 0, 36)
 	refreshBtn.BorderSizePixel = 0
@@ -701,7 +767,7 @@ local function ensureRefreshButton()
 	refreshBtn.Text = "Refresh"
 	refreshBtn.Font = Enum.Font.GothamBold
 	refreshBtn.TextSize = 14
-	refreshBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	refreshBtn.TextColor3 = Color3.fromRGB(255, 255, 255) -- forced white
 	refreshBtn.Parent = gui
 
 	makeCorner(refreshBtn, 12)
@@ -731,20 +797,15 @@ local function ensureRefreshButton()
 		hideRefreshTooltip()
 	end)
 
-	-- RightControl hotkey triggers the same action
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		if input.KeyCode ~= REFRESH_HOTKEY then return end
-		if refreshBtn and refreshBtn.Parent then
-			refreshBtn:Activate()
-		else
-			doRefresh()
-		end
+		doRefresh()
 	end)
 end
 
 --------------------------------------------------------------------
--- BROADCAST UI
+-- BROADCAST UI (BOTTOM LEFT)
 --------------------------------------------------------------------
 local function ensureBroadcastPanel()
 	ensureGui()
@@ -792,7 +853,7 @@ local function ensureBroadcastPanel()
 end
 
 --------------------------------------------------------------------
--- SFX PANEL (OWNER OR COOWNER)
+-- SFX PANEL (OWNER OR COOWNER) (ABOVE BROADCAST)
 --------------------------------------------------------------------
 local function ensureSfxPanel()
 	ensureGui()
@@ -855,9 +916,9 @@ local function ensureSfxPanel()
 		end
 	end)
 end
-
 --------------------------------------------------------------------
--- TRAIL MENU (SLIDE OUT) WITH FX MODE BUTTONS
+-- OWNER/COOWNER MENU (OPENS DOWN INTO THE SQUARE AREA)
+-- Includes SOS and AK buttons inside it
 --------------------------------------------------------------------
 local function makeColorChip(parent, label, color3, onClick)
 	local b = Instance.new("TextButton")
@@ -891,135 +952,153 @@ local function ensureTrailMenu()
 
 	if not canSeeTrailMenu() then
 		if trailPanel and trailPanel.Parent then trailPanel:Destroy() end
-		trailPanel, trailArrow = nil, nil
+		trailPanel, trailToggleBtn, trailContent = nil, nil, nil
 		trailOpen = false
 		trailTween = nil
 		return
 	end
 
-	if trailPanel and trailPanel.Parent then
-		return
-	end
+	if trailPanel and trailPanel.Parent then return end
 
-	local PANEL_W, PANEL_H = 270, 240
-	local ARROW_W = 34
+	-- This is the "square" area between the menu header and SFX panel in your screenshot.
+	-- We place the panel top so that when OPEN, it fills down toward SFX.
+	local PANEL_W, PANEL_H = 220, 320
+	local CLOSED_H = 36
+	local GAP = 10
+
+	-- SFX sits at Y = -64. Make our OPEN panel end just above SFX.
+	local bottomY = -64
+	local topY = bottomY - GAP - PANEL_H
 
 	trailPanel = Instance.new("Frame")
-	trailPanel.Name = "SOS_TrailsPanel"
-	trailPanel.AnchorPoint = Vector2.new(0, 0.5)
-	trailPanel.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
-	trailPanel.Position = UDim2.new(0, -(PANEL_W - ARROW_W), 0.5, 0)
+	trailPanel.Name = "SOS_OwnerCoOwnerMenu"
+	trailPanel.AnchorPoint = Vector2.new(0, 0)
+	trailPanel.Position = UDim2.new(0, 10, 1, topY)
+	trailPanel.Size = UDim2.new(0, PANEL_W, 0, CLOSED_H)
 	trailPanel.BorderSizePixel = 0
 	trailPanel.Parent = gui
-	makeCorner(trailPanel, 16)
+	makeCorner(trailPanel, 14)
 	makeGlass(trailPanel)
 	makeStroke(trailPanel, 2, Color3.fromRGB(200, 40, 40), 0.10)
 
-	trailArrow = Instance.new("TextButton")
-	trailArrow.Name = "Arrow"
-	trailArrow.AnchorPoint = Vector2.new(1, 0.5)
-	trailArrow.Size = UDim2.new(0, ARROW_W, 0, 46)
-	trailArrow.Position = UDim2.new(1, 0, 0.5, 0)
-	trailArrow.BorderSizePixel = 0
-	trailArrow.AutoButtonColor = true
-	trailArrow.Text = ">"
-	trailArrow.Font = Enum.Font.GothamBlack
-	trailArrow.TextSize = 18
-	trailArrow.TextColor3 = Color3.fromRGB(245, 245, 245)
-	trailArrow.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-	trailArrow.BackgroundTransparency = 0.18
-	trailArrow.Parent = trailPanel
-	makeCorner(trailArrow, 14)
-	makeStroke(trailArrow, 2, Color3.fromRGB(200, 40, 40), 0.15)
+	trailToggleBtn = Instance.new("TextButton")
+	trailToggleBtn.Name = "Toggle"
+	trailToggleBtn.Position = UDim2.new(0, 10, 0, 6)
+	trailToggleBtn.Size = UDim2.new(1, -20, 0, 24)
+	trailToggleBtn.BorderSizePixel = 0
+	trailToggleBtn.AutoButtonColor = true
+	trailToggleBtn.Text = (isOwner(LocalPlayer) and "Owner Menu  ^" or "CoOwner Menu  ^")
+	trailToggleBtn.Font = Enum.Font.GothamBold
+	trailToggleBtn.TextSize = 13
+	trailToggleBtn.TextColor3 = Color3.fromRGB(245, 245, 245)
+	trailToggleBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+	trailToggleBtn.BackgroundTransparency = 0.18
+	trailToggleBtn.Parent = trailPanel
+	makeCorner(trailToggleBtn, 10)
+	makeStroke(trailToggleBtn, 1, Color3.fromRGB(200, 40, 40), 0.25)
 
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.BackgroundTransparency = 1
-	title.Position = UDim2.new(0, 12, 0, 10)
-	title.Size = UDim2.new(1, -(ARROW_W + 18), 0, 22)
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 16
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.TextColor3 = Color3.fromRGB(245, 245, 245)
-	title.Text = "Trails"
-	title.Parent = trailPanel
+	trailContent = Instance.new("Frame")
+	trailContent.Name = "Content"
+	trailContent.BackgroundTransparency = 1
+	trailContent.Position = UDim2.new(0, 0, 0, 40)
+	trailContent.Size = UDim2.new(1, 0, 1, -46)
+	trailContent.Visible = false
+	trailContent.Parent = trailPanel
 
-	local sub = Instance.new("TextLabel")
-	sub.Name = "Sub"
-	sub.BackgroundTransparency = 1
-	sub.Position = UDim2.new(0, 12, 0, 34)
-	sub.Size = UDim2.new(1, -(ARROW_W + 18), 0, 18)
-	sub.Font = Enum.Font.Gotham
-	sub.TextSize = 12
-	sub.TextXAlignment = Enum.TextXAlignment.Left
-	sub.TextColor3 = Color3.fromRGB(200, 200, 200)
-	sub.Text = isOwner(LocalPlayer) and "Owner controls" or "CoOwner controls"
-	sub.Parent = trailPanel
+	-- SOS / AK buttons inside menu (your request)
+	local topRow = Instance.new("Frame")
+	topRow.BackgroundTransparency = 1
+	topRow.Position = UDim2.new(0, 10, 0, 0)
+	topRow.Size = UDim2.new(1, -20, 0, 34)
+	topRow.Parent = trailContent
 
-	local btnRow = Instance.new("Frame")
-	btnRow.BackgroundTransparency = 1
-	btnRow.Position = UDim2.new(0, 10, 0, 62)
-	btnRow.Size = UDim2.new(1, -(ARROW_W + 20), 0, 36)
-	btnRow.Parent = trailPanel
+	local topLayout = Instance.new("UIListLayout")
+	topLayout.FillDirection = Enum.FillDirection.Horizontal
+	topLayout.Padding = UDim.new(0, 10)
+	topLayout.Parent = topRow
 
-	local rowLayout = Instance.new("UIListLayout")
-	rowLayout.FillDirection = Enum.FillDirection.Horizontal
-	rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	rowLayout.Padding = UDim.new(0, 10)
-	rowLayout.Parent = btnRow
+	local sosBtn = makeButton(topRow, "SOS")
+	sosBtn.Size = UDim2.new(0, 95, 0, 32)
 
-	local onBtn = makeButton(btnRow, "ON")
-	onBtn.Size = UDim2.new(0, 90, 0, 32)
+	local akBtn = makeButton(topRow, "AK")
+	akBtn.Size = UDim2.new(0, 95, 0, 32)
 
-	local offBtn = makeButton(btnRow, "OFF")
-	offBtn.Size = UDim2.new(0, 90, 0, 32)
+	local effectsLabel = Instance.new("TextLabel")
+	effectsLabel.BackgroundTransparency = 1
+	effectsLabel.Position = UDim2.new(0, 12, 0, 40)
+	effectsLabel.Size = UDim2.new(1, -24, 0, 18)
+	effectsLabel.Font = Enum.Font.GothamBold
+	effectsLabel.TextSize = 13
+	effectsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	effectsLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
+	effectsLabel.Text = "Effects"
+	effectsLabel.Parent = trailContent
 
-	local fxLabel = Instance.new("TextLabel")
-	fxLabel.BackgroundTransparency = 1
-	fxLabel.Position = UDim2.new(0, 12, 0, 104)
-	fxLabel.Size = UDim2.new(1, -(ARROW_W + 18), 0, 16)
-	fxLabel.Font = Enum.Font.GothamBold
-	fxLabel.TextSize = 12
-	fxLabel.TextXAlignment = Enum.TextXAlignment.Left
-	fxLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-	fxLabel.Text = "Effect"
-	fxLabel.Parent = trailPanel
+	local row1 = Instance.new("Frame")
+	row1.BackgroundTransparency = 1
+	row1.Position = UDim2.new(0, 10, 0, 62)
+	row1.Size = UDim2.new(1, -20, 0, 34)
+	row1.Parent = trailContent
 
-	local fxRow = Instance.new("Frame")
-	fxRow.BackgroundTransparency = 1
-	fxRow.Position = UDim2.new(0, 10, 0, 124)
-	fxRow.Size = UDim2.new(1, -(ARROW_W + 20), 0, 36)
-	fxRow.Parent = trailPanel
+	local row1Layout = Instance.new("UIListLayout")
+	row1Layout.FillDirection = Enum.FillDirection.Horizontal
+	row1Layout.Padding = UDim.new(0, 10)
+	row1Layout.Parent = row1
 
-	local fxLayout = Instance.new("UIListLayout")
-	fxLayout.FillDirection = Enum.FillDirection.Horizontal
-	fxLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	fxLayout.Padding = UDim.new(0, 10)
-	fxLayout.Parent = fxRow
+	local onBtn = makeButton(row1, "ON")
+	onBtn.Size = UDim2.new(0, 95, 0, 32)
+	local offBtn = makeButton(row1, "OFF")
+	offBtn.Size = UDim2.new(0, 95, 0, 32)
 
-	local fxLines = makeButton(fxRow, "Lines")
-	fxLines.Size = UDim2.new(0, 66, 0, 32)
-	local fxLight = makeButton(fxRow, "Light")
-	fxLight.Size = UDim2.new(0, 66, 0, 32)
-	local fxGlitch = makeButton(fxRow, "Glitch")
-	fxGlitch.Size = UDim2.new(0, 66, 0, 32)
+	local modeLabel = Instance.new("TextLabel")
+	modeLabel.BackgroundTransparency = 1
+	modeLabel.Position = UDim2.new(0, 12, 0, 102)
+	modeLabel.Size = UDim2.new(1, -24, 0, 18)
+	modeLabel.Font = Enum.Font.GothamBold
+	modeLabel.TextSize = 13
+	modeLabel.TextXAlignment = Enum.TextXAlignment.Left
+	modeLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
+	modeLabel.Text = "Mode"
+	modeLabel.Parent = trailContent
 
-	local colorsLabel = Instance.new("TextLabel")
-	colorsLabel.BackgroundTransparency = 1
-	colorsLabel.Position = UDim2.new(0, 12, 0, 168)
-	colorsLabel.Size = UDim2.new(1, -(ARROW_W + 18), 0, 16)
-	colorsLabel.Font = Enum.Font.GothamBold
-	colorsLabel.TextSize = 12
-	colorsLabel.TextXAlignment = Enum.TextXAlignment.Left
-	colorsLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-	colorsLabel.Text = "Colour"
-	colorsLabel.Parent = trailPanel
+	local row2 = Instance.new("Frame")
+	row2.BackgroundTransparency = 1
+	row2.Position = UDim2.new(0, 10, 0, 124)
+	row2.Size = UDim2.new(1, -20, 0, 34)
+	row2.Parent = trailContent
 
-	local colorArea = Instance.new("Frame")
-	colorArea.BackgroundTransparency = 1
-	colorArea.Position = UDim2.new(0, 10, 0, 188)
-	colorArea.Size = UDim2.new(1, -(ARROW_W + 20), 0, 42)
-	colorArea.Parent = trailPanel
+	local row2Layout = Instance.new("UIListLayout")
+	row2Layout.FillDirection = Enum.FillDirection.Horizontal
+	row2Layout.Padding = UDim.new(0, 8)
+	row2Layout.Parent = row2
+
+	local fxLines = makeButton(row2, "Lines")
+	fxLines.Size = UDim2.new(0, 62, 0, 32)
+	local fxLight = makeButton(row2, "Light")
+	fxLight.Size = UDim2.new(0, 62, 0, 32)
+	local fxGlitch = makeButton(row2, "Glitch")
+	fxGlitch.Size = UDim2.new(0, 62, 0, 32)
+
+	local colLabel = Instance.new("TextLabel")
+	colLabel.BackgroundTransparency = 1
+	colLabel.Position = UDim2.new(0, 12, 0, 164)
+	colLabel.Size = UDim2.new(1, -24, 0, 18)
+	colLabel.Font = Enum.Font.GothamBold
+	colLabel.TextSize = 13
+	colLabel.TextXAlignment = Enum.TextXAlignment.Left
+	colLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
+	colLabel.Text = "Colour"
+	colLabel.Parent = trailContent
+
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "ColourScroll"
+	scroll.BackgroundTransparency = 1
+	scroll.BorderSizePixel = 0
+	scroll.Position = UDim2.new(0, 10, 0, 186)
+	scroll.Size = UDim2.new(1, -20, 1, -196)
+	scroll.ScrollBarThickness = 6
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.Parent = trailContent
 
 	local grid = Instance.new("UIGridLayout")
 	grid.CellSize = UDim2.new(0, 34, 0, 24)
@@ -1028,7 +1107,26 @@ local function ensureTrailMenu()
 	grid.SortOrder = Enum.SortOrder.LayoutOrder
 	grid.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	grid.VerticalAlignment = Enum.VerticalAlignment.Top
-	grid.Parent = colorArea
+	grid.Parent = scroll
+
+	local palette = {
+		{ "RGB", Color3.fromRGB(30, 30, 30), "Rainbow" },
+		{ "ICE", Color3.fromRGB(180, 245, 255), "Ice" },
+		{ "RED", Color3.fromRGB(255, 60, 60), "Red" },
+		{ "GRN", Color3.fromRGB(60, 255, 120), "Neon" },
+		{ "YEL", Color3.fromRGB(255, 220, 80), "Sun" },
+		{ "PRP", Color3.fromRGB(160, 120, 255), "Violet" },
+		{ "WHT", Color3.fromRGB(245, 245, 245), "White" },
+		{ "SLV", Color3.fromRGB(170, 170, 170), "Silver" },
+	}
+
+	local function updateCanvas()
+		task.defer(function()
+			scroll.CanvasSize = UDim2.new(0, 0, 0, grid.AbsoluteContentSize.Y + 10)
+		end)
+	end
+	grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+	updateCanvas()
 
 	local function sendOn()
 		if isOwner(LocalPlayer) then
@@ -1070,6 +1168,16 @@ local function ensureTrailMenu()
 		end
 	end
 
+	sosBtn.MouseButton1Click:Connect(function()
+		SosUsers[LocalPlayer.UserId] = true
+		trySendChat(SOS_ACTIVATE_MARKER)
+	end)
+
+	akBtn.MouseButton1Click:Connect(function()
+		AkUsers[LocalPlayer.UserId] = true
+		trySendChat(AK_MARKER_1)
+	end)
+
 	onBtn.MouseButton1Click:Connect(sendOn)
 	offBtn.MouseButton1Click:Connect(sendOff)
 
@@ -1077,54 +1185,39 @@ local function ensureTrailMenu()
 	fxLight.MouseButton1Click:Connect(function() sendFxMode("Lighting") end)
 	fxGlitch.MouseButton1Click:Connect(function() sendFxMode("Glitch") end)
 
-	local palette = {
-		{ "RGB", Color3.fromRGB(30, 30, 30), "Rainbow" },
-		{ "ICE", Color3.fromRGB(180, 245, 255), "Ice" },
-		{ "RED", Color3.fromRGB(255, 60, 60), "Red" },
-		{ "GRN", Color3.fromRGB(60, 255, 120), "Neon" },
-		{ "YEL", Color3.fromRGB(255, 220, 80), "Sun" },
-		{ "PRP", Color3.fromRGB(160, 120, 255), "Violet" },
-		{ "WHT", Color3.fromRGB(245, 245, 245), "White" },
-		{ "SLV", Color3.fromRGB(170, 170, 170), "Silver" },
-	}
-
 	for _, item in ipairs(palette) do
 		local label, col, mode = item[1], item[2], item[3]
-		makeColorChip(colorArea, label, col, function()
+		makeColorChip(scroll, label, col, function()
 			sendColor(mode)
 		end)
 	end
 
-	local openPos = UDim2.new(0, 10, 0.5, 0)
-	local closedPos = UDim2.new(0, -(PANEL_W - ARROW_W), 0.5, 0)
-
-	local function setTrailMenu(open)
+	local function setOpen(open)
 		trailOpen = open
-		trailArrow.Text = open and "<" or ">"
+		if trailTween then pcall(function() trailTween:Cancel() end) end
 
-		if trailTween then
-			pcall(function() trailTween:Cancel() end)
-			trailTween = nil
-		end
+		trailToggleBtn.Text = (isOwner(LocalPlayer) and "Owner Menu  " or "CoOwner Menu  ") .. (open and "^" or "v")
+
+		trailContent.Visible = open
 
 		trailTween = TweenService:Create(
 			trailPanel,
-			TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{ Position = open and openPos or closedPos }
+			TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Size = open and UDim2.new(0, PANEL_W, 0, PANEL_H) or UDim2.new(0, PANEL_W, 0, CLOSED_H) }
 		)
 		trailTween:Play()
 	end
 
-	trailArrow.MouseButton1Click:Connect(function()
-		setTrailMenu(not trailOpen)
+	trailToggleBtn.MouseButton1Click:Connect(function()
+		setOpen(not trailOpen)
 	end)
 
-	trailOpen = false
-	trailArrow.Text = ">"
+	-- start OPEN so it matches your screenshot style
+	setOpen(true)
 end
 
 --------------------------------------------------------------------
--- STATS POPUP
+-- STATS POPUP (RIGHT CLICK OPENS, COPYABLE USERID, AVATAR WORTH)
 --------------------------------------------------------------------
 local function ensureStatsPopup()
 	ensureGui()
@@ -1134,7 +1227,7 @@ local function ensureStatsPopup()
 	statsPopup.Name = "SOS_StatsPopup"
 	statsPopup.AnchorPoint = Vector2.new(0.5, 0.5)
 	statsPopup.Position = UDim2.new(0.5, 0, 0.5, 0)
-	statsPopup.Size = UDim2.new(0, 380, 0, 170)
+	statsPopup.Size = UDim2.new(0, 420, 0, 210)
 	statsPopup.BorderSizePixel = 0
 	statsPopup.Visible = false
 	statsPopup.Parent = gui
@@ -1142,10 +1235,21 @@ local function ensureStatsPopup()
 	makeGlass(statsPopup)
 	makeStroke(statsPopup, 2, Color3.fromRGB(200, 40, 40), 0.1)
 
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Position = UDim2.new(0, 12, 0, 10)
+	title.Size = UDim2.new(1, -24, 0, 20)
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 16
+	title.TextColor3 = Color3.fromRGB(245, 245, 245)
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Text = "Player Stats"
+	title.Parent = statsPopup
+
 	statsPopupLabel = Instance.new("TextLabel")
 	statsPopupLabel.BackgroundTransparency = 1
-	statsPopupLabel.Size = UDim2.new(1, -18, 1, -54)
-	statsPopupLabel.Position = UDim2.new(0, 9, 0, 10)
+	statsPopupLabel.Size = UDim2.new(1, -24, 0, 96)
+	statsPopupLabel.Position = UDim2.new(0, 12, 0, 34)
 	statsPopupLabel.Font = Enum.Font.Gotham
 	statsPopupLabel.TextSize = 14
 	statsPopupLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
@@ -1155,15 +1259,86 @@ local function ensureStatsPopup()
 	statsPopupLabel.Text = ""
 	statsPopupLabel.Parent = statsPopup
 
+	local uidLabel = Instance.new("TextLabel")
+	uidLabel.BackgroundTransparency = 1
+	uidLabel.Position = UDim2.new(0, 12, 0, 132)
+	uidLabel.Size = UDim2.new(0, 80, 0, 18)
+	uidLabel.Font = Enum.Font.GothamBold
+	uidLabel.TextSize = 12
+	uidLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	uidLabel.TextXAlignment = Enum.TextXAlignment.Left
+	uidLabel.Text = "UserId"
+	uidLabel.Parent = statsPopup
+
+	statsUserIdBox = Instance.new("TextBox")
+	statsUserIdBox.Name = "UserIdBox"
+	statsUserIdBox.Position = UDim2.new(0, 12, 0, 150)
+	statsUserIdBox.Size = UDim2.new(1, -24, 0, 26)
+	statsUserIdBox.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+	statsUserIdBox.BackgroundTransparency = 0.18
+	statsUserIdBox.BorderSizePixel = 0
+	statsUserIdBox.Font = Enum.Font.Gotham
+	statsUserIdBox.TextSize = 13
+	statsUserIdBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	statsUserIdBox.TextXAlignment = Enum.TextXAlignment.Left
+	statsUserIdBox.ClearTextOnFocus = false
+	statsUserIdBox.TextEditable = false
+	statsUserIdBox.Text = ""
+	statsUserIdBox.Parent = statsPopup
+	makeCorner(statsUserIdBox, 10)
+	makeStroke(statsUserIdBox, 1, Color3.fromRGB(200, 40, 40), 0.35)
+
+	local worthLabel = Instance.new("TextLabel")
+	worthLabel.BackgroundTransparency = 1
+	worthLabel.Position = UDim2.new(0, 12, 0, 178)
+	worthLabel.Size = UDim2.new(0, 120, 0, 18)
+	worthLabel.Font = Enum.Font.GothamBold
+	worthLabel.TextSize = 12
+	worthLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	worthLabel.TextXAlignment = Enum.TextXAlignment.Left
+	worthLabel.Text = "Avatar Worth"
+	worthLabel.Parent = statsPopup
+
+	statsWorthBox = Instance.new("TextBox")
+	statsWorthBox.Name = "WorthBox"
+	statsWorthBox.Position = UDim2.new(0, 12, 0, 196)
+	statsWorthBox.Size = UDim2.new(1, -170, 0, 26)
+	statsWorthBox.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+	statsWorthBox.BackgroundTransparency = 0.18
+	statsWorthBox.BorderSizePixel = 0
+	statsWorthBox.Font = Enum.Font.Gotham
+	statsWorthBox.TextSize = 13
+	statsWorthBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	statsWorthBox.TextXAlignment = Enum.TextXAlignment.Left
+	statsWorthBox.ClearTextOnFocus = false
+	statsWorthBox.TextEditable = false
+	statsWorthBox.Text = "Calculating..."
+	statsWorthBox.Parent = statsPopup
+	makeCorner(statsWorthBox, 10)
+	makeStroke(statsWorthBox, 1, Color3.fromRGB(200, 40, 40), 0.35)
+
+	statsWorthStatusLabel = Instance.new("TextLabel")
+	statsWorthStatusLabel.BackgroundTransparency = 1
+	statsWorthStatusLabel.Position = UDim2.new(1, -150, 0, 196)
+	statsWorthStatusLabel.Size = UDim2.new(0, 138, 0, 26)
+	statsWorthStatusLabel.Font = Enum.Font.Gotham
+	statsWorthStatusLabel.TextSize = 12
+	statsWorthStatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	statsWorthStatusLabel.TextXAlignment = Enum.TextXAlignment.Right
+	statsWorthStatusLabel.Text = ""
+	statsWorthStatusLabel.Parent = statsPopup
+
 	local closeBtn = makeButton(statsPopup, "Close")
-	closeBtn.AnchorPoint = Vector2.new(0.5, 1)
-	closeBtn.Position = UDim2.new(0.5, 0, 1, -10)
-	closeBtn.Size = UDim2.new(0, 140, 0, 34)
+	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.Position = UDim2.new(1, -12, 0, 10)
+	closeBtn.Size = UDim2.new(0, 90, 0, 28)
 	closeBtn.MouseButton1Click:Connect(function()
 		statsPopup.Visible = false
 	end)
 end
-
+--------------------------------------------------------------------
+-- TAG HELPERS
+--------------------------------------------------------------------
 local function destroyTagGui(char, name)
 	if not char then return end
 	local old = char:FindFirstChild(name)
@@ -1184,7 +1359,7 @@ local function getSosRole(plr)
 		return "Custom"
 	end
 
-	if OgProfiles[plr.UserId] then
+	if OgProfiles[plr.UserId] ~= nil then
 		return "OG"
 	end
 
@@ -1210,7 +1385,7 @@ local function getRoleColor(plr, role)
 	end
 	if role == "OG" then
 		local prof = OgProfiles[plr.UserId]
-		if prof and prof.Color then return prof.Color end
+		if type(prof) == "table" and prof.Color then return prof.Color end
 	end
 	if role == "Custom" then
 		local prof = CustomTags[plr.UserId]
@@ -1233,7 +1408,7 @@ local function getTopLine(plr, role)
 
 	if role == "OG" then
 		local prof = OgProfiles[plr.UserId]
-		if prof and prof.OgName and #tostring(prof.OgName) > 0 then
+		if type(prof) == "table" and prof.OgName and #tostring(prof.OgName) > 0 then
 			return tostring(prof.OgName)
 		end
 		return "OG"
@@ -1286,17 +1461,70 @@ local function showPlayerStats(plr)
 
 	local txt = ""
 	txt = txt .. "User: " .. plr.Name .. "\n"
-	txt = txt .. "UserId: " .. tostring(plr.UserId) .. "\n"
-	txt = txt .. "AccountAge: " .. tostring(ageDays) .. " days\n\n"
+	txt = txt .. "AccountAge: " .. tostring(ageDays) .. " days\n"
 	txt = txt .. "Role: " .. roleLine .. "\n"
 	txt = txt .. akLine .. "\n"
+	txt = txt .. "Tip: click the UserId box then Ctrl C to copy it\n"
 
 	statsPopupLabel.Text = txt
+	statsUserIdBox.Text = tostring(plr.UserId)
+
+	statsWorthBox.Text = "Calculating..."
+	statsWorthStatusLabel.Text = ""
+
 	statsPopup.Visible = true
+
+	task.spawn(function()
+		local cached = AvatarWorthCache[plr.UserId]
+		if cached and cached.Total ~= nil then
+			statsWorthBox.Text = tostring(cached.Total) .. " Robux"
+			statsWorthStatusLabel.Text = "Counted " .. tostring(cached.Counted) .. "  Skipped " .. tostring(cached.Skipped)
+			return
+		end
+
+		local worth = getAvatarWorthRobux(plr.UserId)
+		if not statsPopup or not statsPopup.Parent or not statsPopup.Visible then return end
+		if not worth then
+			statsWorthBox.Text = "Calculating..."
+			statsWorthStatusLabel.Text = ""
+			return
+		end
+
+		if worth.Total == nil then
+			statsWorthBox.Text = "Unavailable"
+			statsWorthStatusLabel.Text = "Could not read avatar"
+			return
+		end
+
+		statsWorthBox.Text = tostring(worth.Total) .. " Robux"
+		statsWorthStatusLabel.Text = "Counted " .. tostring(worth.Counted) .. "  Skipped " .. tostring(worth.Skipped)
+	end)
 end
 
-local function makeTagButtonCommon(btn, plr)
-	local function act()
+-- Invisible click catcher overlay
+-- Left click teleports
+-- Right click opens stats
+-- Ctrl click also opens stats as a fallback
+local function makeTagButtonCommon(visualButton, plr)
+	if not visualButton then return end
+
+	local overlay = visualButton:FindFirstChild("InvisibleClickCatcher")
+	if not overlay then
+		overlay = Instance.new("TextButton")
+		overlay.Name = "InvisibleClickCatcher"
+		overlay.BackgroundTransparency = 1
+		overlay.BorderSizePixel = 0
+		overlay.Text = ""
+		overlay.AutoButtonColor = false
+		overlay.Active = true
+		overlay.Selectable = false
+		overlay.Size = UDim2.new(1, 0, 1, 0)
+		overlay.Position = UDim2.new(0, 0, 0, 0)
+		overlay.ZIndex = 50
+		overlay.Parent = visualButton
+	end
+
+	local function leftAction()
 		local holdingCtrl = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
 		if holdingCtrl then
 			showPlayerStats(plr)
@@ -1305,9 +1533,17 @@ local function makeTagButtonCommon(btn, plr)
 		end
 	end
 
-	btn.MouseButton1Click:Connect(act)
+	overlay.MouseButton1Click:Connect(leftAction)
+
+	overlay.InputBegan:Connect(function(input, gp)
+		if gp then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton2 then
+			showPlayerStats(plr)
+		end
+	end)
+
 	pcall(function()
-		btn.Activated:Connect(act)
+		overlay.Activated:Connect(leftAction)
 	end)
 end
 
@@ -1611,35 +1847,19 @@ local function applyTagEffects(plr, role, btn, baseGrad, stroke, topLabel, botto
 			btn.Size = baseBtnSize
 		end
 
-		if hasEffect(effects, "Shake") then
-			btn.Rotation = baseBtnRot + (math.sin(t * 25) * 0.8)
-		else
-			btn.Rotation = baseBtnRot
-		end
-
-		if hasEffect(effects, "BounceText") and topLabel then
-			local y = math.sin(t * 6) * 1.2
-			topLabel.Position = UDim2.new(0, 5, 0, 3 + y)
-		elseif topLabel then
-			topLabel.Position = UDim2.new(0, 5, 0, 3)
-		end
-
 		if scan then
 			local g = scan:FindFirstChildOfClass("UIGradient")
 			if g then
 				g.Offset = Vector2.new(0, (t * 0.6) % 1)
 			end
 		end
-
-		if topLabel then topLabel.TextColor3 = profile.TopTextColor end
-		if bottomLabel then bottomLabel.TextColor3 = profile.BottomTextColor end
 	end)
 
 	TagFxConnByUserId[plr.UserId] = conn
 end
 
 --------------------------------------------------------------------
--- SPECIAL FX CORE (Lines / Lighting / Glitch aura)
+-- SPECIAL FX CORE (FIXED: MODE + COLOUR APPLY AGAIN)
 --------------------------------------------------------------------
 local function disconnectFxConn(userId)
 	local c = FxConnByUserId[userId]
@@ -1691,24 +1911,74 @@ local function makeTrailOnPart(part, parentFolder)
 	return tr
 end
 
-local function resolveFxMode(isOwnerRole)
-	return isOwnerRole and (FxMode.Owner or "Lines") or (FxMode.CoOwner or "Lines")
+local function resolveFxModeFor(plr)
+	if isOwner(plr) then
+		return FxMode.Owner or "Lines"
+	end
+	return FxMode.CoOwner or "Lines"
 end
 
-local function ensureSpecialFx(plr, role)
+local function resolveFxColorModeFor(plr)
+	if isOwner(plr) then
+		return FxColorMode.Owner or "Rainbow"
+	end
+	return FxColorMode.CoOwner or "Rainbow"
+end
+
+local function resolveFxEnabledFor(plr)
+	if isOwner(plr) then
+		return FxEnabled.Owner ~= false
+	end
+	return FxEnabled.CoOwner ~= false
+end
+
+local function getModeColors(mode, t)
+	if mode == "Ice" then
+		local c = Color3.fromRGB(180, 245, 255)
+		return c, Color3.fromRGB(255, 255, 255), ColorSequence.new(c, Color3.fromRGB(120, 200, 255)), c
+	end
+	if mode == "Red" then
+		local c = Color3.fromRGB(255, 60, 60)
+		return c, Color3.fromRGB(0, 0, 0), ColorSequence.new(c, Color3.fromRGB(140, 0, 0)), c
+	end
+	if mode == "Neon" then
+		local c = Color3.fromRGB(60, 255, 120)
+		return c, Color3.fromRGB(0, 0, 0), ColorSequence.new(c, Color3.fromRGB(0, 180, 120)), c
+	end
+	if mode == "Sun" then
+		local c = Color3.fromRGB(255, 220, 80)
+		return c, Color3.fromRGB(255, 60, 60), ColorSequence.new(c, Color3.fromRGB(255, 140, 40)), c
+	end
+	if mode == "Violet" then
+		local c = Color3.fromRGB(160, 120, 255)
+		return c, Color3.fromRGB(0, 0, 0), ColorSequence.new(c, Color3.fromRGB(120, 60, 255)), c
+	end
+	if mode == "White" then
+		local c = Color3.fromRGB(245, 245, 245)
+		return c, Color3.fromRGB(255, 60, 60), ColorSequence.new(c, Color3.fromRGB(200, 200, 200)), c
+	end
+	if mode == "Silver" then
+		local c = Color3.fromRGB(170, 170, 170)
+		return c, Color3.fromRGB(255, 60, 60), ColorSequence.new(c, Color3.fromRGB(120, 120, 120)), c
+	end
+
+	local h = (t * 0.20) % 1
+	local c1 = Color3.fromHSV(h, 1, 1)
+	local c2 = Color3.fromHSV((h + 0.20) % 1, 1, 1)
+	local c3 = Color3.fromHSV((h + 0.40) % 1, 1, 1)
+	return c2, c1, ColorSequence.new(c1, c2, c3), c2
+end
+
+local function ensureSpecialFx(plr)
 	if not plr or not plr.Character then return end
 
-	local isOwnerRole = (role == "Owner")
-	local isCoOwnerRole = isCoOwner(plr)
-	local isSpecial = isOwnerRole or isCoOwnerRole
-
+	local isSpecial = isOwner(plr) or isCoOwner(plr)
 	if not isSpecial then
 		clearSpecialFx(plr)
 		return
 	end
 
-	local enabled = isOwnerRole and (FxEnabled.Owner ~= false) or (FxEnabled.CoOwner ~= false)
-	if not enabled then
+	if not resolveFxEnabledFor(plr) then
 		clearSpecialFx(plr)
 		return
 	end
@@ -1724,10 +1994,10 @@ local function ensureSpecialFx(plr, role)
 	folder.Name = FX_FOLDER_NAME
 	folder.Parent = char
 
-	local mode = resolveFxMode(isOwnerRole)
-	local trails = nil
-	local light = nil
-	local hl = nil
+	local mode = resolveFxModeFor(plr)
+	local trails
+	local light
+	local hl
 
 	if mode == "Lines" then
 		trails = {}
@@ -1763,23 +2033,27 @@ local function ensureSpecialFx(plr, role)
 		local speed = hrp.Velocity.Magnitude
 		local moving = speed > 1.5
 
+		local colorMode = resolveFxColorModeFor(plr)
+		local fillC, outlineC, trailSeq, lightC = getModeColors(colorMode, os.clock())
+
 		if trails then
 			for _, tr in ipairs(trails) do
 				tr.Enabled = moving
+				tr.Color = trailSeq
 			end
 		end
 
 		if light then
 			light.Brightness = moving and 2.6 or 0
-			light.Color = Color3.fromRGB(200, 235, 255)
+			light.Color = lightC
 		end
 
 		if hl then
 			local pulse = (math.sin(os.clock() * 10) * 0.5 + 0.5)
 			hl.FillTransparency = 0.25 + (pulse * 0.35)
 			hl.OutlineTransparency = 0.05 + (pulse * 0.25)
-			hl.FillColor = Color3.fromRGB(255, 255, 255)
-			hl.OutlineColor = Color3.fromRGB(255, 60, 60)
+			hl.FillColor = fillC
+			hl.OutlineColor = outlineC
 		end
 	end)
 
@@ -1787,7 +2061,7 @@ local function ensureSpecialFx(plr, role)
 end
 
 --------------------------------------------------------------------
--- ARRIVAL INTROS AND JOIN POPUP
+-- ARRIVAL INTROS AND JOIN POPUP (UNCHANGED CORE)
 --------------------------------------------------------------------
 local function playArrivalSound(parentGui, soundId, volume)
 	if not soundId or soundId == "" then return end
@@ -2075,7 +2349,7 @@ local function createSosRoleTag(plr)
 	if not char then return end
 
 	local role = getSosRole(plr)
-	ensureSpecialFx(plr, role)
+	ensureSpecialFx(plr)
 
 	if not role then
 		disconnectTagFxConn(plr.UserId)
@@ -2102,11 +2376,12 @@ local function createSosRoleTag(plr)
 	bb.Parent = char
 
 	local btn = Instance.new("TextButton")
-	btn.Name = "ClickArea"
+	btn.Name = "Visual"
 	btn.Size = UDim2.new(1, 0, 1, 0)
 	btn.BorderSizePixel = 0
 	btn.Text = ""
-	btn.AutoButtonColor = true
+	btn.AutoButtonColor = false
+	btn.Active = true
 	btn.Parent = bb
 	makeCorner(btn, 10)
 
@@ -2129,6 +2404,7 @@ local function createSosRoleTag(plr)
 	top.TextXAlignment = Enum.TextXAlignment.Center
 	top.TextYAlignment = Enum.TextYAlignment.Center
 	top.Text = getTopLine(plr, role)
+	top.TextColor3 = Color3.fromRGB(255, 255, 255)
 	top.ZIndex = 3
 	top.Parent = btn
 
@@ -2141,6 +2417,7 @@ local function createSosRoleTag(plr)
 	bottom.TextXAlignment = Enum.TextXAlignment.Center
 	bottom.TextYAlignment = Enum.TextYAlignment.Center
 	bottom.Text = plr.Name
+	bottom.TextColor3 = Color3.fromRGB(255, 255, 255)
 	bottom.ZIndex = 4
 	bottom.Parent = btn
 
@@ -2149,7 +2426,6 @@ local function createSosRoleTag(plr)
 	end
 
 	applyTagEffects(plr, role, btn, grad, stroke, top, bottom, roleColor)
-
 	makeTagButtonCommon(btn, plr)
 end
 
@@ -2179,11 +2455,12 @@ local function createAkOrbTag(plr)
 	bb.Parent = char
 
 	local btn = Instance.new("TextButton")
-	btn.Name = "ClickArea"
+	btn.Name = "Visual"
 	btn.Size = UDim2.new(1, 0, 1, 0)
 	btn.BorderSizePixel = 0
 	btn.Text = "AK"
-	btn.AutoButtonColor = true
+	btn.AutoButtonColor = false
+	btn.Active = true
 	btn.Font = Enum.Font.GothamBlack
 	btn.TextSize = 10
 	btn.TextXAlignment = Enum.TextXAlignment.Center
@@ -2204,7 +2481,6 @@ local function refreshAllTagsForPlayer(plr)
 	createAkOrbTag(plr)
 end
 
--- Expose for the refresh button debounce rebuild (keeps tags from vanishing after refresh event)
 _G.__SOS_REFRESH_TAGS_FOR_PLAYER = refreshAllTagsForPlayer
 
 local function hookPlayer(plr)
@@ -2212,10 +2488,12 @@ local function hookPlayer(plr)
 	plr.CharacterAdded:Connect(function()
 		task.wait(0.12)
 		refreshAllTagsForPlayer(plr)
+		ensureSpecialFx(plr)
 	end)
 	if plr.Character then
 		task.defer(function()
 			refreshAllTagsForPlayer(plr)
+			ensureSpecialFx(plr)
 		end)
 	end
 end
@@ -2253,14 +2531,16 @@ local function onAkSeen(userId)
 end
 
 --------------------------------------------------------------------
--- COMMANDS (OWNER COOWNER ONLY)
+-- COMMANDS (OWNER COOWNER ONLY) (FIXED: APPLY FX IMMEDIATELY)
 --------------------------------------------------------------------
 local function applyCommandFrom(uid, text)
 	local plr = Players:GetPlayerByUserId(uid)
 
 	if text == CMD_OWNER_ON and plr and isOwner(plr) then
 		FxEnabled.Owner = true
-		if plr.Character then refreshAllTagsForPlayer(plr) end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isOwner(p) then ensureSpecialFx(p) end
+		end
 		return true
 	end
 	if text == CMD_OWNER_OFF and plr and isOwner(plr) then
@@ -2273,36 +2553,52 @@ local function applyCommandFrom(uid, text)
 
 	if text == CMD_COOWNER_ON and plr and isCoOwner(plr) then
 		FxEnabled.CoOwner = true
-		if plr.Character then refreshAllTagsForPlayer(plr) end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isCoOwner(p) then ensureSpecialFx(p) end
+		end
 		return true
 	end
 	if text == CMD_COOWNER_OFF and plr and isCoOwner(plr) then
 		FxEnabled.CoOwner = false
-		if plr then clearSpecialFx(plr) end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isCoOwner(p) then clearSpecialFx(p) end
+		end
 		return true
 	end
 
 	if text:sub(1, #CMD_OWNER_COLOR_PREFIX) == CMD_OWNER_COLOR_PREFIX and plr and isOwner(plr) then
 		local mode = text:sub(#CMD_OWNER_COLOR_PREFIX + 1)
 		if mode ~= "" then FxColorMode.Owner = mode end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isOwner(p) then ensureSpecialFx(p) end
+		end
 		return true
 	end
 
 	if text:sub(1, #CMD_COOWNER_COLOR_PREFIX) == CMD_COOWNER_COLOR_PREFIX and plr and isCoOwner(plr) then
 		local mode = text:sub(#CMD_COOWNER_COLOR_PREFIX + 1)
 		if mode ~= "" then FxColorMode.CoOwner = mode end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isCoOwner(p) then ensureSpecialFx(p) end
+		end
 		return true
 	end
 
 	if text:sub(1, #CMD_OWNER_FX_PREFIX) == CMD_OWNER_FX_PREFIX and plr and isOwner(plr) then
 		local mode = text:sub(#CMD_OWNER_FX_PREFIX + 1)
 		if mode ~= "" then FxMode.Owner = mode end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isOwner(p) then ensureSpecialFx(p) end
+		end
 		return true
 	end
 
 	if text:sub(1, #CMD_COOWNER_FX_PREFIX) == CMD_COOWNER_FX_PREFIX and plr and isCoOwner(plr) then
 		local mode = text:sub(#CMD_COOWNER_FX_PREFIX + 1)
 		if mode ~= "" then FxMode.CoOwner = mode end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if isCoOwner(p) then ensureSpecialFx(p) end
+		end
 		return true
 	end
 
@@ -2410,6 +2706,7 @@ local function init()
 
 	for _, plr in ipairs(Players:GetPlayers()) do
 		hookPlayer(plr)
+		ensureSpecialFx(plr)
 	end
 
 	Players.PlayerAdded:Connect(function(plr)
@@ -2419,6 +2716,10 @@ local function init()
 
 		task.delay(0.2, function()
 			tryShowCustomUserIntro(plr.UserId)
+		end)
+
+		task.delay(0.4, function()
+			ensureSpecialFx(plr)
 		end)
 	end)
 
@@ -2443,14 +2744,13 @@ local function init()
 	onSosActivated(LocalPlayer.UserId)
 	trySendChat(SOS_ACTIVATE_MARKER)
 
-	-- If the refresh event is missing, still keep the button, it just won't fire anything.
 	local ev = findRefreshEvent()
 	if not ev then
 		warn("Refresh event not found: " .. REFRESH_EVENT_NAME)
 	end
 
-	-- British humour safety check: if this breaks, it's not my fault, it's Roblox.
-	print("SOS Tags loaded. Refresh button ready. RightControl hotkey enabled.")
+	-- If this breaks, blame the gremlins in the Roblox scheduler.
+	print("SOS Tags loaded. Menu opens down into the square. Right click tags for stats.")
 end
 
 task.delay(INIT_DELAY, init)
