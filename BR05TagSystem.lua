@@ -255,8 +255,8 @@ local TagEffectProfiles = {
 		Gradient3 = Color3.fromRGB(0, 0, 0),
 		SpinGradient = true,
 		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
+		TopTextColor = RED,
+		BottomTextColor = YELLOW,
 		Effects = { "Pulse", "Scanline" },
 	},
 
@@ -268,7 +268,7 @@ local TagEffectProfiles = {
 		SpinGradient = false,
 		ScrollGradient = true,
 		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(240, 240, 240),
+		BottomTextColor = YELLOW,
 		Effects = { "Scanline", "Shimmer" },
 	},
 
@@ -280,7 +280,7 @@ local TagEffectProfiles = {
 		SpinGradient = false,
 		ScrollGradient = true,
 		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(240, 240, 240),
+		BottomTextColor = YELLOW,
 		Effects = { "Scanline", "Shimmer" },
 	},
 
@@ -292,7 +292,7 @@ local TagEffectProfiles = {
 		SpinGradient = true,
 		ScrollGradient = true,
 		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(240, 240, 240),
+		BottomTextColor = YELLOW,
 		Effects = { "Scanline", "Shimmer" },
 	},
 
@@ -303,8 +303,8 @@ local TagEffectProfiles = {
 		Gradient3 = Color3.fromRGB(255, 255, 255),
 		SpinGradient = true,
 		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(220, 220, 220),
+		TopTextColor = Color3.fromRGB(255, 255, 255),
+		BottomTextColor = YELLOW,
 		Effects = { "Pulse", "Scanline" },
 	},
 
