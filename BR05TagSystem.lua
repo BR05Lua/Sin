@@ -259,7 +259,7 @@ local AMBER = Color3.fromRGB(255, 190, 70)
 local BLACK = Color3.fromRGB(0, 0, 0)
 
 local TagEffectProfiles = {
-	-- Ghoul (754232813): purple, white, black
+	-- Ghoul
 	[754232813] = {
 		Gradient1 = Color3.fromRGB(140, 0, 255),
 		Gradient2 = Color3.fromRGB(255, 255, 255),
@@ -273,33 +273,33 @@ local TagEffectProfiles = {
 
 	-- XTCY vvv
 	[7452991350] = {
-		Gradient1 = Color3.fromRGB(255, 0, 0),
-		Gradient2 = Color3.fromRGB(255, 0, 0),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
-		SpinGradient = true,
-		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = YELLOW,
-		Effects = { "Scanline", "Shimmer" },
+	Gradient1 = Color3.fromRGB(255, 0, 0),
+	Gradient2 = Color3.fromRGB(255, 0, 0),
+	Gradient3 = BLACK,
+	SpinGradient = true,
+	ScrollGradient = false,
+	TopTextColor = YELLOW,
+	BottomTextColor = YELLOW,
+	Effects = { "Scanline", "Shimmer" },
 	},
 
 	-- XTCY Extavious
 	[7444930172] = {
 	Gradient1 = Color3.fromRGB(255, 0, 0),
-		Gradient2 = Color3.fromRGB(255, 0, 0),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
-		SpinGradient = true,
-		ScrollGradient = false,
-		TopTextColor = YELLOW,
-		BottomTextColor = YELLOW,
-		Effects = { "Scanline", "Shimmer" },
+	Gradient2 = Color3.fromRGB(255, 0, 0),
+	Gradient3 = BLACK,
+	SpinGradient = true,
+	ScrollGradient = false,
+	TopTextColor = YELLOW,
+	BottomTextColor = YELLOW,
+	Effects = { "Scanline", "Shimmer" },
 	},
 
 	-- XTCY Wazz0ck_banned
 	[9072904295] = {
 	Gradient1 = Color3.fromRGB(255, 0, 0),
 		Gradient2 = Color3.fromRGB(255, 0, 0),
-		Gradient3 = Color3.fromRGB(0, 0, 0),
+		Gradient3 = BLACK,
 		SpinGradient = true,
 		ScrollGradient = false,
 		TopTextColor = YELLOW,
