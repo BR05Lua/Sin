@@ -376,13 +376,6 @@ local TagEffectProfiles = {
 		ScrollGradient = true,
 	},
 
-	-- Other current CustomTags IDs (no duplicates)
-	[8299334811] = {
-		Preset = "SKY_SCROLL",
-		TopTextColor = YELLOW,
-		BottomTextColor = Color3.fromRGB(235, 235, 235),
-		Effects = { "Shimmer" },
-	},
 }
 
 --------------------------------------------------------------------
