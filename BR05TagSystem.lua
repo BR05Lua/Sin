@@ -269,6 +269,10 @@ end
 local YELLOW = Color3.fromRGB(255, 255, 0)
 local LIGHT_BLUE = Color3.fromRGB(120, 190, 235)
 local RED = Color3.fromRGB(255, 60, 60)
+local BLUE = Color3.fromRGB(0, 0, 255)
+local WWHITE = Color3.fromRGB(255, 255, 255)
+
+
 
 local SAM_BLUE = Color3.fromRGB(70, 120, 255)
 local SAM_PURPLE = Color3.fromRGB(170, 80, 255)
@@ -401,8 +405,8 @@ local TagEffectProfiles = {
 	-- Pooki (2440542440)
 	[4225432791] = {
 		Gradient1 = RED,
-		Gradient2 = Color3.fromRGB(255, 255, 255),
-		Gradient3 = Color3.fromRGB(0, 0, 255),
+		Gradient2 = WHITE,
+		Gradient3 = BLUE,
 		SpinGradient = true,
 		ScrollGradient = true,
 		TopTextColor = Color3.fromRGB(245, 178, 255),
