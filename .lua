@@ -1,5 +1,5 @@
 local urls = {
-    "https://raw.githubusercontent.com/user/script1.lua",
+    "https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/BR05TagSystem.lua",
     "https://raw.githubusercontent.com/user/script2.lua",
     "https://raw.githubusercontent.com/user/script3.lua"
 }
