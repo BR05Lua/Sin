@@ -401,11 +401,11 @@ local TagEffectProfiles = {
 	-- Pooki (2440542440)
 	[4225432791] = {
 		Gradient1 = RED,
-		Gradient2 = WHITE,
-		Gradient3 = BLUE,
+		Gradient2 = Color3.fromRGB(255, 255, 255),
+		Gradient3 = Color3.fromRGB(0, 0, 255),
 		SpinGradient = true,
 		ScrollGradient = true,
-		TopTextColor = YELLOW,
+		TopTextColor = Color3.fromRGB(245, 178, 255),
 		BottomTextColor = YELLOW,
 		Effects = { "Scanline", "Shimmer" },
 	},
