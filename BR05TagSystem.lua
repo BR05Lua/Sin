@@ -2838,12 +2838,11 @@ local function init()
 end
 
 task.delay(INIT_DELAY, init)
-
-
 -- VCB 5 or 6 Minute Timer Addon
 -- Paste this at the very bottom of your script
 -- Starts when you click one of the buttons OR when YOU type "vcb" in chat (not other players)
 -- Extra: typing "vcb 6" or "vcb6" starts 6 minutes
+-- If timer is running and the panel is closed, a red countdown pill shows next to the VCB button
 
 do
 	local VCB_DURATION_5 = 5 * 60
@@ -2858,6 +2857,8 @@ do
 	local vcbStart6Btn
 	local vcbCloseBtn
 
+	local vcbMiniPill
+
 	local vcbRunning = false
 	local vcbEndAt = 0
 	local vcbTickConn = nil
@@ -2867,7 +2868,8 @@ do
 
 	local VCB_W = 58
 	local VCB_H = 36
-	local GAP = 10
+	local MINI_W = 88
+	local GAP = 8
 
 	local PANEL_W = 380
 	local PANEL_H = 176
@@ -2916,33 +2918,8 @@ do
 			vcbTimeLabel.Text = vcbDurationLabel(duration)
 		end
 		if vcbHintLabel then
-			vcbHintLabel.Text = "Counting down. Good luck, try not to blink."
+			vcbHintLabel.Text = "Counting down. Try not to scuff it."
 		end
-	end
-
-	local function vcbStartTick()
-		vcbStopTick()
-		vcbTickConn = RunService.RenderStepped:Connect(function()
-			if not vcbPanel or not vcbPanel.Parent then
-				vcbStopTick()
-				return
-			end
-
-			if not vcbPanel.Visible then
-				return
-			end
-
-			if vcbRunning then
-				local left = vcbEndAt - os.clock()
-				if left <= 0 then
-					vcbRunning = false
-					if vcbTimeLabel then vcbTimeLabel.Text = "00:00" end
-					if vcbHintLabel then vcbHintLabel.Text = "Time is up. If it still hasnt happened, Roblox said no." end
-				else
-					if vcbTimeLabel then vcbTimeLabel.Text = vcbFormatTime(left) end
-				end
-			end
-		end)
 	end
 
 	local function vcbStopLayout()
@@ -2966,26 +2943,89 @@ do
 		return 1920, 1080
 	end
 
+	local function vcbWantMini()
+		if not vcbMiniPill then return false end
+		if not vcbMiniPill.Parent then return false end
+		if not vcbRunning then return false end
+		if vcbPanel and vcbPanel.Parent and vcbPanel.Visible then return false end
+		return true
+	end
+
+	local function vcbEnsureMiniPill()
+		ensureGui()
+		if vcbMiniPill and vcbMiniPill.Parent then return end
+
+		vcbMiniPill = Instance.new("TextButton")
+		vcbMiniPill.Name = "VCB_MiniCountdown"
+		vcbMiniPill.AnchorPoint = Vector2.new(0, 0)
+		vcbMiniPill.Position = UDim2.fromOffset(0, 0)
+		vcbMiniPill.Size = UDim2.new(0, MINI_W, 0, VCB_H)
+		vcbMiniPill.BorderSizePixel = 0
+		vcbMiniPill.AutoButtonColor = true
+		vcbMiniPill.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+		vcbMiniPill.BackgroundTransparency = 0.18
+		vcbMiniPill.Font = Enum.Font.GothamBold
+		vcbMiniPill.TextSize = 13
+		vcbMiniPill.TextColor3 = Color3.fromRGB(255, 80, 80)
+		vcbMiniPill.Text = "05:00"
+		vcbMiniPill.Visible = false
+		vcbMiniPill.ZIndex = 9050
+		vcbMiniPill.Parent = gui
+
+		makeCorner(vcbMiniPill, 12)
+		makeStroke(vcbMiniPill, 2, Color3.fromRGB(200, 40, 40), 0.10)
+
+		vcbMiniPill.MouseButton1Click:Connect(function()
+			if not vcbPanel then return end
+			vcbPanel.Visible = true
+		end)
+	end
+
 	local function vcbDoLayout()
 		if not gui or not gui.Parent then return end
 		if not refreshBtn or not refreshBtn.Parent then return end
 		if not vcbToggleBtn or not vcbToggleBtn.Parent then return end
+
+		vcbEnsureMiniPill()
 
 		local vpX, vpY = vcbGetViewportSize()
 
 		local rPos = refreshBtn.AbsolutePosition
 		local rSize = refreshBtn.AbsoluteSize
 
-		local toggleX = rPos.X - GAP - VCB_W
-		local toggleY = rPos.Y
+		local rowY = rPos.Y + ((rSize.Y - VCB_H) * 0.5)
+
+		local refreshLeft = rPos.X
+		local refreshTop = rPos.Y
+
+		local showMini = vcbWantMini()
+		if vcbMiniPill then
+			vcbMiniPill.Visible = showMini
+		end
+
+		local miniW = showMini and MINI_W or 0
+		local miniGap = showMini and GAP or 0
+
+		local toggleX = refreshLeft - GAP - miniW - miniGap - VCB_W
+		local toggleY = rowY
 
 		toggleX = vcbClamp(toggleX, 8, math.max(8, vpX - VCB_W - 8))
 		toggleY = vcbClamp(toggleY, 8, math.max(8, vpY - VCB_H - 8))
+
 		vcbToggleBtn.Position = UDim2.fromOffset(toggleX, toggleY)
+
+		if showMini and vcbMiniPill then
+			local miniX = toggleX + VCB_W + GAP
+			local miniY = toggleY
+			miniX = vcbClamp(miniX, 8, math.max(8, vpX - MINI_W - 8))
+			miniY = vcbClamp(miniY, 8, math.max(8, vpY - VCB_H - 8))
+			vcbMiniPill.Position = UDim2.fromOffset(miniX, miniY)
+			vcbMiniPill.Size = UDim2.new(0, MINI_W, 0, VCB_H)
+		end
 
 		if vcbPanel and vcbPanel.Parent then
 			local panelX = toggleX
-			local preferBelowY = toggleY + rSize.Y + 6
+			local preferBelowY = refreshTop + rSize.Y + 6
 			local panelY = preferBelowY
 
 			if (panelY + PANEL_H) > (vpY - 8) then
@@ -3144,22 +3184,19 @@ do
 		makeStroke(vcbStart6Btn, 2, Color3.fromRGB(200, 40, 40), 0.15)
 
 		vcbStart5Btn.MouseButton1Click:Connect(function()
-			vcbStartTick()
 			vcbStartTimer(VCB_DURATION_5)
 			vcbDoLayout()
 		end)
 
 		vcbStart6Btn.MouseButton1Click:Connect(function()
-			vcbStartTick()
 			vcbStartTimer(VCB_DURATION_6)
 			vcbDoLayout()
 		end)
 
 		vcbCloseBtn.MouseButton1Click:Connect(function()
 			vcbPanel.Visible = false
+			vcbDoLayout()
 		end)
-
-		-- If this ends up off screen, it is not the UI's fault. It is your monitor doing parkour.
 	end
 
 	local function vcbEnsureToggle()
@@ -3189,10 +3226,9 @@ do
 			vcbEnsurePanel()
 			vcbPanel.Visible = not vcbPanel.Visible
 			if vcbPanel.Visible then
-				vcbStartTick()
 				vcbResetUI()
-				vcbDoLayout()
 			end
+			vcbDoLayout()
 		end)
 	end
 
@@ -3218,7 +3254,6 @@ do
 		local dur = vcbParseChatDuration(s)
 
 		vcbEnsurePanel()
-		vcbStartTick()
 		vcbStartTimer(dur)
 		vcbDoLayout()
 	end
@@ -3241,9 +3276,48 @@ do
 		end)
 	end
 
+	local function vcbStartTick()
+		vcbStopTick()
+		vcbTickConn = RunService.RenderStepped:Connect(function()
+			if not gui or not gui.Parent then
+				vcbStopTick()
+				return
+			end
+
+			local showMini = vcbWantMini()
+			if vcbMiniPill then
+				vcbMiniPill.Visible = showMini
+			end
+
+			if vcbRunning then
+				local left = vcbEndAt - os.clock()
+				if left <= 0 then
+					vcbRunning = false
+					if vcbTimeLabel then vcbTimeLabel.Text = "00:00" end
+					if vcbHintLabel then vcbHintLabel.Text = "Time is up. Pain." end
+					if vcbMiniPill then vcbMiniPill.Visible = false end
+				else
+					local ttxt = vcbFormatTime(left)
+					if vcbTimeLabel and vcbPanel and vcbPanel.Visible then
+						vcbTimeLabel.Text = ttxt
+					end
+					if vcbMiniPill and showMini then
+						vcbMiniPill.Text = ttxt
+					end
+				end
+			else
+				if vcbMiniPill then vcbMiniPill.Visible = false end
+			end
+		end)
+	end
+
 	vcbEnsureToggle()
 	vcbEnsurePanel()
+	vcbEnsureMiniPill()
+
 	vcbStartLayout()
 	vcbDoLayout()
+
+	vcbStartTick()
 	hookLocalChatTriggers()
 end
