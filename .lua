@@ -1,10 +1,6 @@
--- Steps Loader (Client Only)
--- Put this as a LocalScript in StarterPlayerScripts (or somewhere that runs on the client)
-
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
--- Safety: do not run on the server
 if RunService:IsServer() then
     return
 end
@@ -16,20 +12,16 @@ end
 
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Loader-wide run-once lock (prevents the whole loader from running twice)
 local LOADER_LOCK_NAME = "StepsLoader_Lock"
 if playerGui:FindFirstChild(LOADER_LOCK_NAME) then
     return
 end
 
-do
-    local lock = Instance.new("BoolValue")
-    lock.Name = LOADER_LOCK_NAME
-    lock.Value = true
-    lock.Parent = playerGui
-end
+local lock = Instance.new("BoolValue")
+lock.Name = LOADER_LOCK_NAME
+lock.Value = true
+lock.Parent = playerGui
 
--- Step run-once marker (prevents a specific step from running twice)
 local function canRunStep(stepName)
     local markerName = "StepsLoader_Step_" .. tostring(stepName)
 
@@ -52,9 +44,8 @@ local steps = {
             if not canRunStep("Main Menu") then
                 return
             end
-
-            -- Put your Main Menu start code here
-           loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/SOSMenu.lua"))()
+            -- Main Menu code here
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/SOSMenu.lua"))()
         end,
         delayAfter = 0.5,
     },
@@ -64,8 +55,7 @@ local steps = {
             if not canRunStep("Tag System") then
                 return
             end
-
-            -- Put your Tag System start code here
+            -- Tag System code here
             loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/BR05TagSystem.lua"))()
         end,
     },
