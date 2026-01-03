@@ -2327,14 +2327,104 @@ end
 		end)
 	end
 
-	----------------------------------------------------------------
--- ANIM PACKS TAB (with Reset Anim Overrides at the top)
+----------------------------------------------------------------
+-- ANIM PACKS TAB
 ----------------------------------------------------------------
 do
+	-- Cache the character's original Animate IDs once, so we can truly reset later
+	local function getOrigCache()
+		if typeof(_G) ~= "table" then return nil end
+		_G.__SOS_OrigAnimateIds = _G.__SOS_OrigAnimateIds or {}
+		return _G.__SOS_OrigAnimateIds
+	end
+
+	local function captureOriginalAnimateIds()
+		local cache = getOrigCache()
+		if not cache then return false end
+		if cache.__captured then return true end
+
+		local animate = getAnimateScript()
+		if not animate then return false end
+
+		local function safeGetAnimId(obj)
+			if obj and obj:IsA("Animation") then
+				return obj.AnimationId
+			end
+			return nil
+		end
+
+		cache.Idle1 = safeGetAnimId(animate:FindFirstChild("idle") and animate.idle:FindFirstChild("Animation1"))
+		cache.Idle2 = safeGetAnimId(animate:FindFirstChild("idle") and animate.idle:FindFirstChild("Animation2"))
+		cache.Walk  = safeGetAnimId(animate:FindFirstChild("walk") and animate.walk:FindFirstChild("WalkAnim"))
+		cache.Run   = safeGetAnimId(animate:FindFirstChild("run") and animate.run:FindFirstChild("RunAnim"))
+		cache.Jump  = safeGetAnimId(animate:FindFirstChild("jump") and animate.jump:FindFirstChild("JumpAnim"))
+		cache.Climb = safeGetAnimId(animate:FindFirstChild("climb") and animate.climb:FindFirstChild("ClimbAnim"))
+		cache.Fall  = safeGetAnimId(animate:FindFirstChild("fall") and animate.fall:FindFirstChild("FallAnim"))
+
+		cache.Swim     = safeGetAnimId(animate:FindFirstChild("swim") and animate.swim:FindFirstChild("Swim"))
+		cache.SwimIdle = safeGetAnimId(animate:FindFirstChild("swim") and animate.swim:FindFirstChild("SwimIdle"))
+		cache.SwimDirect = safeGetAnimId(animate:FindFirstChild("swim"))
+
+		cache.__captured = true
+		return true
+	end
+
+	local function restoreOriginalAnimateIds()
+		local cache = getOrigCache()
+		if not cache or not cache.__captured then return false end
+
+		local animate = getAnimateScript()
+		if not animate then return false end
+		if not humanoid then return false end
+
+		animate.Disabled = true
+		stopAllPlayingTracks(humanoid)
+
+		local function setIf(folderName, childName, value)
+			if not value then return end
+			local f = animate:FindFirstChild(folderName)
+			if not f then return end
+			local a = f:FindFirstChild(childName)
+			if a and a:IsA("Animation") then
+				a.AnimationId = value
+			end
+		end
+
+		local function setDirect(childName, value)
+			if not value then return end
+			local a = animate:FindFirstChild(childName)
+			if a and a:IsA("Animation") then
+				a.AnimationId = value
+			end
+		end
+
+		setIf("idle", "Animation1", cache.Idle1)
+		setIf("idle", "Animation2", cache.Idle2)
+		setIf("walk", "WalkAnim", cache.Walk)
+		setIf("run", "RunAnim", cache.Run)
+		setIf("jump", "JumpAnim", cache.Jump)
+		setIf("climb", "ClimbAnim", cache.Climb)
+		setIf("fall", "FallAnim", cache.Fall)
+
+		setIf("swim", "Swim", cache.Swim)
+		setIf("swim", "SwimIdle", cache.SwimIdle)
+		setDirect("swim", cache.SwimDirect)
+
+		animate.Disabled = false
+		pcall(function()
+			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+		end)
+
+		return true
+	end
+
+	-- Capture originals early if possible
+	captureOriginalAnimateIds()
+
 	local header = makeText(animScroll, "Anim Packs", 16, true)
 	header.Size = UDim2.new(1, 0, 0, 22)
 
-	-- Reset row (NEW)
+	-- Reset row at the top
 	do
 		local row = Instance.new("Frame")
 		row.BackgroundTransparency = 1
@@ -2343,52 +2433,36 @@ do
 
 		local lay = Instance.new("UIListLayout")
 		lay.FillDirection = Enum.FillDirection.Horizontal
-		lay.SortOrder = Enum.SortOrder.LayoutOrder
 		lay.VerticalAlignment = Enum.VerticalAlignment.Center
 		lay.Padding = UDim.new(0, 10)
 		lay.Parent = row
 
-		local resetBtn = makeButton(row, "Reset Anim Overrides")
-		resetBtn.Size = UDim2.new(0, 220, 0, 36)
+		local resetBtn = makeButton(row, "Reset Anims")
+		resetBtn.Size = UDim2.new(0, 160, 0, 36)
 
-		local hint = makeText(row, "Clears your overrides and restores the game defaults.", 13, false)
-		hint.Size = UDim2.new(1, -240, 0, 36)
+		local hint = makeText(row, "Restores your original character Animate IDs.", 13, false)
+		hint.Size = UDim2.new(1, -180, 1, 0)
 		hint.TextColor3 = Color3.fromRGB(210, 210, 210)
 
 		resetBtn.MouseButton1Click:Connect(function()
+			-- Make sure originals are captured (in case character loaded late)
+			if not captureOriginalAnimateIds() then
+				notify("Anim Packs", "Could not find Animate script to reset.", 3)
+				return
+			end
+
+			-- Clear saved overrides
 			for k, _ in pairs(stateOverrides) do
 				stateOverrides[k] = nil
 			end
 
-			local animate = getAnimateScript()
-			if animate then
-				pcall(function() animate.Disabled = true end)
-				stopAllPlayingTracks(humanoid)
-
-				pcall(function()
-					animate:Destroy()
-				end)
-
-				task.defer(function()
-					if character then
-						local ok, res = pcall(function()
-							return Players:GetCharacterAppearanceAsync(LocalPlayer.UserId)
-						end)
-
-						if ok and res then
-							local newAnim = res:FindFirstChild("Animate")
-							if newAnim then
-								newAnim.Parent = character
-							end
-						end
-					end
-				end)
+			local ok = restoreOriginalAnimateIds()
+			if ok then
+				notify("Anim Packs", "Reset to original animations.", 2)
+				scheduleSave()
+			else
+				notify("Anim Packs", "Reset failed. (Animate script missing?)", 3)
 			end
-
-			lastChosenState = "Idle"
-			lastChosenCategory = "Roblox Anims"
-			scheduleSave()
-			notify("Anim Packs", "Overrides cleared. Defaults restored (best-effort).", 3)
 		end)
 	end
 
@@ -2584,7 +2658,6 @@ do
 	setCategory(lastChosenCategory)
 	setState(lastChosenState)
 end
-
 
 ----------------------------------------------------------------
 -- PLAYER TAB (full block, UPDATED: BHOP menu moved, draggable title bar, menu toggle, blocks flight while BHOP enabled)
