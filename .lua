@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/Security/BR05"))()
+loadstring(game:HttpGet(""))()
     end,
     function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/SOSMenu.lua"))()
@@ -15,3 +15,5 @@ for i, loader in ipairs(loaders) do
         break
     end
 end
+
+print("Thanks To Co Owner For Making The New Loadstring System")
