@@ -2328,82 +2328,175 @@ end
 	end
 
 ----------------------------------------------------------------
--- ANIM PACKS TAB (with Reset to Avatar Animations)
+-- ANIM PACKS TAB (Reset now restores your avatar animations properly)
 ----------------------------------------------------------------
 do
-	-- Reset Animate script back to the animations currently equipped on your Roblox avatar
-	local function resetToAvatarAnimations()
+	-- Cache your avatar's Animate IDs (from the actual Animate script on your character)
+	-- so "Reset" can always go back to what your avatar had, even if Roblox returns 0s.
+	local function getAvatarCache()
+		if typeof(_G) ~= "table" then return nil end
+		_G.__SOS_AvatarAnimCache = _G.__SOS_AvatarAnimCache or {}
+		return _G.__SOS_AvatarAnimCache
+	end
+
+	local function readAnimateIds()
 		local animate = getAnimateScript()
-		if not animate or not humanoid then
-			return false, "Animate script not found."
+		if not animate then return nil end
+
+		local function safeGet(folderName, childName)
+			local f = animate:FindFirstChild(folderName)
+			if not f then return nil end
+			local a = f:FindFirstChild(childName)
+			if a and a:IsA("Animation") then
+				return a.AnimationId
+			end
+			return nil
 		end
 
-		local okDesc, desc = pcall(function()
-			return Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
-		end)
-		if not okDesc or not desc then
-			return false, "Could not fetch avatar animations."
+		local function safeGetDirect(childName)
+			local a = animate:FindFirstChild(childName)
+			if a and a:IsA("Animation") then
+				return a.AnimationId
+			end
+			return nil
 		end
 
-		local function toAsset(v)
-			local n = tonumber(v)
-			if not n or n <= 0 then return nil end
-			return "rbxassetid://" .. tostring(n)
-		end
+		return {
+			Idle1 = safeGet("idle", "Animation1"),
+			Idle2 = safeGet("idle", "Animation2"),
+			Walk  = safeGet("walk", "WalkAnim"),
+			Run   = safeGet("run", "RunAnim"),
+			Jump  = safeGet("jump", "JumpAnim"),
+			Climb = safeGet("climb", "ClimbAnim"),
+			Fall  = safeGet("fall", "FallAnim"),
 
-		local function setAnimValue(folderName, childName, assetIdStr)
-			if not assetIdStr then return end
+			Swim = safeGet("swim", "Swim"),
+			SwimIdle = safeGet("swim", "SwimIdle"),
+			SwimDirect = safeGetDirect("swim"),
+		}
+	end
+
+	local function captureAvatarAnimateIds()
+		local cache = getAvatarCache()
+		if not cache then return false end
+
+		local ids = readAnimateIds()
+		if not ids then return false end
+
+		cache.Idle1 = ids.Idle1
+		cache.Idle2 = ids.Idle2
+		cache.Walk  = ids.Walk
+		cache.Run   = ids.Run
+		cache.Jump  = ids.Jump
+		cache.Climb = ids.Climb
+		cache.Fall  = ids.Fall
+		cache.Swim = ids.Swim
+		cache.SwimIdle = ids.SwimIdle
+		cache.SwimDirect = ids.SwimDirect
+
+		cache.__captured = true
+		return true
+	end
+
+	local function applyAnimateIdsFromCache()
+		local cache = getAvatarCache()
+		if not cache or not cache.__captured then return false end
+
+		local animate = getAnimateScript()
+		if not animate or not humanoid then return false end
+
+		local function setIf(folderName, childName, value)
+			if not value then return end
 			local f = animate:FindFirstChild(folderName)
 			if not f then return end
 			local a = f:FindFirstChild(childName)
 			if a and a:IsA("Animation") then
-				a.AnimationId = assetIdStr
+				a.AnimationId = value
 			end
 		end
 
-		local function setDirect(childName, assetIdStr)
-			if not assetIdStr then return end
+		local function setDirect(childName, value)
+			if not value then return end
 			local a = animate:FindFirstChild(childName)
 			if a and a:IsA("Animation") then
-				a.AnimationId = assetIdStr
+				a.AnimationId = value
 			end
 		end
-
-		local idle  = toAsset(desc.IdleAnimation)
-		local walk  = toAsset(desc.WalkAnimation)
-		local run   = toAsset(desc.RunAnimation)
-		local jump  = toAsset(desc.JumpAnimation)
-		local climb = toAsset(desc.ClimbAnimation)
-		local fall  = toAsset(desc.FallAnimation)
-		local swim  = toAsset(desc.SwimAnimation)
 
 		animate.Disabled = true
 		stopAllPlayingTracks(humanoid)
 
-		setAnimValue("idle", "Animation1", idle)
-		setAnimValue("idle", "Animation2", idle)
-		setAnimValue("walk", "WalkAnim", walk)
-		setAnimValue("run", "RunAnim", run)
-		setAnimValue("jump", "JumpAnim", jump)
-		setAnimValue("climb", "ClimbAnim", climb)
-		setAnimValue("fall", "FallAnim", fall)
+		setIf("idle", "Animation1", cache.Idle1)
+		setIf("idle", "Animation2", cache.Idle2)
+		setIf("walk", "WalkAnim", cache.Walk)
+		setIf("run", "RunAnim", cache.Run)
+		setIf("jump", "JumpAnim", cache.Jump)
+		setIf("climb", "ClimbAnim", cache.Climb)
+		setIf("fall", "FallAnim", cache.Fall)
 
-		setAnimValue("swim", "Swim", swim)
-		setAnimValue("swim", "SwimIdle", swim)
-		setDirect("swim", swim)
+		setIf("swim", "Swim", cache.Swim)
+		setIf("swim", "SwimIdle", cache.SwimIdle)
+		setDirect("swim", cache.SwimDirect)
 
 		animate.Disabled = false
 		pcall(function()
 			humanoid:ChangeState(Enum.HumanoidStateType.Running)
 		end)
 
+		return true
+	end
+
+	-- Best-effort: also try Roblox avatar description apply (this can fix cases where Animate got nuked)
+	local function resetToAvatarAnimations()
 		for k, _ in pairs(stateOverrides) do
 			stateOverrides[k] = nil
 		end
 
-		scheduleSave()
-		return true
+		local didSomething = false
+
+		-- Try applying avatar description (may be blocked in some games, so it's wrapped)
+		local okDesc, desc = pcall(function()
+			return Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+		end)
+		if okDesc and desc and humanoid then
+			local okApply = pcall(function()
+				humanoid:ApplyDescription(desc)
+			end)
+			if okApply then
+				didSomething = true
+				task.delay(0.2, function()
+					captureAvatarAnimateIds()
+				end)
+			end
+		end
+
+		-- Always fallback to our captured cache (this is the reliable "your avatar anims at spawn" reset)
+		if applyAnimateIdsFromCache() then
+			didSomething = true
+		end
+
+		if didSomething then
+			scheduleSave()
+			return true
+		end
+
+		return false, "Could not restore avatar animations. (Animate missing or not captured yet)"
 	end
+
+	-- Capture as soon as possible when this tab builds, and again whenever appearance loads
+	captureAvatarAnimateIds()
+	if LocalPlayer and LocalPlayer.CharacterAppearanceLoaded then
+		LocalPlayer.CharacterAppearanceLoaded:Connect(function()
+			task.delay(0.05, function()
+				captureAvatarAnimateIds()
+			end)
+		end)
+	end
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.delay(0.25, function()
+			captureAvatarAnimateIds()
+		end)
+	end)
 
 	local header = makeText(animScroll, "Anim Packs", 16, true)
 	header.Size = UDim2.new(1, 0, 0, 22)
@@ -2424,7 +2517,7 @@ do
 		local resetBtn = makeButton(row, "Reset to Avatar")
 		resetBtn.Size = UDim2.new(0, 170, 0, 36)
 
-		local hint = makeText(row, "Applies the animations your avatar is currently wearing.", 13, false)
+		local hint = makeText(row, "Restores what your avatar had equipped (not the menu).", 13, false)
 		hint.Size = UDim2.new(1, -190, 1, 0)
 		hint.TextColor3 = Color3.fromRGB(210, 210, 210)
 
@@ -2630,6 +2723,7 @@ do
 	setCategory(lastChosenCategory)
 	setState(lastChosenState)
 end
+
 
 ----------------------------------------------------------------
 -- PLAYER TAB (full block, UPDATED: BHOP menu moved, draggable title bar, menu toggle, blocks flight while BHOP enabled)
