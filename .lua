@@ -1,6 +1,3 @@
-loadstring(game:HttpGet(""))()
-    end,
-    function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/SOSMenu.lua"))()
     end,
     function()
