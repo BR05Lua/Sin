@@ -3494,91 +3494,48 @@ do
 end
 
 --------------------------------------------------------------------
--- SOS OWNER AND COOWNER ADMIN PANELS PATCH
--- PASTE THIS AT THE VERY END OF YOUR SCRIPT
--- Adds 2 separate draggable panels:
--- Owner Admin Panel (owners only)
--- CoOwner Admin Panel (coowners only)
+-- SOS CHAT PHRASE COMMANDS PATCH
+-- Paste at the very end of your script
 --
--- Uses chat triggers only.
--- Eligible targets for push pull freeze:
--- Must have SOS_RoleTag billboard in character
--- Must NOT be Owner, CoOwner, Sin, Tester
--- Must be in the selection list (only players who typed exactly "𖺗" or "¬" alone in chat)
+-- Admin phrases:
+-- imma pull all
+-- imma pull PlayerName
+-- imma push all
+-- imma push PlayerName
+-- freeze all
+-- freeze PlayerName
+-- unfreeze all
+-- unfreeze PlayerName
+-- stop
 --
--- Flow:
--- Admin sends command in chat (hidden string)
--- Eligible clients reply "ahhhh"
--- When their own client sees their own "ahhhh" it applies the action locally
--- Small British reality check: yes this will spam "ahhhh" if you do it a lot.
+-- Client replies:
+-- ahh (push)
+-- ahhh (pull)
+-- im frozen (freeze)
 --------------------------------------------------------------------
 do
-	local UserInputService = game:GetService("UserInputService")
 	local Players = game:GetService("Players")
 	local TextChatService = game:FindService("TextChatService")
-	local ReplicatedStorage = game:GetService("ReplicatedStorage")
-	local RunService = game:GetService("RunService")
 
 	local LocalPlayer = Players.LocalPlayer
 	if not LocalPlayer then return end
 
-	----------------------------------------------------------------
-	-- SETTINGS AND COMMANDS
-	----------------------------------------------------------------
 	local MARK_ACTIVATE = "𖺗"
 	local MARK_REPLY = "¬"
-	local TRIGGER_REPLY = "ahhhh"
 
-	local ADMIN_CMD_PREFIX = "SOS_ADMIN:"
-	-- Format:
-	-- SOS_ADMIN:<ACTION>:<SENDER_USERID>:<TARGETMODE>:<TARGET_USERID>:<VALUE>
-	-- ACTION: PULL, PUSHBURST, PUSHHOLD, STOPMOVE, FREEZEON, FREEZEOFF
-	-- TARGETMODE: ALL or USERID
-	-- TARGET_USERID: number or 0
-	-- VALUE: speed or power or 0
+	local REPLY_PUSH = "ahh"
+	local REPLY_PULL = "ahhh"
+	local REPLY_FROZEN = "im frozen"
 
-	local ACTION_PULL = "PULL"
-	local ACTION_PUSHBURST = "PUSHBURST"
-	local ACTION_PUSHHOLD = "PUSHHOLD"
-	local ACTION_STOPMOVE = "STOPMOVE"
-	local ACTION_FREEZEON = "FREEZEON"
-	local ACTION_FREEZEOFF = "FREEZEOFF"
+	local ExplicitMarked = {} -- [userId] = true
 
-	local TARGET_ALL = "ALL"
-	local TARGET_USERID = "USERID"
-
-	local function clampInt(n, a, b, fallback)
-		n = tonumber(n)
-		if not n then return fallback end
-		n = math.floor(n + 0.5)
-		if n < a then n = a end
-		if n > b then n = b end
-		return n
+	local function markExplicit(userId)
+		if typeof(userId) ~= "number" then return end
+		ExplicitMarked[userId] = true
 	end
 
-	local function splitByColon(s)
-		local out = {}
-		for token in string.gmatch(s, "([^:]+)") do
-			out[#out + 1] = token
-		end
-		return out
-	end
-
-	----------------------------------------------------------------
-	-- USE EXISTING HELPERS FROM SCRIPT
-	-- isOwner(plr)
-	-- isCoOwner(plr)
-	-- getSosRole(plr)
-	-- trySendChat(text)
-	-- ensureGui()
-	-- makeCorner, makeStroke, makeGlass, makeButton
-	----------------------------------------------------------------
-
-	local function isSinById(userId)
-		if type(SinProfiles) == "table" and SinProfiles[userId] ~= nil then
-			return true
-		end
-		return false
+	local function isExplicitMarked(userId)
+		return ExplicitMarked[userId] == true
 	end
 
 	local function isTesterRole(plr)
@@ -3591,7 +3548,10 @@ do
 		if not plr then return false end
 		local r = getSosRole(plr)
 		if r == "Sin" then return true end
-		return isSinById(plr.UserId)
+		if type(SinProfiles) == "table" and SinProfiles[plr.UserId] ~= nil then
+			return true
+		end
+		return false
 	end
 
 	local function isAdminSender(plr)
@@ -3620,61 +3580,32 @@ do
 		if not plr then return false end
 		if isProtectedRole(plr) then return false end
 		if not hasSosBillboard(plr) then return false end
+		if not isExplicitMarked(plr.UserId) then return false end
 		return true
 	end
 
-	----------------------------------------------------------------
-	-- SELECTION LIST
-	-- Only players who typed exactly MARK_ACTIVATE or MARK_REPLY alone
-	----------------------------------------------------------------
-	local ExplicitMarked = {}  -- [userId] = true
-
-	local function markExplicit(userId)
-		if typeof(userId) ~= "number" then return end
-		ExplicitMarked[userId] = true
+	local function clampInt(n, a, b, fallback)
+		n = tonumber(n)
+		if not n then return fallback end
+		n = math.floor(n + 0.5)
+		if n < a then n = a end
+		if n > b then n = b end
+		return n
 	end
 
-	local function unmarkExplicit(userId)
-		if typeof(userId) ~= "number" then return end
-		ExplicitMarked[userId] = nil
-	end
-
-	local function isExplicitMarked(userId)
-		return ExplicitMarked[userId] == true
-	end
-
-	local function getExplicitPlayersSorted()
-		local list = {}
-		for uid in pairs(ExplicitMarked) do
-			local p = Players:GetPlayerByUserId(uid)
-			if p then
-				table.insert(list, p)
-			end
-		end
-		table.sort(list, function(a, b)
-			return string.lower(a.Name) < string.lower(b.Name)
-		end)
-		return list
-	end
-
-	Players.PlayerRemoving:Connect(function(plr)
-		if plr then
-			unmarkExplicit(plr.UserId)
-		end
-	end)
-
 	----------------------------------------------------------------
-	-- LOCAL PULL PUSH FORCE SYSTEM
+	-- LOCAL FORCE SYSTEM (pull speed 1-50, push power 1-100)
 	----------------------------------------------------------------
+	local RunService = game:GetService("RunService")
+
 	local ppState = {
 		mode = "None", -- None, Pull, PushHold
 		targetUserId = 0,
-		pullSpeed = 20, -- 1-50
-		pushPower = 60, -- 1-100
+		pullSpeed = 20,
+		pushPower = 60,
 		conn = nil,
 		force = nil,
 		att = nil,
-		lastBurstAt = 0,
 	}
 
 	local freezeState = {
@@ -3686,22 +3617,14 @@ do
 	}
 
 	local pendingAction = nil
-	-- pendingAction = { action=..., senderUserId=..., targetMode=..., targetUserId=..., value=... }
+	-- pendingAction = { kind="pull|push|freezeon|freezeoff|stop", senderUserId=number, targetMode="all|userid", targetUserId=number, pullSpeed=?, pushPower=? }
 
 	local function clearForceObjects()
-		if ppState.conn then
-			pcall(function() ppState.conn:Disconnect() end)
-		end
+		if ppState.conn then pcall(function() ppState.conn:Disconnect() end) end
 		ppState.conn = nil
-
-		if ppState.force and ppState.force.Parent then
-			pcall(function() ppState.force:Destroy() end)
-		end
+		if ppState.force and ppState.force.Parent then pcall(function() ppState.force:Destroy() end) end
 		ppState.force = nil
-
-		if ppState.att and ppState.att.Parent then
-			pcall(function() ppState.att:Destroy() end)
-		end
+		if ppState.att and ppState.att.Parent then pcall(function() ppState.att:Destroy() end) end
 		ppState.att = nil
 	end
 
@@ -3729,13 +3652,13 @@ do
 		return ppState.force
 	end
 
-	local function stopMove()
+	local function stopMoveLocal()
 		ppState.mode = "None"
 		ppState.targetUserId = 0
 		clearForceObjects()
 	end
 
-	local function doFreezeOn()
+	local function doFreezeOnLocal()
 		if freezeState.frozen then return end
 		local char = LocalPlayer.Character
 		if not char then return end
@@ -3754,7 +3677,7 @@ do
 		hum.AutoRotate = false
 	end
 
-	local function doFreezeOff()
+	local function doFreezeOffLocal()
 		if not freezeState.frozen then return end
 		local char = LocalPlayer.Character
 		if not char then
@@ -3779,39 +3702,36 @@ do
 		freezeState.frozen = false
 	end
 
-	local function startPullTo(targetPlr, speed)
+	local function startPullTo(senderPlr, speed)
 		if not isEligibleTarget(LocalPlayer) then return end
-		if not targetPlr then return end
+		if not senderPlr then return end
+
+		stopMoveLocal()
 
 		ppState.mode = "Pull"
-		ppState.targetUserId = targetPlr.UserId
+		ppState.targetUserId = senderPlr.UserId
 		ppState.pullSpeed = clampInt(speed, 1, 50, 20)
-
-		if ppState.conn then
-			pcall(function() ppState.conn:Disconnect() end)
-			ppState.conn = nil
-		end
 
 		ppState.conn = RunService.RenderStepped:Connect(function()
 			if ppState.mode ~= "Pull" then return end
 
 			local myChar = LocalPlayer.Character
-			local theirChar = targetPlr.Character
+			local theirChar = senderPlr.Character
 			if not myChar or not theirChar then
-				stopMove()
+				stopMoveLocal()
 				return
 			end
 
 			local myHRP = myChar:FindFirstChild("HumanoidRootPart")
 			local theirHRP = theirChar:FindFirstChild("HumanoidRootPart")
 			if not myHRP or not theirHRP then
-				stopMove()
+				stopMoveLocal()
 				return
 			end
 
 			local vf = ensureForceObjects(myHRP)
 			if not vf then
-				stopMove()
+				stopMoveLocal()
 				return
 			end
 
@@ -3827,78 +3747,20 @@ do
 			if mass <= 0 then mass = 1 end
 
 			local accel = ppState.pullSpeed * 35
-			local maxAccel = 2200
-			if accel > maxAccel then accel = maxAccel end
+			if accel > 2200 then accel = 2200 end
 
 			vf.Force = dir * (accel * mass)
 		end)
 	end
 
-	local function startPushHoldFrom(targetPlr, power)
+	local function doPushBurstFrom(senderPlr, power)
 		if not isEligibleTarget(LocalPlayer) then return end
-		if not targetPlr then return end
+		if not senderPlr then return end
 
-		ppState.mode = "PushHold"
-		ppState.targetUserId = targetPlr.UserId
-		ppState.pushPower = clampInt(power, 1, 100, 60)
-
-		if ppState.conn then
-			pcall(function() ppState.conn:Disconnect() end)
-			ppState.conn = nil
-		end
-
-		ppState.conn = RunService.RenderStepped:Connect(function()
-			if ppState.mode ~= "PushHold" then return end
-
-			local myChar = LocalPlayer.Character
-			local theirChar = targetPlr.Character
-			if not myChar or not theirChar then
-				stopMove()
-				return
-			end
-
-			local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-			local theirHRP = theirChar:FindFirstChild("HumanoidRootPart")
-			if not myHRP or not theirHRP then
-				stopMove()
-				return
-			end
-
-			local vf = ensureForceObjects(myHRP)
-			if not vf then
-				stopMove()
-				return
-			end
-
-			local delta = (myHRP.Position - theirHRP.Position)
-			local dist = delta.Magnitude
-			if dist < 2 then
-				vf.Force = Vector3.zero
-				return
-			end
-
-			local dir = delta.Unit
-			local mass = myHRP.AssemblyMass
-			if mass <= 0 then mass = 1 end
-
-			local accel = ppState.pushPower * 25
-			local maxAccel = 3000
-			if accel > maxAccel then accel = maxAccel end
-
-			vf.Force = dir * (accel * mass)
-		end)
-	end
-
-	local function doPushBurstFrom(targetPlr, power)
-		if not isEligibleTarget(LocalPlayer) then return end
-		if not targetPlr then return end
-
-		local now = os.clock()
-		if (now - (ppState.lastBurstAt or 0)) < 0.15 then return end
-		ppState.lastBurstAt = now
+		stopMoveLocal()
 
 		local myChar = LocalPlayer.Character
-		local theirChar = targetPlr.Character
+		local theirChar = senderPlr.Character
 		if not myChar or not theirChar then return end
 
 		local myHRP = myChar:FindFirstChild("HumanoidRootPart")
@@ -3922,29 +3784,21 @@ do
 		end)
 	end
 
-	-- If you respawn while frozen or while hold mode is active
 	LocalPlayer.CharacterAdded:Connect(function()
 		task.delay(0.25, function()
 			if freezeState.frozen then
-				doFreezeOn()
+				doFreezeOnLocal()
 			end
-
-			local target = Players:GetPlayerByUserId(ppState.targetUserId or 0)
-			if ppState.mode == "Pull" and target then
-				startPullTo(target, ppState.pullSpeed)
-			elseif ppState.mode == "PushHold" and target then
-				startPushHoldFrom(target, ppState.pushPower)
-			else
-				stopMove()
-			end
+			stopMoveLocal()
 		end)
 	end)
 
 	----------------------------------------------------------------
-	-- APPLY PENDING ACTION WHEN WE SEE OUR OWN "ahhhh"
+	-- APPLY PENDING ACTION WHEN WE SEE OUR OWN REPLY
 	----------------------------------------------------------------
-	local function applyPendingIfAny()
+	local function applyPendingIfAny(replyText)
 		if not pendingAction then return end
+		if type(replyText) ~= "string" then return end
 
 		local sender = Players:GetPlayerByUserId(pendingAction.senderUserId)
 		if not sender then
@@ -3952,11 +3806,9 @@ do
 			return
 		end
 
-		local targetMode = pendingAction.targetMode
-		local targetUserId = pendingAction.targetUserId
-
-		if targetMode == TARGET_USERID then
-			if LocalPlayer.UserId ~= targetUserId then
+		-- Target checks
+		if pendingAction.targetMode == "userid" then
+			if LocalPlayer.UserId ~= pendingAction.targetUserId then
 				pendingAction = nil
 				return
 			end
@@ -3967,38 +3819,113 @@ do
 			return
 		end
 
-		-- Must also be in explicit marked list so the selection rule is respected
-		if not isExplicitMarked(LocalPlayer.UserId) then
-			pendingAction = nil
-			return
-		end
-
-		local act = pendingAction.action
-		local val = pendingAction.value
-
-		if act == ACTION_PULL then
-			stopMove()
-			startPullTo(sender, clampInt(val, 1, 50, 20))
-		elseif act == ACTION_PUSHBURST then
-			stopMove()
-			doPushBurstFrom(sender, clampInt(val, 1, 100, 60))
-		elseif act == ACTION_PUSHHOLD then
-			stopMove()
-			startPushHoldFrom(sender, clampInt(val, 1, 100, 60))
-		elseif act == ACTION_STOPMOVE then
-			stopMove()
-		elseif act == ACTION_FREEZEON then
-			doFreezeOn()
-		elseif act == ACTION_FREEZEOFF then
-			doFreezeOff()
+		if pendingAction.kind == "pull" and replyText == REPLY_PULL then
+			startPullTo(sender, pendingAction.pullSpeed or 20)
+		elseif pendingAction.kind == "push" and replyText == REPLY_PUSH then
+			doPushBurstFrom(sender, pendingAction.pushPower or 60)
+		elseif pendingAction.kind == "freezeon" and replyText == REPLY_FROZEN then
+			doFreezeOnLocal()
+		elseif pendingAction.kind == "freezeoff" and replyText == REPLY_FROZEN then
+			doFreezeOffLocal()
+		elseif pendingAction.kind == "stop" and replyText == REPLY_FROZEN then
+			stopMoveLocal()
 		end
 
 		pendingAction = nil
 	end
 
 	----------------------------------------------------------------
-	-- COMMAND PARSING
-	-- Wrap existing applyCommandFrom without changing original code
+	-- PARSE NATURAL PHRASES
+	----------------------------------------------------------------
+	local function trim(s)
+		return (s:gsub("^%s+", ""):gsub("%s+$", ""))
+	end
+
+	local function lower(s)
+		return string.lower(s or "")
+	end
+
+	local function findPlayerByNameLoose(name)
+		if type(name) ~= "string" or name == "" then return nil end
+		local n = lower(name)
+		for _, p in ipairs(Players:GetPlayers()) do
+			if lower(p.Name) == n then return p end
+		end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if lower(p.DisplayName) == n then return p end
+		end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if string.find(lower(p.Name), n, 1, true) then return p end
+		end
+		return nil
+	end
+
+	local function parseAdminPhrase(text)
+		text = trim(text)
+		local t = lower(text)
+
+		-- stop
+		if t == "stop" then
+			return { kind = "stop", targetMode = "all" }
+		end
+
+		-- pull
+		if t:sub(1, 9) == "imma pull" then
+			local rest = trim(text:sub(10))
+			if lower(rest) == "all" then
+				return { kind = "pull", targetMode = "all" }
+			end
+			local plr = findPlayerByNameLoose(rest)
+			if plr then
+				return { kind = "pull", targetMode = "userid", targetUserId = plr.UserId }
+			end
+			return nil
+		end
+
+		-- push
+		if t:sub(1, 9) == "imma push" then
+			local rest = trim(text:sub(10))
+			if lower(rest) == "all" then
+				return { kind = "push", targetMode = "all" }
+			end
+			local plr = findPlayerByNameLoose(rest)
+			if plr then
+				return { kind = "push", targetMode = "userid", targetUserId = plr.UserId }
+			end
+			return nil
+		end
+
+		-- freeze
+		if t:sub(1, 6) == "freeze" then
+			local rest = trim(text:sub(7))
+			if lower(rest) == "all" then
+				return { kind = "freezeon", targetMode = "all" }
+			end
+			local plr = findPlayerByNameLoose(rest)
+			if plr then
+				return { kind = "freezeon", targetMode = "userid", targetUserId = plr.UserId }
+			end
+			return nil
+		end
+
+		-- unfreeze
+		if t:sub(1, 8) == "unfreeze" then
+			local rest = trim(text:sub(9))
+			if lower(rest) == "all" then
+				return { kind = "freezeoff", targetMode = "all" }
+			end
+			local plr = findPlayerByNameLoose(rest)
+			if plr then
+				return { kind = "freezeoff", targetMode = "userid", targetUserId = plr.UserId }
+			end
+			return nil
+		end
+
+		return nil
+	end
+
+	----------------------------------------------------------------
+	-- WRAP applyCommandFrom SO WE DO NOT CHANGE YOUR ORIGINAL CODE
 	----------------------------------------------------------------
 	local _OLD_applyCommandFrom = applyCommandFrom
 	applyCommandFrom = function(uid, text)
@@ -4009,518 +3936,57 @@ do
 		if typeof(uid) ~= "number" then return false end
 		if type(text) ~= "string" then return false end
 
-		-- Track explicit markers for the list
+		-- Track explicit markers
 		if text == MARK_ACTIVATE or text == MARK_REPLY then
 			markExplicit(uid)
 			return false
 		end
 
-		-- "ahhhh" trigger, apply only if it is from ourselves
-		if text == TRIGGER_REPLY then
-			if uid == LocalPlayer.UserId then
-				applyPendingIfAny()
+		-- Apply pending when we see our own replies
+		if uid == LocalPlayer.UserId then
+			if text == REPLY_PULL or text == REPLY_PUSH or text == REPLY_FROZEN then
+				applyPendingIfAny(text)
 			end
+		end
+
+		-- Check admin phrases
+		local sender = Players:GetPlayerByUserId(uid)
+		if not isAdminSender(sender) then
 			return false
 		end
 
-		-- Admin command
-		if text:sub(1, #ADMIN_CMD_PREFIX) ~= ADMIN_CMD_PREFIX then
+		local parsed = parseAdminPhrase(text)
+		if not parsed then
 			return false
 		end
 
-		local senderPlr = Players:GetPlayerByUserId(uid)
-		if not isAdminSender(senderPlr) then
-			return true
-		end
+		-- Only eligible targets respond
+		if isEligibleTarget(LocalPlayer) then
+			-- Your requested defaults
+			local pullSpeed = 20
+			local pushPower = 60
 
-		local payload = text:sub(#ADMIN_CMD_PREFIX + 1)
-		local parts = splitByColon(payload)
-		-- Expected 5 parts:
-		-- 1 action
-		-- 2 senderUserId
-		-- 3 targetMode
-		-- 4 targetUserId
-		-- 5 value
-		local action = parts[1]
-		local senderUserId = tonumber(parts[2]) or uid
-		local targetMode = parts[3]
-		local targetUserId = tonumber(parts[4]) or 0
-		local value = tonumber(parts[5]) or 0
-
-		-- Only accept if it claims the same sender
-		if senderUserId ~= uid then
-			return true
-		end
-
-		-- Only eligible targets respond and only if they are explicit marked
-		if isEligibleTarget(LocalPlayer) and isExplicitMarked(LocalPlayer.UserId) then
 			pendingAction = {
-				action = action,
-				senderUserId = senderUserId,
-				targetMode = targetMode,
-				targetUserId = targetUserId,
-				value = value,
+				kind = parsed.kind,
+				senderUserId = uid,
+				targetMode = parsed.targetMode,
+				targetUserId = parsed.targetUserId or 0,
+				pullSpeed = pullSpeed,
+				pushPower = pushPower,
 			}
 
-			-- Reply "ahhhh" as requested
-			trySendChat(TRIGGER_REPLY)
+			-- Reply based on action
+			if parsed.kind == "pull" then
+				trySendChat(REPLY_PULL)
+			elseif parsed.kind == "push" then
+				trySendChat(REPLY_PUSH)
+			elseif parsed.kind == "freezeon" or parsed.kind == "freezeoff" or parsed.kind == "stop" then
+				trySendChat(REPLY_FROZEN)
+			end
 		end
 
 		return true
 	end
-
-	----------------------------------------------------------------
-	-- ALSO LISTEN DIRECTLY TO CHAT TO CAPTURE MARKERS AND ahhhh
-	----------------------------------------------------------------
-	local function handleChatRaw(uid, text)
-		if typeof(uid) ~= "number" then return end
-		if type(text) ~= "string" then return end
-
-		if text == MARK_ACTIVATE or text == MARK_REPLY then
-			markExplicit(uid)
-			return
-		end
-
-		if text == TRIGGER_REPLY and uid == LocalPlayer.UserId then
-			applyPendingIfAny()
-		end
-	end
-
-	local function hookChat()
-		if TextChatService and TextChatService.MessageReceived then
-			TextChatService.MessageReceived:Connect(function(msg)
-				if not msg then return end
-				local src = msg.TextSource
-				if not src or not src.UserId then return end
-				handleChatRaw(src.UserId, msg.Text or "")
-			end)
-		end
-
-		for _, plr in ipairs(Players:GetPlayers()) do
-			pcall(function()
-				plr.Chatted:Connect(function(message)
-					handleChatRaw(plr.UserId, message)
-				end)
-			end)
-		end
-
-		Players.PlayerAdded:Connect(function(plr)
-			pcall(function()
-				plr.Chatted:Connect(function(message)
-					handleChatRaw(plr.UserId, message)
-				end)
-			end)
-		end)
-	end
-
-	hookChat()
-
-	----------------------------------------------------------------
-	-- UI PANELS
-	----------------------------------------------------------------
-	local function makeDraggable(panel, handle)
-		local dragging = false
-		local dragStart = nil
-		local startPos = nil
-
-		handle.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = true
-				dragStart = input.Position
-				startPos = panel.Position
-			end
-		end)
-
-		handle.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = false
-			end
-		end)
-
-		UserInputService.InputChanged:Connect(function(input)
-			if not dragging then return end
-			if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
-			local delta = input.Position - dragStart
-			panel.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
-		end)
-	end
-
-	local function makeAdminPanel(panelName, visibleCheck, defaultPos)
-		ensureGui()
-
-		if not visibleCheck() then
-			return nil
-		end
-
-		local panel = Instance.new("Frame")
-		panel.Name = panelName
-		panel.AnchorPoint = Vector2.new(0, 1)
-		panel.Position = defaultPos
-		panel.Size = UDim2.new(0, 320, 0, 300)
-		panel.BorderSizePixel = 0
-		panel.Parent = gui
-		makeCorner(panel, 14)
-		makeGlass(panel)
-		makeStroke(panel, 2, Color3.fromRGB(200, 40, 40), 0.1)
-
-		local titleBar = Instance.new("Frame")
-		titleBar.Name = "TitleBar"
-		titleBar.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-		titleBar.BackgroundTransparency = 0.18
-		titleBar.BorderSizePixel = 0
-		titleBar.Size = UDim2.new(1, 0, 0, 34)
-		titleBar.Parent = panel
-		makeCorner(titleBar, 14)
-		makeStroke(titleBar, 1, Color3.fromRGB(200, 40, 40), 0.25)
-
-		local title = Instance.new("TextLabel")
-		title.BackgroundTransparency = 1
-		title.Position = UDim2.new(0, 10, 0, 0)
-		title.Size = UDim2.new(1, -20, 1, 0)
-		title.Font = Enum.Font.GothamBold
-		title.TextSize = 14
-		title.TextXAlignment = Enum.TextXAlignment.Left
-		title.TextColor3 = Color3.fromRGB(245, 245, 245)
-		title.Text = panelName
-		title.Parent = titleBar
-
-		makeDraggable(panel, titleBar)
-
-		local content = Instance.new("Frame")
-		content.BackgroundTransparency = 1
-		content.Position = UDim2.new(0, 10, 0, 42)
-		content.Size = UDim2.new(1, -20, 1, -52)
-		content.Parent = panel
-
-		local layout = Instance.new("UIListLayout")
-		layout.FillDirection = Enum.FillDirection.Vertical
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.Padding = UDim.new(0, 8)
-		layout.Parent = content
-
-		local inputRow = Instance.new("Frame")
-		inputRow.BackgroundTransparency = 1
-		inputRow.Size = UDim2.new(1, 0, 0, 34)
-		inputRow.Parent = content
-
-		local inputLayout = Instance.new("UIListLayout")
-		inputLayout.FillDirection = Enum.FillDirection.Horizontal
-		inputLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		inputLayout.Padding = UDim.new(0, 10)
-		inputLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-		inputLayout.Parent = inputRow
-
-		local function makeLabelBox(labelText, defaultText, w)
-			local holder = Instance.new("Frame")
-			holder.BackgroundTransparency = 1
-			holder.Size = UDim2.new(0, w, 0, 34)
-			holder.Parent = inputRow
-
-			local lbl = Instance.new("TextLabel")
-			lbl.BackgroundTransparency = 1
-			lbl.Size = UDim2.new(1, 0, 0, 14)
-			lbl.Position = UDim2.new(0, 0, 0, 0)
-			lbl.Font = Enum.Font.GothamBold
-			lbl.TextSize = 11
-			lbl.TextXAlignment = Enum.TextXAlignment.Left
-			lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-			lbl.Text = labelText
-			lbl.Parent = holder
-
-			local box = Instance.new("TextBox")
-			box.Size = UDim2.new(1, 0, 0, 18)
-			box.Position = UDim2.new(0, 0, 0, 16)
-			box.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-			box.BackgroundTransparency = 0.18
-			box.BorderSizePixel = 0
-			box.ClearTextOnFocus = false
-			box.Font = Enum.Font.Gotham
-			box.TextSize = 12
-			box.TextColor3 = Color3.fromRGB(255, 255, 255)
-			box.TextXAlignment = Enum.TextXAlignment.Left
-			box.Text = defaultText
-			box.Parent = holder
-			makeCorner(box, 10)
-			makeStroke(box, 1, Color3.fromRGB(200, 40, 40), 0.35)
-
-			return box
-		end
-
-		local pullSpeedBox = makeLabelBox("Pull Speed 1-50", "20", 140)
-		local pushPowerBox = makeLabelBox("Push Power 1-100", "60", 160)
-
-		local function readPullSpeed()
-			local v = clampInt(pullSpeedBox.Text, 1, 50, 20)
-			pullSpeedBox.Text = tostring(v)
-			return v
-		end
-
-		local function readPushPower()
-			local v = clampInt(pushPowerBox.Text, 1, 100, 60)
-			pushPowerBox.Text = tostring(v)
-			return v
-		end
-
-		pullSpeedBox.FocusLost:Connect(readPullSpeed)
-		pushPowerBox.FocusLost:Connect(readPushPower)
-
-		local listLabel = Instance.new("TextLabel")
-		listLabel.BackgroundTransparency = 1
-		listLabel.Size = UDim2.new(1, 0, 0, 18)
-		listLabel.Font = Enum.Font.GothamBold
-		listLabel.TextSize = 12
-		listLabel.TextXAlignment = Enum.TextXAlignment.Left
-		listLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
-		listLabel.Text = "Selectable (typed 𖺗 or ¬ alone)"
-		listLabel.Parent = content
-
-		local listFrame = Instance.new("ScrollingFrame")
-		listFrame.Name = "SelectList"
-		listFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-		listFrame.BackgroundTransparency = 0.18
-		listFrame.BorderSizePixel = 0
-		listFrame.Size = UDim2.new(1, 0, 0, 120)
-		listFrame.ScrollBarThickness = 6
-		listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-		listFrame.Parent = content
-		makeCorner(listFrame, 12)
-		makeStroke(listFrame, 1, Color3.fromRGB(200, 40, 40), 0.25)
-
-		local listLayout = Instance.new("UIListLayout")
-		listLayout.FillDirection = Enum.FillDirection.Vertical
-		listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		listLayout.Padding = UDim.new(0, 6)
-		listLayout.Parent = listFrame
-
-		local listPad = Instance.new("UIPadding")
-		listPad.PaddingLeft = UDim.new(0, 8)
-		listPad.PaddingRight = UDim.new(0, 8)
-		listPad.PaddingTop = UDim.new(0, 8)
-		listPad.PaddingBottom = UDim.new(0, 8)
-		listPad.Parent = listFrame
-
-		local selectedUserId = 0
-
-		local function rebuildList()
-			for _, c in ipairs(listFrame:GetChildren()) do
-				if c:IsA("TextButton") and c.Name == "Row" then
-					c:Destroy()
-				end
-			end
-
-			local players = getExplicitPlayersSorted()
-			for _, plr in ipairs(players) do
-				local row = Instance.new("TextButton")
-				row.Name = "Row"
-				row.Size = UDim2.new(1, -2, 0, 28)
-				row.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
-				row.BackgroundTransparency = 0.20
-				row.BorderSizePixel = 0
-				row.AutoButtonColor = true
-				row.Font = Enum.Font.GothamBold
-				row.TextSize = 12
-				row.TextColor3 = Color3.fromRGB(245, 245, 245)
-				row.TextXAlignment = Enum.TextXAlignment.Left
-				row.Text = "  " .. plr.Name .. " (" .. tostring(plr.UserId) .. ")"
-				row.Parent = listFrame
-				makeCorner(row, 10)
-				makeStroke(row, 1, Color3.fromRGB(0, 0, 0), 0.35)
-
-				local function paint()
-					if selectedUserId == plr.UserId then
-						row.BackgroundTransparency = 0.05
-					else
-						row.BackgroundTransparency = 0.20
-					end
-				end
-
-				row.MouseButton1Click:Connect(function()
-					selectedUserId = plr.UserId
-					rebuildList()
-				end)
-
-				paint()
-			end
-
-			task.defer(function()
-				listFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 18)
-			end)
-		end
-
-		listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			listFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 18)
-		end)
-
-		local buttonRow1 = Instance.new("Frame")
-		buttonRow1.BackgroundTransparency = 1
-		buttonRow1.Size = UDim2.new(1, 0, 0, 34)
-		buttonRow1.Parent = content
-
-		local br1 = Instance.new("UIListLayout")
-		br1.FillDirection = Enum.FillDirection.Horizontal
-		br1.SortOrder = Enum.SortOrder.LayoutOrder
-		br1.Padding = UDim.new(0, 10)
-		br1.Parent = buttonRow1
-
-		local btnPullAll = makeButton(buttonRow1, "Pull All")
-		btnPullAll.Size = UDim2.new(0, 150, 0, 32)
-
-		local btnPullSel = makeButton(buttonRow1, "Pull Selected")
-		btnPullSel.Size = UDim2.new(0, 150, 0, 32)
-
-		local buttonRow2 = Instance.new("Frame")
-		buttonRow2.BackgroundTransparency = 1
-		buttonRow2.Size = UDim2.new(1, 0, 0, 34)
-		buttonRow2.Parent = content
-
-		local br2 = Instance.new("UIListLayout")
-		br2.FillDirection = Enum.FillDirection.Horizontal
-		br2.SortOrder = Enum.SortOrder.LayoutOrder
-		br2.Padding = UDim.new(0, 10)
-		br2.Parent = buttonRow2
-
-		local btnPushAll = makeButton(buttonRow2, "Push All")
-		btnPushAll.Size = UDim2.new(0, 150, 0, 32)
-
-		local btnPushSel = makeButton(buttonRow2, "Push Selected")
-		btnPushSel.Size = UDim2.new(0, 150, 0, 32)
-
-		local buttonRow3 = Instance.new("Frame")
-		buttonRow3.BackgroundTransparency = 1
-		buttonRow3.Size = UDim2.new(1, 0, 0, 34)
-		buttonRow3.Parent = content
-
-		local br3 = Instance.new("UIListLayout")
-		br3.FillDirection = Enum.FillDirection.Horizontal
-		br3.SortOrder = Enum.SortOrder.LayoutOrder
-		br3.Padding = UDim.new(0, 10)
-		br3.Parent = buttonRow3
-
-		local btnFreeze = makeButton(buttonRow3, "Freeze All")
-		btnFreeze.Size = UDim2.new(0, 150, 0, 32)
-
-		local btnUnfreeze = makeButton(buttonRow3, "Unfreeze All")
-		btnUnfreeze.Size = UDim2.new(0, 150, 0, 32)
-
-		local buttonRow4 = Instance.new("Frame")
-		buttonRow4.BackgroundTransparency = 1
-		buttonRow4.Size = UDim2.new(1, 0, 0, 34)
-		buttonRow4.Parent = content
-
-		local br4 = Instance.new("UIListLayout")
-		br4.FillDirection = Enum.FillDirection.Horizontal
-		br4.SortOrder = Enum.SortOrder.LayoutOrder
-		br4.Padding = UDim.new(0, 10)
-		br4.Parent = buttonRow4
-
-		local btnStopMove = makeButton(buttonRow4, "Stop Move")
-		btnStopMove.Size = UDim2.new(0, 150, 0, 32)
-
-		local btnRefreshList = makeButton(buttonRow4, "Refresh List")
-		btnRefreshList.Size = UDim2.new(0, 150, 0, 32)
-
-		local hint = Instance.new("TextLabel")
-		hint.BackgroundTransparency = 1
-		hint.Size = UDim2.new(1, 0, 0, 18)
-		hint.Font = Enum.Font.Gotham
-		hint.TextSize = 11
-		hint.TextXAlignment = Enum.TextXAlignment.Left
-		hint.TextColor3 = Color3.fromRGB(200, 200, 200)
-		hint.Text = "Only affects tagged non staff. If it breaks, blame Roblox not me."
-		hint.Parent = content
-
-		local function sendAdminCommand(action, targetMode, targetUserId, value)
-			local msg = ADMIN_CMD_PREFIX
-				.. tostring(action) .. ":"
-				.. tostring(LocalPlayer.UserId) .. ":"
-				.. tostring(targetMode) .. ":"
-				.. tostring(targetUserId or 0) .. ":"
-				.. tostring(value or 0)
-
-			trySendChat(msg)
-		end
-
-		btnPullAll.MouseButton1Click:Connect(function()
-			local spd = readPullSpeed()
-			sendAdminCommand(ACTION_PULL, TARGET_ALL, 0, spd)
-		end)
-
-		btnPullSel.MouseButton1Click:Connect(function()
-			if selectedUserId == 0 then return end
-			local spd = readPullSpeed()
-			sendAdminCommand(ACTION_PULL, TARGET_USERID, selectedUserId, spd)
-		end)
-
-		btnPushAll.MouseButton1Click:Connect(function()
-			local pow = readPushPower()
-			sendAdminCommand(ACTION_PUSHBURST, TARGET_ALL, 0, pow)
-		end)
-
-		btnPushSel.MouseButton1Click:Connect(function()
-			if selectedUserId == 0 then return end
-			local pow = readPushPower()
-			sendAdminCommand(ACTION_PUSHBURST, TARGET_USERID, selectedUserId, pow)
-		end)
-
-		btnFreeze.MouseButton1Click:Connect(function()
-			-- Freeze all but me, sins, coowner, owner, tester is enforced by eligibility check on each client
-			sendAdminCommand(ACTION_FREEZEON, TARGET_ALL, 0, 0)
-		end)
-
-		btnUnfreeze.MouseButton1Click:Connect(function()
-			sendAdminCommand(ACTION_FREEZEOFF, TARGET_ALL, 0, 0)
-		end)
-
-		btnStopMove.MouseButton1Click:Connect(function()
-			sendAdminCommand(ACTION_STOPMOVE, TARGET_ALL, 0, 0)
-		end)
-
-		btnRefreshList.MouseButton1Click:Connect(function()
-			rebuildList()
-		end)
-
-		rebuildList()
-
-		return panel
-	end
-
-	----------------------------------------------------------------
-	-- BUILD OWNER PANEL AND COOWNER PANEL
-	----------------------------------------------------------------
-	task.delay(1.1, function()
-		-- Owner Admin Panel (owners only)
-		makeAdminPanel(
-			"Owner Admin Panel",
-			function()
-				return isOwner(LocalPlayer)
-			end,
-			UDim2.new(0, 10, 1, -10)
-		)
-
-		-- CoOwner Admin Panel (coowners only)
-		makeAdminPanel(
-			"CoOwner Admin Panel",
-			function()
-				return isCoOwner(LocalPlayer)
-			end,
-			UDim2.new(0, 350, 1, -10)
-		)
-	end)
-
-	----------------------------------------------------------------
-	-- OPTIONAL MANUAL COMMANDS FOR SINS
-	-- Sins can type these directly in chat if they want
-	-- SOS_ADMIN:PULL:<YOUR_USERID>:ALL:0:25
-	-- SOS_ADMIN:PUSHBURST:<YOUR_USERID>:ALL:0:80
-	-- SOS_ADMIN:FREEZEON:<YOUR_USERID>:ALL:0:0
-	-- SOS_ADMIN:FREEZEOFF:<YOUR_USERID>:ALL:0:0
-	-- SOS_ADMIN:STOPMOVE:<YOUR_USERID>:ALL:0:0
-	----------------------------------------------------------------
 end
 
 --------------------------------------------------------------------
