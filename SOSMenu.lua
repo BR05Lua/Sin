@@ -4216,28 +4216,4 @@ local function safeLoad(url)
     print("Loaded addon:", url)
 end
 
-local player = game.Players.LocalPlayer
-local TRIGGER = "؍"
-local SOUND_ID = "rbxassetid://7147226095"
-local PLAY_COUNT = 1
-
-player.Chatted:Connect(function(message)
-    if message == TRIGGER then
-        local sound = Instance.new("Sound")
-        sound.SoundId = SOUND_ID
-        sound.Volume = 10 -- max volume
-        sound.Looped = false
-
-        -- Parent to Camera so it plays directly in headphones
-        sound.Parent = workspace.CurrentCamera
-
-        for i = 1, PLAY_COUNT do
-            sound:Play()
-            sound.Ended:Wait()
-        end
-
-        sound:Destroy()
-    end
-end)
-
 safeLoad("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/BR05TagSystem.lua")
