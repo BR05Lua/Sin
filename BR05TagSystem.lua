@@ -376,7 +376,7 @@ local TagEffectProfiles = {
 		ScrollGradient = true,
 		TopTextColor = YELLOW,
 		BottomTextColor = YELLOW,
-		Effects = { "Scanline", "Shimmer" },
+		Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "Scanline", "Shimmer" },
 	},
 
 	-- Owners explicit
