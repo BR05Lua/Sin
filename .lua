@@ -44,10 +44,10 @@ local steps = {
             if not canRunStep("Main Menu") then
                 return
             end
-            -- Main Menu code here
+           
             loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/SOSMenu.lua"))()
         end,
-        delayAfter = 0.5,
+        delayAfter = 0.1,
     },
     {
         name = "Tag System",
@@ -55,10 +55,22 @@ local steps = {
             if not canRunStep("Tag System") then
                 return
             end
-            -- Tag System code here
+           
             loadstring(game:HttpGet("https://raw.githubusercontent.com/BR05Lua/SOS/refs/heads/main/BR05TagSystem.lua"))()
         end,
+        delayAfter = 0.1,
     },
+    {
+        name = "IY",
+        run = function()
+            if not canRunStep("IY") then
+                return
+            end
+            
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        end,
+    },
+}
 }
 
 for i, step in ipairs(steps) do
