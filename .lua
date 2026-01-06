@@ -69,7 +69,7 @@ local steps = {
         name = "Main Menu",
         run = function()
             if not canRunStep("Main Menu") then return end
-            safeLoad("https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/SOSMenu.lua?token=GHSAT0AAAAAADSQKI4XOQJXCTF4DPX5XLE22K5QBFQ") -- Add your loadstring URL here
+            safeLoad("https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/SOSMenu.lua") -- Add your loadstring URL here
         end,
         delayAfter = 0.1,
     },
@@ -77,7 +77,7 @@ local steps = {
         name = "Tag System",
         run = function()
             if not canRunStep("Tag System") then return end
-            safeLoad("https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/BR05TagSystem.lua?token=GHSAT0AAAAAADSQKI4XX3HVCI5NQBLFTAHK2K5QCCQ") -- Add your loadstring URL here
+            safeLoad("https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/BR05TagSystem.lua") -- Add your loadstring URL here
         end,
         delayAfter = 0.1,
     },
