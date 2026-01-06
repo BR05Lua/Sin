@@ -833,6 +833,7 @@ local CustomIdle = {
 	["Protagonist"] = 92686470851073,
 	["Arms Crossed"] = 132861892011980,
 	["The Zombie"] = 115485274167727,
+	["Cool ?"] = 110460553651561,
 }
 
 local CustomRun = {
@@ -860,6 +861,8 @@ local CustomRun = {
 	["Ballora"] = 75557142930836,
 	["Pennywise Strut"] = 79671615133463,
 	["The Zombie"] = 113076603308515,
+	["Shuffle / Moonwalk"] = 10714371274,
+	["Garou Slide"] = 107639100736436,
 }
 
 -- Custom Walk removed per request
