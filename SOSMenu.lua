@@ -200,6 +200,19 @@ local buttonSoundAttached = setmetatable({}, { __mode = "k" })
 local pendingSave = false
 
 --------------------------------------------------------------------
+-- ANIMATION USAGE TRACKING (for green circle / star)
+--------------------------------------------------------------------
+local AnimationUsage = {}          -- idString -> true if ever applied
+local KnownAnimations = {}         -- idString -> true (snapshot from last run)
+local NewAnimations = {}          -- idString -> true (computed on load)
+
+-- Helper to build a unique ID for an animation entry
+local function makeAnimId(category, packOrCustom, state, name)
+	-- category: "Pack" or "Custom"
+	return category .. ":" .. packOrCustom .. ":" .. state .. ":" .. name
+end
+
+--------------------------------------------------------------------
 -- HELPERS
 --------------------------------------------------------------------
 local function notify(title, text, dur)
@@ -314,6 +327,10 @@ local function buildSettingsTable()
 		LastAnimCategory = lastChosenCategory,
 
 		Lighting = _G.__SOS_LightingSaveState or nil,
+
+		-- Animation usage tracking
+		AnimationUsage = AnimationUsage,
+		KnownAnimations = KnownAnimations,
 	}
 end
 
@@ -355,6 +372,14 @@ local function applySettingsTable(s)
 
 	if typeof(s.Lighting) == "table" then
 		_G.__SOS_LightingSaveState = s.Lighting
+	end
+
+	-- Animation usage tracking
+	if typeof(s.AnimationUsage) == "table" then
+		AnimationUsage = s.AnimationUsage
+	end
+	if typeof(s.KnownAnimations) == "table" then
+		KnownAnimations = s.KnownAnimations
 	end
 end
 
@@ -2334,7 +2359,7 @@ end
 	end
 
 ----------------------------------------------------------------
--- ANIM PACKS TAB (Reset now restores your avatar animations properly)
+-- ANIM PACKS TAB (with green circle / star usage tracking)
 ----------------------------------------------------------------
 do
 	-- Cache your avatar's Animate IDs (from the actual Animate script on your character)
@@ -2460,7 +2485,6 @@ do
 
 		local didSomething = false
 
-		-- Try applying avatar description (may be blocked in some games, so it's wrapped)
 		local okDesc, desc = pcall(function()
 			return Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
 		end)
@@ -2476,7 +2500,6 @@ do
 			end
 		end
 
-		-- Always fallback to our captured cache (this is the reliable "your avatar anims at spawn" reset)
 		if applyAnimateIdsFromCache() then
 			didSomething = true
 		end
@@ -2486,7 +2509,7 @@ do
 			return true
 		end
 
-		return false, "Could not restore avatar animations. (Animate missing or not captured yet)"
+		return false, "Could not restore avatar animations. (Animate script missing or not captured yet)"
 	end
 
 	-- Capture as soon as possible when this tab builds, and again whenever appearance loads
@@ -2609,6 +2632,41 @@ do
 	local stateButtons = {}
 	local categoryButtons = {}
 
+	----------------------------------------------------------------
+	-- Helper to mark an animation as used (remove green circle, remove star)
+	----------------------------------------------------------------
+	local function markAnimationUsed(animId, button)
+		if not AnimationUsage[animId] then
+			AnimationUsage[animId] = true
+			-- Remove from new if it was new
+			if NewAnimations[animId] then
+				NewAnimations[animId] = nil
+			end
+			-- Update button text immediately if button is given
+			if button then
+				-- Strip leading emojis and spaces
+				local text = button.Text
+				text = text:gsub("^[⭐🟢]+\s*", "")
+				button.Text = text
+			end
+			scheduleSave()
+		end
+	end
+
+	----------------------------------------------------------------
+	-- Build the button text with appropriate emojis
+	----------------------------------------------------------------
+	local function buildButtonText(baseName, animId)
+		local prefix = ""
+		if not AnimationUsage[animId] then
+			prefix = "🟢 "
+		end
+		if NewAnimations[animId] then
+			prefix = "⭐ " .. prefix
+		end
+		return prefix .. baseName
+	end
+
 	local function rebuildPackList()
 		for _, ch in ipairs(animListContainer:GetChildren()) do
 			if ch:IsA("TextButton") or ch:IsA("TextLabel") or ch:IsA("Frame") then
@@ -2633,8 +2691,11 @@ do
 			end
 
 			for _, nm in ipairs(names) do
-				local b = makeButton(animListContainer, nm)
+				local animId = makeAnimId("Custom", lastChosenState, nm)
+				local btnText = buildButtonText(nm, animId)
+				local b = makeButton(animListContainer, btnText)
 				b.Size = UDim2.new(1, 0, 0, 36)
+
 				b.MouseButton1Click:Connect(function()
 					local id = getCustomIdForState(nm, lastChosenState)
 					if not id then return end
@@ -2642,6 +2703,8 @@ do
 					local ok = applyStateOverrideToAnimate(lastChosenState, stateOverrides[lastChosenState])
 					if ok then
 						notify("Anim Packs", "Set " .. lastChosenState .. " to " .. nm, 2)
+						-- Mark as used
+						markAnimationUsed(animId, b)
 						scheduleSave()
 					else
 						notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
@@ -2655,8 +2718,11 @@ do
 
 		local names = listPackNamesForCategory(lastChosenCategory)
 		for _, packName in ipairs(names) do
-			local b = makeButton(animListContainer, packName)
+			local animId = makeAnimId("Pack", packName, lastChosenState, packName)
+			local btnText = buildButtonText(packName, animId)
+			local b = makeButton(animListContainer, btnText)
 			b.Size = UDim2.new(1, 0, 0, 36)
+
 			b.MouseButton1Click:Connect(function()
 				local id = getPackValueForState(packName, lastChosenState)
 				if not id then
@@ -2667,6 +2733,8 @@ do
 				local ok = applyStateOverrideToAnimate(lastChosenState, stateOverrides[lastChosenState])
 				if ok then
 					notify("Anim Packs", "Set " .. lastChosenState .. " to " .. packName, 2)
+					-- Mark as used
+					markAnimationUsed(animId, b)
 					scheduleSave()
 				else
 					notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
@@ -4170,6 +4238,46 @@ end)
 -- MAIN
 --------------------------------------------------------------------
 loadSettings()
+
+-- After loading settings, compute which animations are newly added
+task.spawn(function()
+	local currentIds = {}
+
+	-- Collect all Pack animation identifiers
+	for packName, pack in pairs(AnimationPacks) do
+		for state, id in pairs(pack) do
+			local baseState = state:gsub("%d", "")
+			if baseState == "" then baseState = state end
+			local idStr = "Pack:" .. packName .. ":" .. baseState .. ":" .. packName
+			currentIds[idStr] = true
+		end
+	end
+
+	-- Collect all Custom Idle identifiers
+	for name, _ in pairs(CustomIdle) do
+		local idStr = "Custom:Idle:" .. name
+		currentIds[idStr] = true
+	end
+
+	-- Collect all Custom Run identifiers
+	for name, _ in pairs(CustomRun) do
+		local idStr = "Custom:Run:" .. name
+		currentIds[idStr] = true
+	end
+
+	-- Determine which are new (not in KnownAnimations)
+	NewAnimations = {}
+	for id, _ in pairs(currentIds) do
+		if not KnownAnimations[id] then
+			NewAnimations[id] = true
+		end
+	end
+
+	-- Update KnownAnimations to current set
+	KnownAnimations = currentIds
+	scheduleSave()
+end)
+
 getCharacter()
 createUI()
 applyPlayerSpeed()
