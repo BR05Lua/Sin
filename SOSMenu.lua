@@ -861,8 +861,10 @@ local CustomRun = {
 	["Ballora"] = 75557142930836,
 	["Pennywise Strut"] = 79671615133463,
 	["The Zombie"] = 113076603308515,
-	["Shuffle / Moonwalk"] = 10714371274,
+	["Moonwalk ?"] = 10714371274,
 	["Garou Slide"] = 107639100736436,
+	["American Football"] = 116881956670910,
+	["Shuffle"] = 95729263172851,
 }
 
 -- Custom Walk removed per request
@@ -875,6 +877,7 @@ local CustomWalk = nil
 --------------------------------------------------------------------
 local SinsIdle = {
 	-- ["Name"] = 1234567890,
+		["⭐ Arms Crossed (Floating) ⭐"] = 114638285555594,
 }
 
 local SinsRun = {
