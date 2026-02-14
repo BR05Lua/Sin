@@ -813,7 +813,7 @@ local CustomIdle = {
 	["Lethal Company (R6)"] = 109994416741422,
 	["Sit (R6)"] = 76939255365514,
 	["Tall"] = 91348372558295,
-    ["Badware"] = 140131631438778,
+    ["Badware (R6)"] = 140131631438778,
 	["Jonathan"] = 120629563851640,
 	["Killer Queen"] = 104714163485875,
 	["Dio"] = 138467089338692,
@@ -872,7 +872,7 @@ local CustomIdle = {
 
 local CustomRun = {
 	["Conga (R6)"] = 117506341081827,
-	["Dr. Livesey (R6)"] = 117506341081827,
+	["Dr. Livesey (R6)"] = 126769395026240,
 	["Tall"] = 134010853417610,
 	["Officer Earl"] = 104646820775114,
 	["AOT Titan"] = 95363958550738,
