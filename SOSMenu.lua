@@ -908,16 +908,13 @@ local CustomWalk = nil
 -- NEW: PRIVATE CUSTOM LISTS FOR SINS AND CO/OWNERS
 --------------------------------------------------------------------
 local SinsIdle = {
-	-- ["Name"] = 1234567890,
 	    ["Arms Crossed (Floating)"] = 114638285555594,
 	    ["Sol's RNG 1"] = 125722696765151,
 	    ["Sol's RNG 2"] = 87449122230956,
-	    ["Invisible"] = 111332891826566,
 }
 
 local SinsRun = {
 	-- ["Name"] = 1234567890,
-	    ["Invisible"] = 111332891826566,
 }
 
 local CoOwnersIdle = {
