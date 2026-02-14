@@ -810,8 +810,10 @@ end
 -- CUSTOM ANIMS (Custom tab)
 --------------------------------------------------------------------
 local CustomIdle = {
+	["Lethal Company (R6)"] = 109994416741422,
+	["Sit (R6)"] = 76939255365514,
 	["Tall"] = 91348372558295,
-
+    ["Badware"] = 140131631438778,
 	["Jonathan"] = 120629563851640,
 	["Killer Queen"] = 104714163485875,
 	["Dio"] = 138467089338692,
@@ -826,10 +828,9 @@ local CustomIdle = {
 	["Mahito"] = 92585001378279,
 	["Gojo"] = 139000839803032,
 	["Gon Rage"] = 136678571910037,
-	["Sol's RNG 1"] = 125722696765151,
 	["Luffy"] = 107520488394848,
 	["Sans"] = 123627677663418,
-	["Fake R6"] = 96518514398708,
+	["Idle (R6)"] = 96518514398708,
 	["Goku Warm Up"] = 84773442399798,
 	["Goku UI/Mui"] = 130104867308995,
 	["Goku Black"] = 110240143520283,
@@ -845,14 +846,15 @@ local CustomIdle = {
 	["Head Hold"] = 129453036635884,
 	["Robot Perform"] = 105174189783870,
 
-	["Springtrap"] = 90257184304714,
+	["Piccolo "] = 132760736980996,
 	["Hmmm Float"] = 107666091494733,
 	["OG Golden Freddy"] = 138402679058341,
 	["Wally West"] = 106169111259587,
 	["L"] = 103267638009024,
 	["Robot Malfunction"] = 110419039625879,
 
-	["A Vibing Spider"] = 86005347720103,
+	["Spider (fast)"] = 86005347720103,
+	["Spider (Normal)"] = 113915508368392,
 	["Spiderman"] = 74785222555193,
 	["Ballora"] = 88392341793465,
 	["Backpack"] = 114948866128817,
@@ -862,22 +864,27 @@ local CustomIdle = {
 	["Protagonist"] = 92686470851073,
 	["Arms Crossed"] = 132861892011980,
 	["The Zombie"] = 115485274167727,
-	["Cool ?"] = 110460553651561,
+	["Cool"] = 110460553651561,
+	["Metal Sonic"] = 103607187680497,
+	["Douma"] = 127626736897320,
+	["Hands Behind Back"] = 140184554928517,
 }
 
 local CustomRun = {
+	["Conga (R6)"] = 117506341081827,
+	["Dr. Livesey (R6)"] = 117506341081827,
 	["Tall"] = 134010853417610,
 	["Officer Earl"] = 104646820775114,
 	["AOT Titan"] = 95363958550738,
 	["Animal"] = 87721497492370,
 	["Captain JS"] = 87806542116815,
-	["Ninja Sprint"] = 123763532572423,
-	["Fake R6"] = 101293881003047,
+	["Samurai Sprint"] = 123763532572423,
+	["Run (R6)(fast)"] = 101293881003047,
 	["Gojo"] = 82260970223217,
 	["Head Hold"] = 92715775326925,
 
 	["Springtrap Sturdy"] = 80927378599036,
-	["UFO"] = 118703314621593,
+	["Hmmm Float (Spinning)"] = 118703314621593,
 	["Closed Eyes Vibe"] = 117991470645633,
 	["Wally West"] = 102622695004986,
 	["Squidward"] = 82365330773489,
@@ -886,35 +893,37 @@ local CustomRun = {
 	["Missile"] = 92401041987431,
 	["I Wanna Run Away"] = 78510387198062,
 
-	["A Spider"] = 89356423918695,
+	["Spider"] = 89356423918695,
 	["Ballora"] = 75557142930836,
 	["Pennywise Strut"] = 79671615133463,
 	["The Zombie"] = 113076603308515,
-	["Moonwalk ?"] = 10714371274,
+	["Moonwalk"] = 10714371274,
 	["Garou Slide"] = 107639100736436,
 	["American Football"] = 116881956670910,
 	["Shuffle"] = 95729263172851,
 }
 
--- Custom Walk removed per request
 local CustomWalk = nil
 
 --------------------------------------------------------------------
 -- NEW: PRIVATE CUSTOM LISTS FOR SINS AND CO/OWNERS
--- When you later say "put these idles in Sins" or "put these runs in Co/Owners"
--- I will add them right here.
 --------------------------------------------------------------------
 local SinsIdle = {
 	-- ["Name"] = 1234567890,
-		["⭐ Arms Crossed (Floating) ⭐"] = 114638285555594,
+	    ["Arms Crossed (Floating)"] = 114638285555594,
+	    ["Sol's RNG 1"] = 125722696765151,
+	    ["Sol's RNG 2"] = 87449122230956,
+	    ["Invisible"] = 111332891826566,
 }
 
 local SinsRun = {
 	-- ["Name"] = 1234567890,
+	    ["Invisible"] = 111332891826566,
 }
 
 local CoOwnersIdle = {
 	-- ["Name"] = 1234567890,
+	    
 }
 
 local CoOwnersRun = {
