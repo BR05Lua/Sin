@@ -22,6 +22,34 @@ local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 --------------------------------------------------------------------
+-- GLOBAL INTERFACE (for BHOP and Car UI)
+--------------------------------------------------------------------
+_G.SOS_BlockFlight = false
+_G.SOS_BlockFlightReason = nil
+
+_G.SOS_SetFlightEnabled = function(enabled, reason)
+    if enabled then
+        if not flying and not _G.SOS_BlockFlight then
+            startFlying()
+        end
+    else
+        if flying then
+            stopFlying()
+        end
+    end
+end
+
+_G.SOS_StopFlight = function(reason)
+    if flying then
+        stopFlying()
+    end
+end
+
+_G.SOS_StartCarUI = function()
+    notify("Car Animations", "Car UI not wired yet. Tell me and I will embed it here.", 4)
+end
+
+--------------------------------------------------------------------
 -- CONFIG
 --------------------------------------------------------------------
 local DEBUG = false
@@ -81,16 +109,54 @@ local VIP_GAMEPASSES = {
 }
 
 --------------------------------------------------------------------
--- ROLE GATES FOR TABS
+-- ROLE DATA (updated as requested)
 --------------------------------------------------------------------
-local OWNER_USERIDS = {
-    [433636433] = true,
+local ROLE_COLOR = {
+	Normal = Color3.fromRGB(120, 190, 235),
+	Owner  = Color3.fromRGB(255, 255, 80),
+	CoOwner = Color3.fromRGB(125, 216, 215),
+	Tester = Color3.fromRGB(60, 255, 90),
+	Sin    = Color3.fromRGB(235, 70, 70),
+	OG     = Color3.fromRGB(160, 220, 255),
+	Custom = Color3.fromRGB(245, 245, 245),
+}
+
+local OwnerNames = {
+	["deniskraily"] = true,
+}
+
+local OwnerUserIds = {
+	[433636433] = true,
 	[196988708] = true,
 	[4926923208] = true,
 }
 
+local CoOwners = {
+	[2630250935] = true,
+	[9253548067] = true,
+	[5348319883] = true,
+}
+
+local SinProfiles = {
+	[105995794]  = { SinName = "Lettuce" },
+	[138975737]  = { SinName = "Music" },
+	[9159968275] = { SinName = "Music" },
+	[4659279349] = { SinName = "Trial" },
+	[4495710706] = { SinName = "Games Design" },
+	[1575141882] = { SinName = "Heart" },
+	[118170824]  = { SinName = "Security" },
+	[7870252435] = { SinName = "Security" },
+	[3600244479] = { SinName = "PAWS" },
+}
+
+--------------------------------------------------------------------
+-- ROLE GATES FOR TABS (using the new data)
+--------------------------------------------------------------------
 local function isOwnerUser()
-	if OWNER_USERIDS[LocalPlayer.UserId] then
+	if OwnerUserIds[LocalPlayer.UserId] then
+		return true
+	end
+	if OwnerNames[LocalPlayer.Name] then
 		return true
 	end
 	if game.CreatorType == Enum.CreatorType.User then
@@ -100,17 +166,17 @@ local function isOwnerUser()
 end
 
 local function isSinsAllowed()
-	if LocalPlayer.Name == "Sins" then
+	if SinProfiles[LocalPlayer.UserId] then
 		return true
 	end
-	return isOwnerUser()
+	return isOwnerUser()  -- owners also see the Sins tab
 end
 
 local function isCoOwnersAllowed()
-	if LocalPlayer.Name == "Cinna" then
+	if CoOwners[LocalPlayer.UserId] then
 		return true
 	end
-	return isOwnerUser()
+	return isOwnerUser()  -- owners also see the Co/Owners tab
 end
 
 --------------------------------------------------------------------
@@ -844,14 +910,12 @@ local CustomIdle = {
 	["Tanjiro"] = 118533315464114,
 	["Head Hold"] = 129453036635884,
 	["Robot Perform"] = 105174189783870,
-
 	["Piccolo "] = 132760736980996,
 	["Hmmm Float"] = 107666091494733,
 	["OG Golden Freddy"] = 138402679058341,
 	["Wally West"] = 106169111259587,
 	["L"] = 103267638009024,
 	["Robot Malfunction"] = 110419039625879,
-
 	["Spider (fast)"] = 86005347720103,
 	["Spider (Normal)"] = 113915508368392,
 	["Spiderman"] = 74785222555193,
@@ -881,7 +945,6 @@ local CustomRun = {
 	["Run (R6)(fast)"] = 101293881003047,
 	["Gojo"] = 82260970223217,
 	["Head Hold"] = 92715775326925,
-
 	["Springtrap Sturdy"] = 80927378599036,
 	["Hmmm Float (Spinning)"] = 118703314621593,
 	["Closed Eyes Vibe"] = 117991470645633,
@@ -891,7 +954,6 @@ local CustomRun = {
 	["Very Happy Run"] = 86522070222739,
 	["Missile"] = 92401041987431,
 	["I Wanna Run Away"] = 78510387198062,
-
 	["Spider"] = 89356423918695,
 	["Ballora"] = 75557142930836,
 	["Pennywise Strut"] = 79671615133463,
@@ -1013,6 +1075,10 @@ end
 --------------------------------------------------------------------
 local function startFlying()
 	if flying or not humanoid or not rootPart then return end
+	if _G.SOS_BlockFlight then
+		notify("Flight", "Blocked by " .. (_G.SOS_BlockFlightReason or "another feature"), 2)
+		return
+	end
 	flying = true
 
 	humanoid.PlatformStand = true
@@ -2064,7 +2130,7 @@ local function createUI()
 	local serverPage, serverScroll = makePage("Server")
 	local clientPage, clientScroll = makePage("Client")
 
-	-- NEW tabs pages
+	-- NEW tabs pages (role‑based)
 	local sinsPage, sinsScroll = nil, nil
 	if isSinsAllowed() then
 		sinsPage, sinsScroll = makePage("Sins")
@@ -4110,7 +4176,7 @@ end
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
 
-	if input.KeyCode == flightToggleKey then
+	if input.KeyCode == flightToggleKey and not _G.SOS_BlockFlight then
 		if flying then stopFlying() else startFlying() end
 	elseif menuToggleKey and input.KeyCode == menuToggleKey then
 		if arrowButton then
