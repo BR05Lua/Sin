@@ -87,7 +87,7 @@ local MICUP_PLACE_IDS = {
 	["15546218972"] = true,
 }
 
-local DISCORD_LINK = "https://discord.gg/cacg7kvX"
+local DISCORD_LINK = "https://discord.gg/YB3spFe6f8"
 
 local INTRO_SOUND_ID = "rbxassetid://1843492223"
 
