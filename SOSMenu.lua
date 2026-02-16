@@ -1,3 +1,8 @@
+-- SOS HUD (The Sins Of Scripting)
+-- Single LocalScript (StarterPlayerScripts recommended)
+-- Update: Added mini Animations sub-tab inside Sins and Co/Owners tabs (Idle + Run only)
+-- Future-proof: Added empty tables for Sins/CoOwners custom idles/runs so you can tell me later what to add where
+
 --------------------------------------------------------------------
 -- SERVICES
 --------------------------------------------------------------------
@@ -262,27 +267,6 @@ local buttonSoundAttached = setmetatable({}, { __mode = "k" })
 local pendingSave = false
 
 --------------------------------------------------------------------
--- ANTI FEATURES STATE
---------------------------------------------------------------------
-local antiEnabled = {
-	kick = false,   -- just notifies
-	ban = false,    -- just notifies
-	push = false,
-	fling = false,
-}
-
--- For anti-push/anti-fling: monitor velocity and counteract
-local antiPushForce = nil
-local antiFlingForce = nil
-
---------------------------------------------------------------------
--- CLIENT CUSTOMIZATION
---------------------------------------------------------------------
-local accentColor = Color3.fromRGB(200, 40, 40)  -- default red
-local disableBhop = false
-local disableCarAnim = false
-
---------------------------------------------------------------------
 -- ANIMATION USAGE TRACKING (for green circle / star)
 --------------------------------------------------------------------
 local AnimationUsage = {}          -- idString -> true if ever applied
@@ -418,14 +402,6 @@ local function buildSettingsTable()
 		-- Animation usage tracking
 		AnimationUsage = AnimationUsage,
 		KnownAnimations = KnownAnimations,
-
-		-- Anti features
-		AntiEnabled = antiEnabled,
-
-		-- Client customisation
-		AccentColor = { accentColor.R, accentColor.G, accentColor.B },
-		DisableBhop = disableBhop,
-		DisableCarAnim = disableCarAnim,
 	}
 end
 
@@ -476,22 +452,6 @@ local function applySettingsTable(s)
 	if typeof(s.KnownAnimations) == "table" then
 		KnownAnimations = s.KnownAnimations
 	end
-
-	-- Anti features
-	if typeof(s.AntiEnabled) == "table" then
-		for k, v in pairs(s.AntiEnabled) do
-			if antiEnabled[k] ~= nil then
-				antiEnabled[k] = v
-			end
-		end
-	end
-
-	-- Client customisation
-	if typeof(s.AccentColor) == "table" and #s.AccentColor >= 3 then
-		accentColor = Color3.new(s.AccentColor[1], s.AccentColor[2], s.AccentColor[3])
-	end
-	if typeof(s.DisableBhop) == "boolean" then disableBhop = s.DisableBhop end
-	if typeof(s.DisableCarAnim) == "boolean" then disableCarAnim = s.DisableCarAnim end
 end
 
 local function loadSettings()
@@ -1183,7 +1143,7 @@ end
 
 local function makeStroke(parent, thickness)
 	local s = Instance.new("UIStroke")
-	s.Color = accentColor
+	s.Color = Color3.fromRGB(200, 40, 40)
 	s.Thickness = thickness or 2
 	s.Transparency = 0.1
 	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1259,7 +1219,7 @@ local function makeButton(parent, txt)
 	makeCorner(b, 10)
 
 	local st = Instance.new("UIStroke")
-	st.Color = accentColor
+	st.Color = Color3.fromRGB(200, 40, 40)
 	st.Thickness = 1
 	st.Transparency = 0.25
 	st.Parent = b
@@ -1283,7 +1243,7 @@ local function makeInput(parent, placeholder)
 	makeCorner(tb, 10)
 
 	local st = Instance.new("UIStroke")
-	st.Color = accentColor
+	st.Color = Color3.fromRGB(200, 40, 40)
 	st.Thickness = 1
 	st.Transparency = 0.35
 	st.Parent = tb
@@ -1298,96 +1258,6 @@ local function setTabButtonActive(btn, active)
 		st.Thickness = active and 2 or 1
 	end
 	btn.BackgroundTransparency = active and 0.08 or 0.22
-end
-
--- Function to update all accent colors in the UI
-local function updateAccentColor()
-	if not gui then return end
-	local color = accentColor
-	for _, stroke in ipairs(gui:GetDescendants()) do
-		if stroke:IsA("UIStroke") and stroke.Color ~= color then
-			stroke.Color = color
-		end
-	end
-	-- Also update slider fills (they are separate frames)
-	for _, fill in ipairs(gui:GetDescendants()) do
-		if fill.Name == "SliderFill" or (fill.Parent and fill.Parent.Name == "SliderBg" and fill:IsA("Frame") and fill.BackgroundColor3 ~= color) then
-			fill.BackgroundColor3 = color
-		end
-	end
-end
-
---------------------------------------------------------------------
--- ANTI FEATURES LOGIC
---------------------------------------------------------------------
-local function antiPushUpdate(dt)
-	if not antiEnabled.push or not rootPart then return end
-	-- If we detect a sudden velocity change that seems like a push, counteract
-	local vel = rootPart.Velocity
-	local speed = vel.Magnitude
-	if speed > 50 then  -- arbitrary threshold for "push"
-		-- Apply a counter force in opposite direction
-		if not antiPushForce then
-			antiPushForce = Instance.new("BodyVelocity")
-			antiPushForce.MaxForce = Vector3.new(1e5, 0, 1e5)
-			antiPushForce.P = 10000
-			antiPushForce.Parent = rootPart
-		end
-		antiPushForce.Velocity = Vector3.new(0, rootPart.Velocity.Y, 0)  -- cancel horizontal
-	else
-		if antiPushForce then
-			antiPushForce:Destroy()
-			antiPushForce = nil
-		end
-	end
-end
-
-local function antiFlingUpdate(dt)
-	if not antiEnabled.fling or not rootPart then return end
-	-- Fling often involves extremely high velocity or rotation
-	local vel = rootPart.Velocity
-	local angVel = rootPart.RotVelocity
-	if vel.Magnitude > 150 or angVel.Magnitude > 20 then
-		-- Reset velocity and angular velocity
-		rootPart.Velocity = Vector3.new(0, rootPart.Velocity.Y, 0)
-		rootPart.RotVelocity = Vector3.new()
-		-- Also apply a temporary force to stabilize
-		if not antiFlingForce then
-			antiFlingForce = Instance.new("BodyVelocity")
-			antiFlingForce.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-			antiFlingForce.P = 10000
-			antiFlingForce.Velocity = Vector3.new(0, rootPart.Velocity.Y, 0)
-			antiFlingForce.Parent = rootPart
-		end
-	else
-		if antiFlingForce then
-			antiFlingForce:Destroy()
-			antiFlingForce = nil
-		end
-	end
-end
-
--- Anti-kick/ban detection (just notify when remote events fire)
-local function hookRemoteEvent(eventName, message)
-	local mt = getrawmetatable(game)
-	local old_namecall = mt.__namecall
-	setreadonly(mt, false)
-	mt.__namecall = newcclosure(function(self, ...)
-		local args = {...}
-		local method = getnamecallmethod()
-		if method == "FireServer" and self.Name == eventName then
-			notify("Anti " .. eventName, message, 2)
-		end
-		return old_namecall(self, ...)
-	end)
-	setreadonly(mt, true)
-end
-
-if antiEnabled.kick then
-	pcall(function() hookRemoteEvent("Kick", "Kick attempt detected!") end)
-end
-if antiEnabled.ban then
-	pcall(function() hookRemoteEvent("Ban", "Ban attempt detected!") end)
 end
 
 --------------------------------------------------------------------
@@ -2257,21 +2127,10 @@ local function createUI()
 	local playerPage, playerScroll = makePage("Player")
 	local cameraPage, cameraScroll = makePage("Camera")
 	local lightingPage, lightingScroll = makePage("Lighting")
-	local antiPage, antiScroll = makePage("Anti")
 	local serverPage, serverScroll = makePage("Server")
 	local clientPage, clientScroll = makePage("Client")
 
-	-- New placeholder tabs
-	local socialPage, socialScroll = makePage("Social")
-	local funPage, funScroll = makePage("Fun")
-	local toolsPage, toolsScroll = makePage("Tools")
-	local statsPage, statsScroll = makePage("Stats")
-	local cosmeticsPage, cosmeticsScroll = makePage("Cosmetics")
-	local musicPage, musicScroll = makePage("Music")
-	local gamesPage, gamesScroll = makePage("Games")
-	local devPage, devScroll = makePage("Developer")
-
-	-- Role tabs
+	-- NEW tabs pages (role‑based)
 	local sinsPage, sinsScroll = nil, nil
 	if isSinsAllowed() then
 		sinsPage, sinsScroll = makePage("Sins")
@@ -2530,8 +2389,7 @@ end
 		makeCorner(sliderBg, 999)
 
 		local sliderFill = Instance.new("Frame")
-		sliderFill.Name = "SliderFill"
-		sliderFill.BackgroundColor3 = accentColor
+		sliderFill.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 		sliderFill.BorderSizePixel = 0
 		sliderFill.Size = UDim2.new(0, 0, 1, 0)
 		sliderFill.Parent = sliderBg
@@ -3017,7 +2875,7 @@ end
 
 
 ----------------------------------------------------------------
--- PLAYER TAB (BHOP and Car sections commented out)
+-- PLAYER TAB (full block, UPDATED: BHOP menu moved, draggable title bar, menu toggle, blocks flight while BHOP enabled)
 ----------------------------------------------------------------
 do
 	local header = makeText(playerScroll, "Player", 16, true)
@@ -3045,8 +2903,7 @@ do
 	makeCorner(sliderBg, 999)
 
 	local sliderFill = Instance.new("Frame")
-	sliderFill.Name = "SliderFill"
-	sliderFill.BackgroundColor3 = accentColor
+	sliderFill.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 	sliderFill.BorderSizePixel = 0
 	sliderFill.Size = UDim2.new(0, 0, 1, 0)
 	sliderFill.Parent = sliderBg
@@ -3106,9 +2963,8 @@ do
 		notify("Player", "Speed reset.", 2)
 	end)
 
-	--[[
 	----------------------------------------------------------------
-	-- Car Animations (commented out – kept for future use)
+	-- Car Animations (button hook)
 	----------------------------------------------------------------
 	local carHeader = makeText(playerScroll, "Car Animations", 16, true)
 	carHeader.Size = UDim2.new(1, 0, 0, 22)
@@ -3120,19 +2976,21 @@ do
 	local carBtn = makeButton(playerScroll, "Look Mum im a Car")
 	carBtn.Size = UDim2.new(0, 240, 0, 40)
 
-	carBtn.MouseButton1Click:Connect(function()
+	local function startCarUI()
 		if typeof(_G) == "table" and typeof(_G.SOS_StartCarUI) == "function" then
 			_G.SOS_StartCarUI()
 			return true
 		end
 		notify("Car Animations", "Car UI not wired yet. Tell me and I will embed it here.", 4)
 		return false
-	end)
-	--]]
+	end
 
-	--[[
+	carBtn.MouseButton1Click:Connect(function()
+		startCarUI()
+	end)
+
 	----------------------------------------------------------------
-	-- BHOP (commented out – kept for future use)
+	-- BHOP (themed menu, opened via Player tab button, draggable, moved out the way, blocks flight while enabled)
 	----------------------------------------------------------------
 	local bhopHeader = makeText(playerScroll, "Bhop", 16, true)
 	bhopHeader.Size = UDim2.new(1, 0, 0, 22)
@@ -3143,7 +3001,518 @@ do
 
 	local bhopBtn = makeButton(playerScroll, "Bhop")
 	bhopBtn.Size = UDim2.new(0, 240, 0, 40)
-	--]] (the rest of BHOP logic remains commented out in the actual script, but we'll omit for brevity)
+
+	local bhopGui = nil
+	local bhopHandle = nil
+	local bhopFrame = nil
+	local bhopArrow = nil
+	local bhopOpen = false
+	local bhopTween = nil
+
+	local bhopEnabled = false
+	local bhopBodyVel = nil
+
+	local bhopCharacter = nil
+	local bhopHumanoid = nil
+	local bhopRoot = nil
+
+	local bhopOriginalWalkSpeed = nil
+	local bhopOriginalJumpPower = nil
+
+	local isTyping = false
+	local maxSpeedReached = 0
+
+	local bhopConfig = {
+		GROUND_FRICTION = 6,
+		GROUND_ACCELERATE = 10,
+		AIR_ACCELERATE = 16,
+		GROUND_SPEED = 16,
+		AIR_CAP = 10,
+		JUMP_POWER = 50,
+		STOP_SPEED = 1,
+	}
+
+	local bhopCurrentVel = Vector3.new(0, 0, 0)
+
+	UserInputService.TextBoxFocused:Connect(function()
+		isTyping = true
+	end)
+	UserInputService.TextBoxFocusReleased:Connect(function()
+		isTyping = false
+	end)
+
+	local function bhopTryStopFlight()
+		if typeof(_G) ~= "table" then return end
+
+		_G.SOS_BlockFlight = bhopEnabled and true or false
+		_G.SOS_BlockFlightReason = bhopEnabled and "Bhop active" or nil
+
+		if bhopEnabled then
+			if typeof(_G.SOS_SetFlightEnabled) == "function" then
+				pcall(function()
+					_G.SOS_SetFlightEnabled(false, "Bhop active")
+				end)
+			end
+			if typeof(_G.SOS_StopFlight) == "function" then
+				pcall(function()
+					_G.SOS_StopFlight("Bhop active")
+				end)
+			end
+		end
+	end
+
+	local function bhopGetRefs()
+		bhopCharacter = LocalPlayer.Character
+		if not bhopCharacter then return false end
+		bhopHumanoid = bhopCharacter:FindFirstChildOfClass("Humanoid")
+		bhopRoot = bhopCharacter:FindFirstChild("HumanoidRootPart")
+		if not bhopHumanoid or not bhopRoot then return false end
+		return true
+	end
+
+	local function bhopEnsureBodyVel()
+		if not bhopRoot then return end
+		if bhopBodyVel and bhopBodyVel.Parent == bhopRoot then return end
+		if bhopBodyVel then pcall(function() bhopBodyVel:Destroy() end) end
+
+		bhopBodyVel = Instance.new("BodyVelocity")
+		bhopBodyVel.Name = "SOS_BhopVelocity"
+		bhopBodyVel.MaxForce = Vector3.new(0, 0, 0)
+		bhopBodyVel.P = 10000
+		bhopBodyVel.Velocity = Vector3.new(0, 0, 0)
+		bhopBodyVel.Parent = bhopRoot
+	end
+
+	local function bhopIsGrounded()
+		if not bhopRoot or not bhopCharacter then return false end
+
+		local rayOrigin = bhopRoot.Position
+		local rayDirection = Vector3.new(0, -4, 0)
+
+		local params = RaycastParams.new()
+		params.FilterDescendantsInstances = { bhopCharacter }
+		params.FilterType = Enum.RaycastFilterType.Blacklist
+
+		return workspace:Raycast(rayOrigin, rayDirection, params) ~= nil
+	end
+
+	local function bhopGetWishDir()
+		if isTyping then
+			return Vector3.new(0, 0, 0)
+		end
+
+		local cam = workspace.CurrentCamera
+		if not cam then return Vector3.new(0, 0, 0) end
+
+		local moveVector = Vector3.new(0, 0, 0)
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVector = moveVector + cam.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVector = moveVector - cam.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVector = moveVector - cam.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVector = moveVector + cam.CFrame.RightVector end
+
+		moveVector = Vector3.new(moveVector.X, 0, moveVector.Z)
+		if moveVector.Magnitude > 0 then
+			return moveVector.Unit
+		end
+		return Vector3.new(0, 0, 0)
+	end
+
+	local function bhopAirAccelerate(wishDir, wishSpeed, accel, dt)
+		local currentSpeed = bhopCurrentVel:Dot(wishDir)
+		local addSpeed = wishSpeed - currentSpeed
+		if addSpeed <= 0 then return end
+		local accelSpeed = math.min(accel * wishSpeed * dt, addSpeed)
+		bhopCurrentVel = bhopCurrentVel + wishDir * accelSpeed
+	end
+
+	local function bhopGroundAccelerate(wishDir, wishSpeed, accel, dt)
+		local currentSpeed = bhopCurrentVel:Dot(wishDir)
+		local addSpeed = wishSpeed - currentSpeed
+		if addSpeed <= 0 then return end
+		local accelSpeed = math.min(accel * dt * wishSpeed, addSpeed)
+		bhopCurrentVel = bhopCurrentVel + wishDir * accelSpeed
+	end
+
+	local function bhopApplyFriction(dt)
+		local speed = bhopCurrentVel.Magnitude
+		if speed < 0.1 then
+			bhopCurrentVel = Vector3.new(0, 0, 0)
+			return
+		end
+
+		local control = speed < bhopConfig.STOP_SPEED and bhopConfig.STOP_SPEED or speed
+		local drop = control * bhopConfig.GROUND_FRICTION * dt
+		local newSpeed = math.max(speed - drop, 0)
+
+		if speed > 0 then
+			bhopCurrentVel = bhopCurrentVel * (newSpeed / speed)
+		end
+	end
+
+	local bhopDebugLine = nil
+	local function bhopUpdateDebug(speed, grounded)
+		if not bhopDebugLine then return end
+		if speed > maxSpeedReached then
+			maxSpeedReached = speed
+		end
+		local g = grounded and "GROUNDED" or "IN AIR"
+		bhopDebugLine.Text = string.format("Status: %s  |  Speed: %.1f  |  Max: %.1f", g, speed, maxSpeedReached)
+	end
+
+	local function bhopSetEnabled(on)
+		if not bhopGetRefs() then
+			notify("Bhop", "Character not ready.", 2)
+			return
+		end
+
+		bhopEnsureBodyVel()
+
+		bhopEnabled = on and true or false
+		maxSpeedReached = 0
+		bhopTryStopFlight()
+
+		if bhopEnabled then
+			bhopOriginalWalkSpeed = bhopHumanoid.WalkSpeed
+			bhopOriginalJumpPower = bhopHumanoid.JumpPower
+
+			bhopHumanoid.WalkSpeed = 0
+			bhopHumanoid.JumpPower = 0
+
+			bhopCurrentVel = Vector3.new(0, 0, 0)
+			bhopBodyVel.MaxForce = Vector3.new(100000, 0, 100000)
+			bhopBodyVel.Velocity = Vector3.new(0, 0, 0)
+
+			notify("Bhop", "Enabled. Flight blocked.", 2)
+		else
+			if bhopOriginalWalkSpeed ~= nil then
+				bhopHumanoid.WalkSpeed = bhopOriginalWalkSpeed
+			end
+			if bhopOriginalJumpPower ~= nil then
+				bhopHumanoid.JumpPower = bhopOriginalJumpPower
+			end
+
+			bhopBodyVel.MaxForce = Vector3.new(0, 0, 0)
+			bhopBodyVel.Velocity = Vector3.new(0, 0, 0)
+
+			bhopCurrentVel = Vector3.new(0, 0, 0)
+			notify("Bhop", "Disabled.", 2)
+		end
+	end
+
+	local function bhopPhysicsStep(dt)
+		if bhopEnabled then
+			bhopTryStopFlight()
+		end
+
+		if not bhopEnabled then
+			if bhopRoot then
+				local v = bhopRoot.Velocity
+				local speed = Vector3.new(v.X, 0, v.Z).Magnitude
+				bhopUpdateDebug(speed, bhopIsGrounded())
+			end
+			return
+		end
+
+		if not bhopRoot or not bhopHumanoid or not bhopBodyVel then return end
+
+		local wishDir = bhopGetWishDir()
+		local onGround = bhopIsGrounded()
+
+		if onGround then
+			bhopApplyFriction(dt)
+			bhopGroundAccelerate(wishDir, bhopConfig.GROUND_SPEED, bhopConfig.GROUND_ACCELERATE, dt)
+
+			if UserInputService:IsKeyDown(Enum.KeyCode.Space) and not isTyping then
+				bhopRoot.Velocity = Vector3.new(bhopCurrentVel.X, bhopConfig.JUMP_POWER, bhopCurrentVel.Z)
+			end
+		else
+			bhopAirAccelerate(wishDir, bhopConfig.AIR_CAP, bhopConfig.AIR_ACCELERATE, dt)
+		end
+
+		bhopBodyVel.Velocity = Vector3.new(bhopCurrentVel.X, 0, bhopCurrentVel.Z)
+		bhopUpdateDebug(bhopCurrentVel.Magnitude, onGround)
+	end
+
+	local function bhopBuildMenu()
+		if bhopGui and bhopGui.Parent then
+			return
+		end
+
+		bhopGui = Instance.new("ScreenGui")
+		bhopGui.Name = "SOS_BhopMenu"
+		bhopGui.ResetOnSpawn = false
+		bhopGui.IgnoreGuiInset = true
+		bhopGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		bhopGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+		setupGlobalButtonSounds(bhopGui)
+
+		bhopHandle = Instance.new("Frame")
+		bhopHandle.Name = "Handle"
+		bhopHandle.AnchorPoint = Vector2.new(0, 0)
+		bhopHandle.Position = UDim2.new(1, -460, 0, 120)
+		bhopHandle.Size = UDim2.new(0, 420, 0, 42)
+		bhopHandle.BorderSizePixel = 0
+		bhopHandle.Parent = bhopGui
+		makeCorner(bhopHandle, 16)
+		makeGlass(bhopHandle)
+		makeStroke(bhopHandle, 2)
+
+		local titleBar = Instance.new("TextButton")
+		titleBar.Name = "TitleBar"
+		titleBar.BackgroundTransparency = 1
+		titleBar.Text = ""
+		titleBar.Size = UDim2.new(1, 0, 1, 0)
+		titleBar.Parent = bhopHandle
+
+		bhopArrow = Instance.new("TextButton")
+		bhopArrow.Name = "Arrow"
+		bhopArrow.BackgroundTransparency = 1
+		bhopArrow.Size = UDim2.new(0, 40, 0, 40)
+		bhopArrow.Position = UDim2.new(0, 8, 0, 1)
+		bhopArrow.Text = "˄"
+		bhopArrow.Font = Enum.Font.GothamBold
+		bhopArrow.TextSize = 22
+		bhopArrow.TextColor3 = Color3.fromRGB(240, 240, 240)
+		bhopArrow.Parent = bhopHandle
+
+		local title = Instance.new("TextLabel")
+		title.BackgroundTransparency = 1
+		title.Size = UDim2.new(1, -90, 1, 0)
+		title.Position = UDim2.new(0, 70, 0, 0)
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 18
+		title.Text = "Bhop"
+		title.TextColor3 = Color3.fromRGB(245, 245, 245)
+		title.TextXAlignment = Enum.TextXAlignment.Center
+		title.Parent = bhopHandle
+
+		bhopFrame = Instance.new("Frame")
+		bhopFrame.Name = "Menu"
+		bhopFrame.AnchorPoint = Vector2.new(0, 0)
+		bhopFrame.Position = UDim2.new(1, -460, 0, 166)
+		bhopFrame.Size = UDim2.new(0, 420, 0, 360)
+		bhopFrame.BorderSizePixel = 0
+		bhopFrame.Parent = bhopGui
+		makeCorner(bhopFrame, 16)
+		makeGlass(bhopFrame)
+		makeStroke(bhopFrame, 2)
+
+		local function clampToScreen()
+			local cam = workspace.CurrentCamera
+			if not cam then return end
+			local v = cam.ViewportSize
+			local x = bhopHandle.Position.X.Offset
+			local y = bhopHandle.Position.Y.Offset
+
+			x = math.clamp(x, 10 - (v.X), v.X - bhopHandle.Size.X.Offset - 10)
+			y = math.clamp(y, 10, v.Y - bhopHandle.Size.Y.Offset - 10)
+
+			bhopHandle.Position = UDim2.new(0, x, 0, y)
+			bhopFrame.Position = UDim2.new(0, x, 0, y + bhopHandle.Size.Y.Offset + 4)
+		end
+
+		local dragOn = false
+		local dragStart = nil
+		local startPos = nil
+
+		titleBar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragOn = true
+				dragStart = input.Position
+				startPos = bhopHandle.Position
+			end
+		end)
+
+		titleBar.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragOn = false
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(input)
+			if not dragOn then return end
+			if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+			local delta = input.Position - dragStart
+
+			local newX = startPos.X.Offset + delta.X
+			local newY = startPos.Y.Offset + delta.Y
+
+			bhopHandle.Position = UDim2.new(0, newX, 0, newY)
+			bhopFrame.Position = UDim2.new(0, newX, 0, newY + bhopHandle.Size.Y.Offset + 4)
+			clampToScreen()
+		end)
+
+		local scroll = Instance.new("ScrollingFrame")
+		scroll.Name = "Scroll"
+		scroll.BackgroundTransparency = 1
+		scroll.BorderSizePixel = 0
+		scroll.Size = UDim2.new(1, 0, 1, 0)
+		scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+		scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		scroll.ScrollBarThickness = 4
+		scroll.Parent = bhopFrame
+
+		local pad = Instance.new("UIPadding")
+		pad.PaddingTop = UDim.new(0, 10)
+		pad.PaddingBottom = UDim.new(0, 12)
+		pad.PaddingLeft = UDim.new(0, 10)
+		pad.PaddingRight = UDim.new(0, 10)
+		pad.Parent = scroll
+
+		local layout = Instance.new("UIListLayout")
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 10)
+		layout.Parent = scroll
+
+		local statusRow = Instance.new("Frame")
+		statusRow.BackgroundTransparency = 1
+		statusRow.Size = UDim2.new(1, 0, 0, 44)
+		statusRow.Parent = scroll
+
+		local statusLay = Instance.new("UIListLayout")
+		statusLay.FillDirection = Enum.FillDirection.Horizontal
+		statusLay.VerticalAlignment = Enum.VerticalAlignment.Center
+		statusLay.Padding = UDim.new(0, 10)
+		statusLay.Parent = statusRow
+
+		local enableBtn = makeButton(statusRow, "Enable")
+		enableBtn.Size = UDim2.new(0, 140, 0, 40)
+
+		local disableBtn = makeButton(statusRow, "Disable")
+		disableBtn.Size = UDim2.new(0, 140, 0, 40)
+
+		bhopDebugLine = makeText(scroll, "Status: GROUNDED  |  Speed: 0.0  |  Max: 0.0", 13, true)
+		bhopDebugLine.Size = UDim2.new(1, 0, 0, 22)
+		bhopDebugLine.TextColor3 = Color3.fromRGB(220, 220, 220)
+
+		local cfgHeader = makeText(scroll, "Config", 15, true)
+		cfgHeader.Size = UDim2.new(1, 0, 0, 20)
+
+		local function makeCfgRow(labelText, key, minV, maxV, step)
+			local r = Instance.new("Frame")
+			r.BackgroundTransparency = 1
+			r.Size = UDim2.new(1, 0, 0, 44)
+			r.Parent = scroll
+
+			local l = makeText(r, labelText, 13, true)
+			l.Size = UDim2.new(0, 160, 1, 0)
+
+			local minus = makeButton(r, "-")
+			minus.Size = UDim2.new(0, 40, 0, 36)
+			minus.Position = UDim2.new(0, 170, 0, 4)
+
+			local box = makeInput(r, "")
+			box.Size = UDim2.new(0, 120, 0, 36)
+			box.Position = UDim2.new(0, 220, 0, 4)
+			box.Text = tostring(bhopConfig[key])
+
+			local plus = makeButton(r, "+")
+			plus.Size = UDim2.new(0, 40, 0, 36)
+			plus.Position = UDim2.new(0, 350, 0, 4)
+
+			local function setValue(v)
+				v = tonumber(v)
+				if not v then return end
+				v = math.clamp(v, minV, maxV)
+				if step and step > 0 then
+					v = math.floor((v / step) + 0.5) * step
+				end
+				bhopConfig[key] = v
+				box.Text = tostring(v)
+			end
+
+			minus.MouseButton1Click:Connect(function()
+				setValue((bhopConfig[key] or 0) - step)
+			end)
+			plus.MouseButton1Click:Connect(function()
+				setValue((bhopConfig[key] or 0) + step)
+			end)
+			box.FocusLost:Connect(function()
+				setValue(tonumber(box.Text))
+			end)
+		end
+
+		makeCfgRow("Ground Friction", "GROUND_FRICTION", 0, 10000, 1)
+		makeCfgRow("Ground Accel", "GROUND_ACCELERATE", 1, 10000, 1)
+		makeCfgRow("Air Accel", "AIR_ACCELERATE", 1, 100000, 1)
+		makeCfgRow("Ground Speed", "GROUND_SPEED", 1, 10000, 1)
+		makeCfgRow("Air Cap", "AIR_CAP", 0, 10000, 1)
+		makeCfgRow("Jump Power", "JUMP_POWER", 1, 10000, 1)
+		makeCfgRow("Stop Speed", "STOP_SPEED", 0, 10000, 1)
+
+		enableBtn.MouseButton1Click:Connect(function()
+			bhopSetEnabled(true)
+		end)
+		disableBtn.MouseButton1Click:Connect(function()
+			bhopSetEnabled(false)
+		end)
+
+		local function setMenuVisible(visible, instant)
+			bhopOpen = visible
+			bhopArrow.Text = visible and "˅" or "˄"
+
+			if bhopTween then
+				pcall(function() bhopTween:Cancel() end)
+				bhopTween = nil
+			end
+
+			if instant then
+				bhopFrame.Visible = visible
+				bhopFrame.BackgroundTransparency = visible and 0.18 or 1
+				return
+			end
+
+			if visible then
+				bhopFrame.Visible = true
+				bhopFrame.BackgroundTransparency = 1
+				bhopTween = tween(bhopFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					BackgroundTransparency = 0.18
+				})
+			else
+				bhopTween = tween(bhopFrame, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					BackgroundTransparency = 1
+				})
+				bhopTween.Completed:Connect(function()
+					if not bhopOpen then
+						bhopFrame.Visible = false
+					end
+				end)
+			end
+		end
+
+		bhopArrow.MouseButton1Click:Connect(function()
+			setMenuVisible(not bhopOpen, false)
+		end)
+
+		setMenuVisible(false, true)
+		clampToScreen()
+	end
+
+	bhopBtn.MouseButton1Click:Connect(function()
+		bhopBuildMenu()
+		if not bhopGui then return end
+
+		local show = not (bhopHandle and bhopHandle.Visible)
+		if bhopHandle then bhopHandle.Visible = show end
+		if bhopFrame then bhopFrame.Visible = show and bhopOpen or false end
+
+		if not show then
+			bhopSetEnabled(false)
+		end
+	end)
+
+	RunService.RenderStepped:Connect(function(dt)
+		if not bhopGui then return end
+		bhopPhysicsStep(dt)
+	end)
+
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(0.15)
+		bhopGetRefs()
+		bhopEnsureBodyVel()
+		bhopSetEnabled(false)
+	end)
 
 	----------------------------------------------------------------
 	-- VISIBILITY (sub-section inside Player tab)
@@ -3345,17 +3714,6 @@ do
 end
 
 	----------------------------------------------------------------
-	-- CAMERA TAB (unchanged, placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(cameraScroll, "Camera", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(cameraScroll, "Camera settings coming soon.\nYou'll be able to change FOV, subject, offset, and zoom limits.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 60)
-	end
-
-	----------------------------------------------------------------
 	-- LIGHTING TAB (unchanged)
 	----------------------------------------------------------------
 	do
@@ -3475,44 +3833,28 @@ end
 	end
 
 	----------------------------------------------------------------
-	-- ANTI TAB
+	-- MIC UP TAB (unchanged)
 	----------------------------------------------------------------
-	do
-		local header = makeText(antiScroll, "Anti Features", 16, true)
+	if micupScroll then
+		local header = makeText(micupScroll, "Mic up", 16, true)
 		header.Size = UDim2.new(1, 0, 0, 22)
 
-		local desc = makeText(antiScroll, "Client‑side only – they may not fully prevent server actions.", 13, false)
-		desc.Size = UDim2.new(1, 0, 0, 34)
-		desc.TextColor3 = Color3.fromRGB(210, 210, 210)
+		local msg = makeText(micupScroll,
+			"For those of you who play this game hopefully your not a P£D0 also dont be weird and enjoy this tab\n(Some Stuff Will Be Added Soon)",
+			14, false
+		)
+		msg.Size = UDim2.new(1, 0, 0, 120)
 
-		local function makeAntiToggle(label, key)
-			local row = Instance.new("Frame")
-			row.BackgroundTransparency = 1
-			row.Size = UDim2.new(1, 0, 0, 44)
-			row.Parent = antiScroll
+		local coilBtn = makeButton(micupScroll, "Better Speed Coil")
+		coilBtn.Size = UDim2.new(0, 220, 0, 40)
 
-			local btn = makeButton(row, (antiEnabled[key] and "✅ ON: " or "❌ OFF: ") .. label)
-			btn.Size = UDim2.new(0, 300, 0, 36)
-
-			btn.MouseButton1Click:Connect(function()
-				antiEnabled[key] = not antiEnabled[key]
-				btn.Text = (antiEnabled[key] and "✅ ON: " or "❌ OFF: ") .. label
-				if key == "kick" or key == "ban" then
-					-- Re-hook remotes (simplified: just notify on next attempt)
-					-- For simplicity, we won't dynamically unhook; just notify on next fire.
-				end
-				scheduleSave()
-			end)
-		end
-
-		makeAntiToggle("Anti‑Kick (notify only)", "kick")
-		makeAntiToggle("Anti‑Ban (notify only)", "ban")
-		makeAntiToggle("Anti‑Push", "push")
-		makeAntiToggle("Anti‑Fling", "fling")
-
-		local warning = makeText(antiScroll, "Anti‑Push/Fling monitor velocity and try to counteract.", 13, false)
-		warning.Size = UDim2.new(1, 0, 0, 34)
-		warning.TextColor3 = Color3.fromRGB(220, 220, 220)
+		coilBtn.MouseButton1Click:Connect(function()
+			if ownsAnyVipPass() then
+				giveBetterSpeedCoil()
+			else
+				notify("VIP Required", "You need VIP First.", 3)
+			end
+		end)
 	end
 
 	----------------------------------------------------------------
@@ -3603,178 +3945,15 @@ end
 	end
 
 	----------------------------------------------------------------
-	-- CLIENT TAB (with accent color picker)
+	-- CLIENT TAB (unchanged)
 	----------------------------------------------------------------
 	do
-		local header = makeText(clientScroll, "Client Customization", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local accentHeader = makeText(clientScroll, "Accent Color", 15, true)
-		accentHeader.Size = UDim2.new(1, 0, 0, 20)
-
-		local colorRow = Instance.new("Frame")
-		colorRow.BackgroundTransparency = 1
-		colorRow.Size = UDim2.new(1, 0, 0, 40)
-		colorRow.Parent = clientScroll
-
-		local rLabel = makeText(colorRow, "R", 13, true)
-		rLabel.Size = UDim2.new(0, 20, 1, 0)
-
-		local rBox = makeInput(colorRow, "0-255")
-		rBox.Size = UDim2.new(0, 60, 0, 30)
-		rBox.Position = UDim2.new(0, 25, 0, 5)
-		rBox.Text = tostring(math.floor(accentColor.R * 255))
-
-		local gLabel = makeText(colorRow, "G", 13, true)
-		gLabel.Position = UDim2.new(0, 100, 0, 0)
-		gLabel.Size = UDim2.new(0, 20, 1, 0)
-
-		local gBox = makeInput(colorRow, "0-255")
-		gBox.Size = UDim2.new(0, 60, 0, 30)
-		gBox.Position = UDim2.new(0, 125, 0, 5)
-		gBox.Text = tostring(math.floor(accentColor.G * 255))
-
-		local bLabel = makeText(colorRow, "B", 13, true)
-		bLabel.Position = UDim2.new(0, 200, 0, 0)
-		bLabel.Size = UDim2.new(0, 20, 1, 0)
-
-		local bBox = makeInput(colorRow, "0-255")
-		bBox.Size = UDim2.new(0, 60, 0, 30)
-		bBox.Position = UDim2.new(0, 225, 0, 5)
-		bBox.Text = tostring(math.floor(accentColor.B * 255))
-
-		local applyColor = makeButton(colorRow, "Apply")
-		applyColor.Size = UDim2.new(0, 80, 0, 30)
-		applyColor.Position = UDim2.new(0, 300, 0, 5)
-
-		applyColor.MouseButton1Click:Connect(function()
-			local r = tonumber(rBox.Text) or 0
-			local g = tonumber(gBox.Text) or 0
-			local b = tonumber(bBox.Text) or 0
-			r = math.clamp(r, 0, 255) / 255
-			g = math.clamp(g, 0, 255) / 255
-			b = math.clamp(b, 0, 255) / 255
-			accentColor = Color3.new(r, g, b)
-			updateAccentColor()
-			scheduleSave()
-		end)
+		local t = makeText(clientScroll, "Controls\n(Coming soon)", 14, true)
+		t.Size = UDim2.new(1, 0, 0, 50)
 	end
 
 	----------------------------------------------------------------
-	-- SOCIAL TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(socialScroll, "Social", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(socialScroll, "Coming soon: friend lists, status, activity feed, and more.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- FUN TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(funScroll, "Fun", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(funScroll, "Coming soon: emotes, particle effects, dance commands, and silly visuals.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- TOOLS TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(toolsScroll, "Tools", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(toolsScroll, "Coming soon: calculator, timer, notepad, and other utilities.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- STATS TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(statsScroll, "Stats", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(statsScroll, "Coming soon: playtime, animation usage, speed records, and more.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- COSMETICS TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(cosmeticsScroll, "Cosmetics", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(cosmeticsScroll, "Coming soon: outfit saving, color customization, and accessories.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- MUSIC TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(musicScroll, "Music", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(musicScroll, "Coming soon: music player, soundboard, and voice effects.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- GAMES TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(gamesScroll, "Games", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(gamesScroll, "Coming soon: mini‑games like rock paper scissors, trivia, and more.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- DEVELOPER TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(devScroll, "Developer", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(devScroll, "Coming soon: debug info, script console, and performance graphs.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- MIC UP TAB (unchanged)
-	----------------------------------------------------------------
-	if micupScroll then
-		local header = makeText(micupScroll, "Mic up", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(micupScroll,
-			"For those of you who play this game hopefully your not a P£D0 also dont be weird and enjoy this tab\n(Some Stuff Will Be Added Soon)",
-			14, false
-		)
-		msg.Size = UDim2.new(1, 0, 0, 120)
-
-		local coilBtn = makeButton(micupScroll, "Better Speed Coil")
-		coilBtn.Size = UDim2.new(0, 220, 0, 40)
-
-		coilBtn.MouseButton1Click:Connect(function()
-			if ownsAnyVipPass() then
-				giveBetterSpeedCoil()
-			else
-				notify("VIP Required", "You need VIP First.", 3)
-			end
-		end)
-	end
-
-	----------------------------------------------------------------
-	-- SINS TAB (with mini tabs)
+	-- SINS TAB (now with mini tabs + Animations)
 	----------------------------------------------------------------
 	if sinsScroll then
 		buildMiniAnimPicker(
@@ -3787,7 +3966,7 @@ end
 	end
 
 	----------------------------------------------------------------
-	-- CO/OWNERS TAB (with mini tabs)
+	-- CO/OWNERS TAB (now with mini tabs + Animations, room for more)
 	----------------------------------------------------------------
 	if coOwnersScroll then
 		buildMiniAnimPicker(
@@ -3856,33 +4035,24 @@ end
 	addTabButton("Player", 5)
 	addTabButton("Camera", 6)
 	addTabButton("Lighting", 7)
-	addTabButton("Anti", 8, 100)
-	addTabButton("Server", 9)
-	addTabButton("Client", 10)
-	addTabButton("Social", 11)
-	addTabButton("Fun", 12)
-	addTabButton("Tools", 13)
-	addTabButton("Stats", 14)
-	addTabButton("Cosmetics", 15)
-	addTabButton("Music", 16)
-	addTabButton("Games", 17)
-	addTabButton("Developer", 18, 130)
+	addTabButton("Server", 8)
+	addTabButton("Client", 9)
 
 	if sinsPage then
-		addTabButton("Sins", 19, 120)
+		addTabButton("Sins", 10, 120)
 	end
 	if coOwnersPage then
-		addTabButton("Co/Owners", 20, 140)
+		addTabButton("Co/Owners", 11, 140)
 	end
 	if micupPage then
-		addTabButton("Mic up", 21, 120)
+		addTabButton("Mic up", 12, 120)
 	end
 
 	pages["Info"].Page.Visible = true
 	setTabButtonActive(tabButtons["Info"], true)
-
 ----------------------------------------------------------------
 -- MOBILE UI SCALE (menu half size, top bar quarter size)
+-- Paste this inside createUI() right before the "Menu toggle (arrow)" section
 ----------------------------------------------------------------
 do
 	local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
@@ -4016,7 +4186,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 
 --------------------------------------------------------------------
--- RENDER LOOP (Flight + FPS + Anti features)
+-- RENDER LOOP (Flight + FPS)
 --------------------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
 	fpsAcc = fpsAcc + dt
@@ -4044,10 +4214,6 @@ RunService.RenderStepped:Connect(function(dt)
 			fpsLabel.TextColor3 = Color3.fromHSV(rainbowHue, 1, 1)
 		end
 	end
-
-	-- Anti features
-	antiPushUpdate(dt)
-	antiFlingUpdate(dt)
 
 	if not flying or not rootPart or not camera or not bodyGyro or not bodyVel then return end
 
