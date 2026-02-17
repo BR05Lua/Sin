@@ -1,7 +1,6 @@
-;
 -- SOS HUD (The Sins Of Scripting)
 -- Single LocalScript (StarterPlayerScripts recommended)
--- Includes: Anti, Camera, Client (enhanced), 8 placeholder tabs, popout calculator
+-- Includes: Anti, Camera, Client, 8 placeholder tabs, popout calculator
 -- Now with anti‑double‑load protection and no duplicate tag system load
 -- I have made this script in a way its easy to copy and edit yourself
 -- so enjoy but pls credit, if i find no credit this script goes private again enjoy it tho
@@ -297,15 +296,6 @@ local accentColor = Color3.fromRGB(200, 40, 40)  -- default red
 local disableBhop = false
 local disableCarAnim = false
 
--- New client settings
-local uiScale = 1
-local uiOpacity = 0.18
-local masterVolume = 0.5
-local fpsLimit = 60
-local performanceMode = false
-local colorblindMode = "None"
-local notificationSounds = true
-
 --------------------------------------------------------------------
 -- ANIMATION USAGE TRACKING (for green circle / star)
 --------------------------------------------------------------------
@@ -450,15 +440,6 @@ local function buildSettingsTable()
 		AccentColor = { accentColor.R, accentColor.G, accentColor.B },
 		DisableBhop = disableBhop,
 		DisableCarAnim = disableCarAnim,
-
-		-- New client settings
-		UIScale = uiScale,
-		UIOpacity = uiOpacity,
-		MasterVolume = masterVolume,
-		FPSLimit = fpsLimit,
-		PerformanceMode = performanceMode,
-		ColorblindMode = colorblindMode,
-		NotificationSounds = notificationSounds,
 	}
 end
 
@@ -525,15 +506,6 @@ local function applySettingsTable(s)
 	end
 	if typeof(s.DisableBhop) == "boolean" then disableBhop = s.DisableBhop end
 	if typeof(s.DisableCarAnim) == "boolean" then disableCarAnim = s.DisableCarAnim end
-
-	-- New client settings
-	if typeof(s.UIScale) == "number" then uiScale = math.clamp(s.UIScale, 0.5, 2) end
-	if typeof(s.UIOpacity) == "number" then uiOpacity = math.clamp(s.UIOpacity, 0.1, 0.9) end
-	if typeof(s.MasterVolume) == "number" then masterVolume = math.clamp(s.MasterVolume, 0, 1) end
-	if typeof(s.FPSLimit) == "number" then fpsLimit = math.clamp(s.FPSLimit, 15, 240) end
-	if typeof(s.PerformanceMode) == "boolean" then performanceMode = s.PerformanceMode end
-	if typeof(s.ColorblindMode) == "string" then colorblindMode = s.ColorblindMode end
-	if typeof(s.NotificationSounds) == "boolean" then notificationSounds = s.NotificationSounds end
 end
 
 local function loadSettings()
@@ -613,7 +585,6 @@ local function ensureClickSoundTemplate()
 end
 
 local function playButtonClick()
-    if not notificationSounds then return end
 	local tmpl = ensureClickSoundTemplate()
 	if not tmpl then return end
 
@@ -2622,7 +2593,8 @@ end
 -- ANIM PACKS TAB (with green circle / star usage tracking)
 ----------------------------------------------------------------
 do
-	
+	-- Cache your avatar's Animate IDs (from the actual Animate script on your character)
+	-- so "Reset" can always go back to what your avatar had, even if Roblox returns 0s.
 	local function getAvatarCache()
 		if typeof(_G) ~= "table" then return nil end
 		_G.__SOS_AvatarAnimCache = _G.__SOS_AvatarAnimCache or {}
@@ -2736,6 +2708,7 @@ do
 		return true
 	end
 
+	-- Best-effort: also try Roblox avatar description apply (this can fix cases where Animate got nuked)
 	local function resetToAvatarAnimations()
 		for k, _ in pairs(stateOverrides) do
 			stateOverrides[k] = nil
@@ -2770,6 +2743,7 @@ do
 		return false, "Could not restore avatar animations. (Animate script missing or not captured yet)"
 	end
 
+	-- Capture as soon as possible when this tab builds, and again whenever appearance loads
 	captureAvatarAnimateIds()
 	if LocalPlayer and LocalPlayer.CharacterAppearanceLoaded then
 		LocalPlayer.CharacterAppearanceLoaded:Connect(function()
@@ -3776,427 +3750,64 @@ do
         end)
     end)
 end
+	----------------------------------------------------------------
+	-- CLIENT TAB (with accent color picker)
+	----------------------------------------------------------------
+	do
+		local header = makeText(clientScroll, "Client Customization", 16, true)
+		header.Size = UDim2.new(1, 0, 0, 22)
 
---[[
-----------------------------------------------------------------
--- CLIENT TAB (fully enhanced)
-----------------------------------------------------------------
-do
-    local header = makeText(clientScroll, "Client Customization", 16, true)
-    header.Size = UDim2.new(1, 0, 0, 22)
+		local accentHeader = makeText(clientScroll, "Accent Color", 15, true)
+		accentHeader.Size = UDim2.new(1, 0, 0, 20)
 
-    local accentHeader = makeText(clientScroll, "Accent Color", 15, true)
-    accentHeader.Size = UDim2.new(1, 0, 0, 20)
+		local colorRow = Instance.new("Frame")
+		colorRow.BackgroundTransparency = 1
+		colorRow.Size = UDim2.new(1, 0, 0, 40)
+		colorRow.Parent = clientScroll
 
-    local colorRow = Instance.new("Frame")
-    colorRow.BackgroundTransparency = 1
-    colorRow.Size = UDim2.new(1, 0, 0, 40)
-    colorRow.Parent = clientScroll
+		local rLabel = makeText(colorRow, "R", 13, true)
+		rLabel.Size = UDim2.new(0, 20, 1, 0)
 
-    local rLabel = makeText(colorRow, "R", 13, true)
-    rLabel.Size = UDim2.new(0, 20, 1, 0)
+		local rBox = makeInput(colorRow, "0-255")
+		rBox.Size = UDim2.new(0, 60, 0, 30)
+		rBox.Position = UDim2.new(0, 25, 0, 5)
+		rBox.Text = tostring(math.floor(accentColor.R * 255))
 
-    local rBox = makeInput(colorRow, "0-255")
-    rBox.Size = UDim2.new(0, 60, 0, 30)
-    rBox.Position = UDim2.new(0, 25, 0, 5)
-    rBox.Text = tostring(math.floor(accentColor.R * 255))
+		local gLabel = makeText(colorRow, "G", 13, true)
+		gLabel.Position = UDim2.new(0, 100, 0, 0)
+		gLabel.Size = UDim2.new(0, 20, 1, 0)
 
-    local gLabel = makeText(colorRow, "G", 13, true)
-    gLabel.Position = UDim2.new(0, 100, 0, 0)
-    gLabel.Size = UDim2.new(0, 20, 1, 0)
+		local gBox = makeInput(colorRow, "0-255")
+		gBox.Size = UDim2.new(0, 60, 0, 30)
+		gBox.Position = UDim2.new(0, 125, 0, 5)
+		gBox.Text = tostring(math.floor(accentColor.G * 255))
 
-    local gBox = makeInput(colorRow, "0-255")
-    gBox.Size = UDim2.new(0, 60, 0, 30)
-    gBox.Position = UDim2.new(0, 125, 0, 5)
-    gBox.Text = tostring(math.floor(accentColor.G * 255))
+		local bLabel = makeText(colorRow, "B", 13, true)
+		bLabel.Position = UDim2.new(0, 200, 0, 0)
+		bLabel.Size = UDim2.new(0, 20, 1, 0)
 
-    local bLabel = makeText(colorRow, "B", 13, true)
-    bLabel.Position = UDim2.new(0, 200, 0, 0)
-    bLabel.Size = UDim2.new(0, 20, 1, 0)
+		local bBox = makeInput(colorRow, "0-255")
+		bBox.Size = UDim2.new(0, 60, 0, 30)
+		bBox.Position = UDim2.new(0, 225, 0, 5)
+		bBox.Text = tostring(math.floor(accentColor.B * 255))
 
-    local bBox = makeInput(colorRow, "0-255")
-    bBox.Size = UDim2.new(0, 60, 0, 30)
-    bBox.Position = UDim2.new(0, 225, 0, 5)
-    bBox.Text = tostring(math.floor(accentColor.B * 255))
+		local applyColor = makeButton(colorRow, "Apply")
+		applyColor.Size = UDim2.new(0, 80, 0, 30)
+		applyColor.Position = UDim2.new(0, 300, 0, 5)
 
-    local applyColor = makeButton(colorRow, "Apply")
-    applyColor.Size = UDim2.new(0, 80, 0, 30)
-    applyColor.Position = UDim2.new(0, 300, 0, 5)
-    applyColor.MouseButton1Click:Connect(function()
-        local r = tonumber(rBox.Text) or 0
-        local g = tonumber(gBox.Text) or 0
-        local b = tonumber(bBox.Text) or 0
-        r = math.clamp(r, 0, 255) / 255
-        g = math.clamp(g, 0, 255) / 255
-        b = math.clamp(b, 0, 255) / 255
-        accentColor = Color3.new(r, g, b)
-        updateAccentColor()
-        scheduleSave()
-    end)
+		applyColor.MouseButton1Click:Connect(function()
+			local r = tonumber(rBox.Text) or 0
+			local g = tonumber(gBox.Text) or 0
+			local b = tonumber(bBox.Text) or 0
+			r = math.clamp(r, 0, 255) / 255
+			g = math.clamp(g, 0, 255) / 255
+			b = math.clamp(b, 0, 255) / 255
+			accentColor = Color3.new(r, g, b)
+			updateAccentColor()
+			scheduleSave()
+		end)
+	end
 
-    local uiHeader = makeText(clientScroll, "UI Settings", 15, true)
-    uiHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local scaleRow = Instance.new("Frame")
-    scaleRow.BackgroundTransparency = 1
-    scaleRow.Size = UDim2.new(1, 0, 0, 60)
-    scaleRow.Parent = clientScroll
-
-    local scaleLabel = makeText(scaleRow, "UI Scale: " .. string.format("%.2f", uiScale), 14, true)
-    scaleLabel.Size = UDim2.new(1, 0, 0, 18)
-
-    local scaleSliderBg = Instance.new("Frame")
-    scaleSliderBg.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-    scaleSliderBg.BackgroundTransparency = 0.15
-    scaleSliderBg.BorderSizePixel = 0
-    scaleSliderBg.Position = UDim2.new(0, 0, 0, 26)
-    scaleSliderBg.Size = UDim2.new(1, 0, 0, 10)
-    scaleSliderBg.Parent = scaleRow
-    makeCorner(scaleSliderBg, 999)
-
-    local scaleSliderFill = Instance.new("Frame")
-    scaleSliderFill.Name = "SliderFill"
-    scaleSliderFill.BackgroundColor3 = accentColor
-    scaleSliderFill.BorderSizePixel = 0
-    scaleSliderFill.Size = UDim2.new(0, 0, 1, 0)
-    scaleSliderFill.Parent = scaleSliderBg
-    makeCorner(scaleSliderFill, 999)
-
-    local scaleKnob = Instance.new("Frame")
-    scaleKnob.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
-    scaleKnob.BorderSizePixel = 0
-    scaleKnob.Size = UDim2.new(0, 14, 0, 14)
-    scaleKnob.Parent = scaleSliderBg
-    makeCorner(scaleKnob, 999)
-
-    local function setScaleFromAlpha(a)
-        a = clamp01(a)
-        local newScale = 0.5 + a * 1.5
-        uiScale = newScale
-        scaleLabel.Text = "UI Scale: " .. string.format("%.2f", uiScale)
-        scaleSliderFill.Size = UDim2.new(a, 0, 1, 0)
-        scaleKnob.Position = UDim2.new(a, -7, 0.5, -7)
-        if gui then
-            gui.Scale = uiScale
-        end
-        scheduleSave()
-    end
-    setScaleFromAlpha((uiScale - 0.5) / 1.5)
-
-    local scaleDragging = false
-    scaleSliderBg.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            scaleDragging = true
-        end
-    end)
-    scaleSliderBg.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            scaleDragging = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(i)
-        if not scaleDragging then return end
-        if i.UserInputType ~= Enum.UserInputType.MouseMovement and i.UserInputType ~= Enum.UserInputType.Touch then return end
-        local a = (i.Position.X - scaleSliderBg.AbsolutePosition.X) / scaleSliderBg.AbsoluteSize.X
-        setScaleFromAlpha(a)
-    end)
-
-    local opacityRow = Instance.new("Frame")
-    opacityRow.BackgroundTransparency = 1
-    opacityRow.Size = UDim2.new(1, 0, 0, 60)
-    opacityRow.Parent = clientScroll
-
-    local opacityLabel = makeText(opacityRow, "UI Opacity: " .. string.format("%.2f", uiOpacity), 14, true)
-    opacityLabel.Size = UDim2.new(1, 0, 0, 18)
-
-    local opacitySliderBg = Instance.new("Frame")
-    opacitySliderBg.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-    opacitySliderBg.BackgroundTransparency = 0.15
-    opacitySliderBg.BorderSizePixel = 0
-    opacitySliderBg.Position = UDim2.new(0, 0, 0, 26)
-    opacitySliderBg.Size = UDim2.new(1, 0, 0, 10)
-    opacitySliderBg.Parent = opacityRow
-    makeCorner(opacitySliderBg, 999)
-
-    local opacitySliderFill = Instance.new("Frame")
-    opacitySliderFill.Name = "SliderFill"
-    opacitySliderFill.BackgroundColor3 = accentColor
-    opacitySliderFill.BorderSizePixel = 0
-    opacitySliderFill.Size = UDim2.new(0, 0, 1, 0)
-    opacitySliderFill.Parent = opacitySliderBg
-    makeCorner(opacitySliderFill, 999)
-
-    local opacityKnob = Instance.new("Frame")
-    opacityKnob.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
-    opacityKnob.BorderSizePixel = 0
-    opacityKnob.Size = UDim2.new(0, 14, 0, 14)
-    opacityKnob.Parent = opacitySliderBg
-    makeCorner(opacityKnob, 999)
-
-    local function setOpacityFromAlpha(a)
-        a = clamp01(a)
-        local newOpacity = 0.1 + a * 0.8
-        uiOpacity = newOpacity
-        opacityLabel.Text = "UI Opacity: " .. string.format("%.2f", uiOpacity)
-        opacitySliderFill.Size = UDim2.new(a, 0, 1, 0)
-        opacityKnob.Position = UDim2.new(a, -7, 0.5, -7)
-        if menuFrame then
-            menuFrame.BackgroundTransparency = uiOpacity
-        end
-        if menuHandle then
-            menuHandle.BackgroundTransparency = uiOpacity
-        end
-        scheduleSave()
-    end
-    setOpacityFromAlpha((uiOpacity - 0.1) / 0.8)
-
-    local opacityDragging = false
-    opacitySliderBg.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            opacityDragging = true
-        end
-    end)
-    opacitySliderBg.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            opacityDragging = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(i)
-        if not opacityDragging then return end
-        if i.UserInputType ~= Enum.UserInputType.MouseMovement and i.UserInputType ~= Enum.UserInputType.Touch then return end
-        local a = (i.Position.X - opacitySliderBg.AbsolutePosition.X) / opacitySliderBg.AbsoluteSize.X
-        setOpacityFromAlpha(a)
-    end)
-
-    local audioHeader = makeText(clientScroll, "Audio Settings", 15, true)
-    audioHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local volumeRow = Instance.new("Frame")
-    volumeRow.BackgroundTransparency = 1
-    volumeRow.Size = UDim2.new(1, 0, 0, 60)
-    volumeRow.Parent = clientScroll
-
-    local volumeLabel = makeText(volumeRow, "Master Volume: " .. math.floor(masterVolume * 100) .. "%", 14, true)
-    volumeLabel.Size = UDim2.new(1, 0, 0, 18)
-
-    local volumeSliderBg = Instance.new("Frame")
-    volumeSliderBg.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-    volumeSliderBg.BackgroundTransparency = 0.15
-    volumeSliderBg.BorderSizePixel = 0
-    volumeSliderBg.Position = UDim2.new(0, 0, 0, 26)
-    volumeSliderBg.Size = UDim2.new(1, 0, 0, 10)
-    volumeSliderBg.Parent = volumeRow
-    makeCorner(volumeSliderBg, 999)
-
-    local volumeSliderFill = Instance.new("Frame")
-    volumeSliderFill.Name = "SliderFill"
-    volumeSliderFill.BackgroundColor3 = accentColor
-    volumeSliderFill.BorderSizePixel = 0
-    volumeSliderFill.Size = UDim2.new(0, 0, 1, 0)
-    volumeSliderFill.Parent = volumeSliderBg
-    makeCorner(volumeSliderFill, 999)
-
-    local volumeKnob = Instance.new("Frame")
-    volumeKnob.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
-    volumeKnob.BorderSizePixel = 0
-    volumeKnob.Size = UDim2.new(0, 14, 0, 14)
-    volumeKnob.Parent = volumeSliderBg
-    makeCorner(volumeKnob, 999)
-
-    local function setVolumeFromAlpha(a)
-        a = clamp01(a)
-        masterVolume = a
-        volumeLabel.Text = "Master Volume: " .. math.floor(masterVolume * 100) .. "%"
-        volumeSliderFill.Size = UDim2.new(a, 0, 1, 0)
-        volumeKnob.Position = UDim2.new(a, -7, 0.5, -7)
-        pcall(function()
-            UserSettings():GetService("UserGameSettings").MasterVolume = masterVolume
-        end)
-        scheduleSave()
-    end
-    setVolumeFromAlpha(masterVolume)
-
-    local volumeDragging = false
-    volumeSliderBg.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            volumeDragging = true
-        end
-    end)
-    volumeSliderBg.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            volumeDragging = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(i)
-        if not volumeDragging then return end
-        if i.UserInputType ~= Enum.UserInputType.MouseMovement and i.UserInputType ~= Enum.UserInputType.Touch then return end
-        local a = (i.Position.X - volumeSliderBg.AbsolutePosition.X) / volumeSliderBg.AbsoluteSize.X
-        setVolumeFromAlpha(a)
-    end)
-
-    local performanceHeader = makeText(clientScroll, "Performance", 15, true)
-    performanceHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local fpsRow = Instance.new("Frame")
-    fpsRow.BackgroundTransparency = 1
-    fpsRow.Size = UDim2.new(1, 0, 0, 60)
-    fpsRow.Parent = clientScroll
-
-    local fpsLabel = makeText(fpsRow, "FPS Limit: " .. fpsLimit .. " FPS", 14, true)
-    fpsLabel.Size = UDim2.new(1, 0, 0, 18)
-
-    local fpsSliderBg = Instance.new("Frame")
-    fpsSliderBg.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
-    fpsSliderBg.BackgroundTransparency = 0.15
-    fpsSliderBg.BorderSizePixel = 0
-    fpsSliderBg.Position = UDim2.new(0, 0, 0, 26)
-    fpsSliderBg.Size = UDim2.new(1, 0, 0, 10)
-    fpsSliderBg.Parent = fpsRow
-    makeCorner(fpsSliderBg, 999)
-
-    local fpsSliderFill = Instance.new("Frame")
-    fpsSliderFill.Name = "SliderFill"
-    fpsSliderFill.BackgroundColor3 = accentColor
-    fpsSliderFill.BorderSizePixel = 0
-    fpsSliderFill.Size = UDim2.new(0, 0, 1, 0)
-    fpsSliderFill.Parent = fpsSliderBg
-    makeCorner(fpsSliderFill, 999)
-
-    local fpsKnob = Instance.new("Frame")
-    fpsKnob.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
-    fpsKnob.BorderSizePixel = 0
-    fpsKnob.Size = UDim2.new(0, 14, 0, 14)
-    fpsKnob.Parent = fpsSliderBg
-    makeCorner(fpsKnob, 999)
-
-    local function setFpsFromAlpha(a)
-        a = clamp01(a)
-        local newFps = 15 + a * 225
-        fpsLimit = math.floor(newFps + 0.5)
-        fpsLabel.Text = "FPS Limit: " .. fpsLimit .. " FPS"
-        fpsSliderFill.Size = UDim2.new(a, 0, 1, 0)
-        fpsKnob.Position = UDim2.new(a, -7, 0.5, -7)
-        pcall(function()
-            setfpscap and setfpscap(fpsLimit)
-        end)
-        scheduleSave()
-    end
-    setFpsFromAlpha((fpsLimit - 15) / 225)
-
-    local fpsDragging = false
-    fpsSliderBg.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            fpsDragging = true
-        end
-    end)
-    fpsSliderBg.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            fpsDragging = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(i)
-        if not fpsDragging then return end
-        if i.UserInputType ~= Enum.UserInputType.MouseMovement and i.UserInputType ~= Enum.UserInputType.Touch then return end
-        local a = (i.Position.X - fpsSliderBg.AbsolutePosition.X) / fpsSliderBg.AbsoluteSize.X
-        setFpsFromAlpha(a)
-    end)
-
-    local perfModeBtn = makeButton(clientScroll, performanceMode and "Performance Mode: ON" or "Performance Mode: OFF")
-    perfModeBtn.Size = UDim2.new(0, 250, 0, 36)
-    perfModeBtn.MouseButton1Click:Connect(function()
-        performanceMode = not performanceMode
-        perfModeBtn.Text = performanceMode and "Performance Mode: ON" or "Performance Mode: OFF"
-        scheduleSave()
-    end)
-
-    local colorblindHeader = makeText(clientScroll, "Colorblind Mode", 15, true)
-    colorblindHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local cbRow = Instance.new("Frame")
-    cbRow.BackgroundTransparency = 1
-    cbRow.Size = UDim2.new(1, 0, 0, 44)
-    cbRow.Parent = clientScroll
-
-    local function setColorblindMode(mode)
-        colorblindMode = mode
-        scheduleSave()
-    end
-
-    local cbNone = makeButton(cbRow, "None")
-    cbNone.Size = UDim2.new(0, 80, 0, 36)
-    cbNone.MouseButton1Click:Connect(function()
-        setColorblindMode("None")
-        accentColor = Color3.fromRGB(200, 40, 40)
-        updateAccentColor()
-    end)
-
-    local cbProtan = makeButton(cbRow, "Protanopia")
-    cbProtan.Size = UDim2.new(0, 100, 0, 36)
-    cbProtan.Position = UDim2.new(0, 90, 0, 0)
-    cbProtan.MouseButton1Click:Connect(function()
-        setColorblindMode("Protanopia")
-        accentColor = Color3.fromRGB(0, 102, 204)
-        updateAccentColor()
-    end)
-
-    local cbDeuteran = makeButton(cbRow, "Deuteranopia")
-    cbDeuteran.Size = UDim2.new(0, 100, 0, 36)
-    cbDeuteran.Position = UDim2.new(0, 200, 0, 0)
-    cbDeuteran.MouseButton1Click:Connect(function()
-        setColorblindMode("Deuteranopia")
-        accentColor = Color3.fromRGB(255, 192, 203)
-        updateAccentColor()
-    end)
-
-    local cbTritan = makeButton(cbRow, "Tritanopia")
-    cbTritan.Size = UDim2.new(0, 100, 0, 36)
-    cbTritan.Position = UDim2.new(0, 310, 0, 0)
-    cbTritan.MouseButton1Click:Connect(function()
-        setColorblindMode("Tritanopia")
-        accentColor = Color3.fromRGB(255, 255, 0)
-        updateAccentColor()
-    end)
-
-    local notifToggle = makeButton(clientScroll, notificationSounds and "Notification Sounds: ON" or "Notification Sounds: OFF")
-    notifToggle.Size = UDim2.new(0, 250, 0, 36)
-    notifToggle.MouseButton1Click:Connect(function()
-        notificationSounds = not notificationSounds
-        notifToggle.Text = notificationSounds and "Notification Sounds: ON" or "Notification Sounds: OFF"
-        scheduleSave()
-    end)
-
-    local resetBtn = makeButton(clientScroll, "Reset All Settings")
-    resetBtn.Size = UDim2.new(0, 200, 0, 40)
-    resetBtn.MouseButton1Click:Connect(function()
-        accentColor = Color3.fromRGB(200, 40, 40)
-        uiScale = 1
-        uiOpacity = 0.18
-        masterVolume = 0.5
-        fpsLimit = 60
-        performanceMode = false
-        colorblindMode = "None"
-        notificationSounds = true
-        updateAccentColor()
-        if gui then gui.Scale = uiScale end
-        if menuFrame then menuFrame.BackgroundTransparency = uiOpacity end
-        if menuHandle then menuHandle.BackgroundTransparency = uiOpacity end
-        pcall(function()
-            UserSettings():GetService("UserGameSettings").MasterVolume = masterVolume
-            setfpscap and setfpscap(fpsLimit)
-        end)
-        scaleLabel.Text = "UI Scale: " .. string.format("%.2f", uiScale)
-        setScaleFromAlpha((uiScale - 0.5) / 1.5)
-        setOpacityFromAlpha((uiOpacity - 0.1) / 0.8)
-        setVolumeFromAlpha(masterVolume)
-        setFpsFromAlpha((fpsLimit - 15) / 225)
-        perfModeBtn.Text = "Performance Mode: OFF"
-        notifToggle.Text = "Notification Sounds: ON"
-        scheduleSave()
-        notify("Client", "All settings reset to defaults.", 2)
-    end)
-end
-
---]]
 	----------------------------------------------------------------
 	-- SOCIAL TAB (placeholder)
 	----------------------------------------------------------------
