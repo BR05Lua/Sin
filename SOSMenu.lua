@@ -1,13 +1,18 @@
 ;
 -- SOS HUD (The Sins Of Scripting)
 -- Single LocalScript (StarterPlayerScripts recommended)
--- Update: Added mini Animations sub-tab inside Sins and Co/Owners tabs (Idle + Run only)
--- Update: Added Anti tab with client‑side anti‑kick/ban/push/fling toggles.
--- Update: Added Client tab with accent color picker.
--- Update: Added Camera tab with subject selector and reset.
--- Update: Added eight new placeholder tabs: Social, Fun, Tools, Stats, Cosmetics, Music, Games, Developer.
--- Future-proof: Added empty tables for Sins/CoOwners custom idles/runs so you can tell me later what to add where
+-- Includes: Anti, Camera, Client, 8 placeholder tabs, popout calculator
+-- Now with anti‑double‑load protection and no duplicate tag system load
+-- I have made this script in a way its easy to copy and edit yourself
+-- so enjoy but pls credit, if i find no credit this script goes private again enjoy it tho
 
+--------------------------------------------------------------------
+-- SAFEGUARD: Prevent running twice
+--------------------------------------------------------------------
+if _G.SOS_HUD_Loaded then
+	return
+end
+_G.SOS_HUD_Loaded = true
 --------------------------------------------------------------------
 -- SERVICES
 --------------------------------------------------------------------
