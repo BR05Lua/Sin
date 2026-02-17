@@ -60,6 +60,8 @@ local function safeLoad(url, name)
     return true
 end
 
+-- ===== ADD YOUR SCRIPT URLs BELOW =====
+-- Format: { name = "Display Name", url = "https://raw.link/your-script.lua", delay = 0.2 }
 local steps = {
     { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/SOSMenu.lua", delay = 0.2 },
     { name = "Tag System", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/BR05TagSystem.lua", delay = 0.1 },
