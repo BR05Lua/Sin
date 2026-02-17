@@ -3579,7 +3579,7 @@ end
 		warning.TextColor3 = Color3.fromRGB(220, 220, 220)
 	end
 
-	----------------------------------------------------------------
+----------------------------------------------------------------
 -- SERVER TAB (enhanced)
 ----------------------------------------------------------------
 do
@@ -3631,25 +3631,6 @@ do
         end)
     end)
 
-    -- Server Region (approximate based on ping/job ID pattern)
-    local regionMap = {
-        ["US"] = "Virginia",
-        ["EU"] = "London",
-        ["JP"] = "Tokyo",
-        ["AU"] = "Sydney",
-        ["BR"] = "Sao Paulo",
-        ["US-West"] = "Oregon",
-    }
-    local detectedRegion = "Unknown"
-    for pattern, name in pairs(regionMap) do
-        if game.JobId:find(pattern) then
-            detectedRegion = name
-            break
-        end
-    end
-    local regionLabel = makeText(serverScroll, "Region: " .. detectedRegion, 13, false)
-    regionLabel.Size = UDim2.new(1, 0, 0, 20)
-
     -- Private Server Link (only if in a private server)
     if game.PrivateServerId and game.PrivateServerId ~= "" then
         local psBtn = makeButton(serverScroll, "Copy Private Server Link")
@@ -3686,47 +3667,6 @@ do
         notify("Server", "Attempting to join friend...", 2)
         pcall(function()
             TeleportService:TeleportToFriend(userId)
-        end)
-    end)
-
-    -- Quick Teleport to Popular Games
-    local popularHeader = makeText(serverScroll, "Quick Teleport", 15, true)
-    popularHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local popularRow = Instance.new("Frame")
-    popularRow.BackgroundTransparency = 1
-    popularRow.Size = UDim2.new(1, 0, 0, 44)
-    popularRow.Parent = serverScroll
-
-    local hubBtn = makeButton(popularRow, "The Hub")
-    hubBtn.Size = UDim2.new(0, 100, 0, 36)
-
-    local adoptBtn = makeButton(popularRow, "Adopt Me")
-    adoptBtn.Size = UDim2.new(0, 100, 0, 36)
-    adoptBtn.Position = UDim2.new(0, 110, 0, 0)
-
-    local brookBtn = makeButton(popularRow, "Brookhaven")
-    brookBtn.Size = UDim2.new(0, 100, 0, 36)
-    brookBtn.Position = UDim2.new(0, 220, 0, 0)
-
-    hubBtn.MouseButton1Click:Connect(function()
-        notify("Server", "Teleporting to The Hub...", 2)
-        pcall(function()
-            TeleportService:Teleport(6089804452, LocalPlayer) -- The Hub place ID
-        end)
-    end)
-
-    adoptBtn.MouseButton1Click:Connect(function()
-        notify("Server", "Teleporting to Adopt Me...", 2)
-        pcall(function()
-            TeleportService:Teleport(920587237, LocalPlayer) -- Adopt Me
-        end)
-    end)
-
-    brookBtn.MouseButton1Click:Connect(function()
-        notify("Server", "Teleporting to Brookhaven...", 2)
-        pcall(function()
-            TeleportService:Teleport(4924922222, LocalPlayer) -- Brookhaven
         end)
     end)
 
