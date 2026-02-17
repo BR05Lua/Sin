@@ -6,7 +6,7 @@ if RunService:IsServer() then return end
 
 local player = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- Persistent lock (survives teleports)
+-- Prevents the loader from running twice in the same game session
 local LOADER_LOCK_NAME = "StepsLoader_Lock"
 if CoreGui:FindFirstChild(LOADER_LOCK_NAME) then
     warn("[StepsLoader] Already running")
@@ -16,12 +16,13 @@ Instance.new("BoolValue", CoreGui).Name = LOADER_LOCK_NAME
 
 local currentPlaceId = game.PlaceId
 
--- Removes any invisible junk (like a BOM) that might break the script
+-- Strips out any invisible junk (like BOM) that would break loadstring
 local function cleanLuaString(str)
     if not str or str == "" then return str end
     local start = 1
     while start <= #str do
         local b = str:byte(start)
+        -- Keep whitespace and valid Lua start characters
         if b == 32 or b == 9 or b == 10 or b == 13 then
             start = start + 1
         elseif (b >= 65 and b <= 90) or (b >= 97 and b <= 122) or b == 95 or
@@ -41,6 +42,7 @@ local function safeLoad(url, name)
         warn("[StepsLoader] Failed to fetch:", url)
         return false
     end
+    -- If the URL returns an HTML error page, skip it
     if result:sub(1, 100):match("<[Hh][Tt][Mm][Ll]") then
         warn("[StepsLoader] URL returned HTML, not Lua. Check URL:", url)
         return false
@@ -60,14 +62,14 @@ local function safeLoad(url, name)
     return true
 end
 
--- ===== ADD YOUR SCRIPT URLs BELOW =====
--- Format: { name = "Display Name", url = "https://raw.link/your-script.lua", delay = 0.2 }
+-- ===== ADD YOUR RAW GITHUB URLs BELOW =====
+-- Format: { name = "Display Name", url = "https://raw.githubusercontent.com/user/repo/branch/file.lua", delay = 0.2 }
 local steps = {
-    { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/SOSMenu.lua", delay = 0.1 },
+    { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/SOSMenu.lua", delay = 0.2 },
     { name = "Tag System", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/BR05TagSystem.lua", delay = 0.1 },
     { name = "Infinite Yield", url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", delay = 0.1 },
-    -- To add more, just copy the line above and change the name and url.
-    -- { name = "My Script", url = "https://example.com/script.lua", delay = 0.1 },
+    -- Add more scripts by copying the line above and changing the name and url
+    -- { name = "My Script", url = "https://raw.githubusercontent.com/YourUser/YourRepo/main/script.lua", delay = 0.1 },
 }
 
 local function runSteps()
@@ -80,6 +82,7 @@ end
 
 runSteps()
 
+-- Reload everything when you teleport to another game
 while true do
     task.wait(1)
     if game.PlaceId ~= currentPlaceId then
