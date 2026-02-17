@@ -31,8 +31,8 @@ local function safeLoad(url)
 end
 
 local steps = {
-    { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/SOSMenu.lua", delay = 0.2 },
-    { name = "Tag System", url = "https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/BR05TagSystem.lua", delay = 0.1 },
+    { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/SOSMenu.lua", delay = 0.2 },
+    { name = "Tag System", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/BR05TagSystem.lua", delay = 0.1 },
     { name = "Infinite Yield", url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", delay = 0.1 },
     -- if u guys wanna use this loader and make your own then remember this bellow
     -- { name = "My Script", url = "https://example.com/script.lua", delay = 0.1 },
