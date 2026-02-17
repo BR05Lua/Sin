@@ -3580,92 +3580,236 @@ end
 	end
 
 	----------------------------------------------------------------
-	-- SERVER TAB (unchanged)
-	----------------------------------------------------------------
-	do
-		local header = makeText(serverScroll, "Server", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
+-- SERVER TAB (enhanced)
+----------------------------------------------------------------
+do
+    local header = makeText(serverScroll, "Server", 16, true)
+    header.Size = UDim2.new(1, 0, 0, 22)
 
-		local controls = makeText(serverScroll, "Controls\n- Rejoin: same server\n- Server Hop: best-effort (highest players).", 14, false)
-		controls.Size = UDim2.new(1, 0, 0, 56)
+    -- Server Info Display
+    local infoFrame = Instance.new("Frame")
+    infoFrame.BackgroundTransparency = 1
+    infoFrame.Size = UDim2.new(1, 0, 0, 60)
+    infoFrame.Parent = serverScroll
 
-		local row = Instance.new("Frame")
-		row.BackgroundTransparency = 1
-		row.Size = UDim2.new(1, 0, 0, 44)
-		row.Parent = serverScroll
+    local placeIdLabel = makeText(infoFrame, "Place ID: " .. game.PlaceId, 13, false)
+    placeIdLabel.Size = UDim2.new(1, 0, 0, 18)
 
-		local lay = Instance.new("UIListLayout")
-		lay.FillDirection = Enum.FillDirection.Horizontal
-		lay.Padding = UDim.new(0, 10)
-		lay.Parent = row
+    local jobIdLabel = makeText(infoFrame, "Job ID: " .. game.JobId:sub(1, 20) .. "...", 13, false)
+    jobIdLabel.Size = UDim2.new(1, 0, 0, 18)
+    jobIdLabel.Position = UDim2.new(0, 0, 0, 20)
 
-		local rejoinBtn = makeButton(row, "Rejoin (Same Server)")
-		rejoinBtn.Size = UDim2.new(0, 230, 0, 36)
+    local playerCount = #Players:GetPlayers()
+    local playerCountLabel = makeText(infoFrame, "Players: " .. playerCount .. "/" .. (game.Players.MaxPlayers or "?"), 13, false)
+    playerCountLabel.Size = UDim2.new(1, 0, 0, 18)
+    playerCountLabel.Position = UDim2.new(0, 0, 0, 40)
 
-		local hopBtn = makeButton(row, "Server Hop")
-		hopBtn.Size = UDim2.new(0, 140, 0, 36)
+    -- Update player count every 5 seconds
+    task.spawn(function()
+        while true do
+            task.wait(5)
+            if playerCountLabel and playerCountLabel.Parent then
+                local newCount = #Players:GetPlayers()
+                playerCountLabel.Text = "Players: " .. newCount .. "/" .. (game.Players.MaxPlayers or "?")
+            end
+        end
+    end)
 
-		rejoinBtn.MouseButton1Click:Connect(function()
-			notify("Server", "Rejoining same server...", 2)
-			pcall(function()
-				TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-			end)
-		end)
+    -- Copy Server Info Button
+    local copyInfoBtn = makeButton(serverScroll, "Copy Server Info")
+    copyInfoBtn.Size = UDim2.new(0, 230, 0, 36)
+    copyInfoBtn.MouseButton1Click:Connect(function()
+        local info = string.format("Game: %s\nPlace ID: %s\nJob ID: %s\nPlayers: %d/%d", 
+            game.Name, game.PlaceId, game.JobId, #Players:GetPlayers(), game.Players.MaxPlayers)
+        pcall(function()
+            if setclipboard then
+                setclipboard(info)
+                notify("Server", "Server info copied to clipboard!", 2)
+            else
+                notify("Server", "setclipboard not supported", 2)
+            end
+        end)
+    end)
 
-		hopBtn.MouseButton1Click:Connect(function()
-			notify("Server", "Searching servers...", 2)
+    -- Server Region (approximate based on ping/job ID pattern)
+    local regionMap = {
+        ["US"] = "Virginia",
+        ["EU"] = "London",
+        ["JP"] = "Tokyo",
+        ["AU"] = "Sydney",
+        ["BR"] = "Sao Paulo",
+        ["US-West"] = "Oregon",
+    }
+    local detectedRegion = "Unknown"
+    for pattern, name in pairs(regionMap) do
+        if game.JobId:find(pattern) then
+            detectedRegion = name
+            break
+        end
+    end
+    local regionLabel = makeText(serverScroll, "Region: " .. detectedRegion, 13, false)
+    regionLabel.Size = UDim2.new(1, 0, 0, 20)
 
-			task.spawn(function()
-				local placeId = game.PlaceId
-				local cursor = ""
-				local best = nil
+    -- Private Server Link (only if in a private server)
+    if game.PrivateServerId and game.PrivateServerId ~= "" then
+        local psBtn = makeButton(serverScroll, "Copy Private Server Link")
+        psBtn.Size = UDim2.new(0, 230, 0, 36)
+        psBtn.MouseButton1Click:Connect(function()
+            local link = "https://www.roblox.com/games/" .. game.PlaceId .. "?privateServerLinkCode=" .. game.PrivateServerId
+            pcall(function()
+                if setclipboard then
+                    setclipboard(link)
+                    notify("Server", "Private server link copied!", 2)
+                end
+            end)
+        end)
+    end
 
-				for _ = 1, 3 do
-					local url = "https://games.roblox.com/v1/games/" .. tostring(placeId) .. "/servers/Public?sortOrder=Desc&limit=100"
-					if cursor ~= "" then
-						url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
-					end
+    -- Join Friend's Server (by user ID)
+    local friendRow = Instance.new("Frame")
+    friendRow.BackgroundTransparency = 1
+    friendRow.Size = UDim2.new(1, 0, 0, 44)
+    friendRow.Parent = serverScroll
 
-					local ok, res = pcall(function()
-						return HttpService:GetAsync(url)
-					end)
+    local friendInput = makeInput(friendRow, "Enter Friend User ID")
+    friendInput.Size = UDim2.new(0, 200, 0, 36)
 
-					if not ok then
-						notify("Server Hop", "HTTP failed. (HttpEnabled might be off)", 4)
-						pcall(function()
-							TeleportService:Teleport(placeId, LocalPlayer)
-						end)
-						return
-					end
+    local joinFriendBtn = makeButton(friendRow, "Join Friend")
+    joinFriendBtn.Size = UDim2.new(0, 120, 0, 36)
+    joinFriendBtn.Position = UDim2.new(0, 210, 0, 4)
+    joinFriendBtn.MouseButton1Click:Connect(function()
+        local userId = tonumber(friendInput.Text)
+        if not userId then
+            notify("Server", "Enter a valid user ID", 2)
+            return
+        end
+        notify("Server", "Attempting to join friend...", 2)
+        pcall(function()
+            TeleportService:TeleportToFriend(userId)
+        end)
+    end)
 
-					local data = HttpService:JSONDecode(res)
-					for _, srv in ipairs(data.data or {}) do
-						if srv.id and srv.id ~= game.JobId then
-							if not best or (srv.playing or 0) > (best.playing or 0) then
-								best = srv
-							end
-						end
-					end
+    -- Quick Teleport to Popular Games
+    local popularHeader = makeText(serverScroll, "Quick Teleport", 15, true)
+    popularHeader.Size = UDim2.new(1, 0, 0, 20)
 
-					cursor = data.nextPageCursor or ""
-					if cursor == "" then break end
-				end
+    local popularRow = Instance.new("Frame")
+    popularRow.BackgroundTransparency = 1
+    popularRow.Size = UDim2.new(1, 0, 0, 44)
+    popularRow.Parent = serverScroll
 
-				if best and best.id then
-					notify("Server Hop", "Teleporting...", 2)
-					pcall(function()
-						TeleportService:TeleportToPlaceInstance(placeId, best.id, LocalPlayer)
-					end)
-				else
-					notify("Server Hop", "No server found. Trying normal teleport.", 3)
-					pcall(function()
-						TeleportService:Teleport(placeId, LocalPlayer)
-					end)
-				end
-			end)
-		end)
-	end
+    local hubBtn = makeButton(popularRow, "The Hub")
+    hubBtn.Size = UDim2.new(0, 100, 0, 36)
 
+    local adoptBtn = makeButton(popularRow, "Adopt Me")
+    adoptBtn.Size = UDim2.new(0, 100, 0, 36)
+    adoptBtn.Position = UDim2.new(0, 110, 0, 0)
+
+    local brookBtn = makeButton(popularRow, "Brookhaven")
+    brookBtn.Size = UDim2.new(0, 100, 0, 36)
+    brookBtn.Position = UDim2.new(0, 220, 0, 0)
+
+    hubBtn.MouseButton1Click:Connect(function()
+        notify("Server", "Teleporting to The Hub...", 2)
+        pcall(function()
+            TeleportService:Teleport(6089804452, LocalPlayer) -- The Hub place ID
+        end)
+    end)
+
+    adoptBtn.MouseButton1Click:Connect(function()
+        notify("Server", "Teleporting to Adopt Me...", 2)
+        pcall(function()
+            TeleportService:Teleport(920587237, LocalPlayer) -- Adopt Me
+        end)
+    end)
+
+    brookBtn.MouseButton1Click:Connect(function()
+        notify("Server", "Teleporting to Brookhaven...", 2)
+        pcall(function()
+            TeleportService:Teleport(4924922222, LocalPlayer) -- Brookhaven
+        end)
+    end)
+
+    -- Original server controls
+    local controls = makeText(serverScroll, "Server Controls", 15, true)
+    controls.Size = UDim2.new(1, 0, 0, 20)
+
+    local row = Instance.new("Frame")
+    row.BackgroundTransparency = 1
+    row.Size = UDim2.new(1, 0, 0, 44)
+    row.Parent = serverScroll
+
+    local lay = Instance.new("UIListLayout")
+    lay.FillDirection = Enum.FillDirection.Horizontal
+    lay.Padding = UDim.new(0, 10)
+    lay.Parent = row
+
+    local rejoinBtn = makeButton(row, "Rejoin (Same Server)")
+    rejoinBtn.Size = UDim2.new(0, 230, 0, 36)
+
+    local hopBtn = makeButton(row, "Server Hop")
+    hopBtn.Size = UDim2.new(0, 140, 0, 36)
+
+    rejoinBtn.MouseButton1Click:Connect(function()
+        notify("Server", "Rejoining same server...", 2)
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end)
+    end)
+
+    hopBtn.MouseButton1Click:Connect(function()
+        notify("Server", "Searching servers...", 2)
+
+        task.spawn(function()
+            local placeId = game.PlaceId
+            local cursor = ""
+            local best = nil
+
+            for _ = 1, 3 do
+                local url = "https://games.roblox.com/v1/games/" .. tostring(placeId) .. "/servers/Public?sortOrder=Desc&limit=100"
+                if cursor ~= "" then
+                    url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
+                end
+
+                local ok, res = pcall(function()
+                    return HttpService:GetAsync(url)
+                end)
+
+                if not ok then
+                    notify("Server Hop", "HTTP failed. (HttpEnabled might be off)", 4)
+                    pcall(function()
+                        TeleportService:Teleport(placeId, LocalPlayer)
+                    end)
+                    return
+                end
+
+                local data = HttpService:JSONDecode(res)
+                for _, srv in ipairs(data.data or {}) do
+                    if srv.id and srv.id ~= game.JobId then
+                        if not best or (srv.playing or 0) > (best.playing or 0) then
+                            best = srv
+                        end
+                    end
+                end
+
+                cursor = data.nextPageCursor or ""
+                if cursor == "" then break end
+            end
+
+            if best and best.id then
+                notify("Server Hop", "Teleporting...", 2)
+                pcall(function()
+                    TeleportService:TeleportToPlaceInstance(placeId, best.id, LocalPlayer)
+                end)
+            else
+                notify("Server Hop", "No server found. Trying normal teleport.", 3)
+                pcall(function()
+                    TeleportService:Teleport(placeId, LocalPlayer)
+                end)
+            end
+        end)
+    end)
+end
 	----------------------------------------------------------------
 	-- CLIENT TAB (with accent color picker)
 	----------------------------------------------------------------
