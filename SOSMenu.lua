@@ -1,4 +1,3 @@
-;
 -- SOS HUD (The Sins Of Scripting)
 -- Single LocalScript (StarterPlayerScripts recommended)
 -- Includes: Anti, Camera, Client, 8 placeholder tabs, popout calculator
