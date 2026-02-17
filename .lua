@@ -1,107 +1,58 @@
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 
--- Prevent running on the server
-if RunService:IsServer() then
-    return
-end
+if RunService:IsServer() then return end
 
--- Ensure LocalPlayer is available
-local player = Players.LocalPlayer
-if not player then
-    repeat task.wait() until Players.LocalPlayer
-    player = Players.LocalPlayer
-end
-
--- Ensure PlayerGui is available
+local player = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Lock to prevent multiple loader instances
 local LOADER_LOCK_NAME = "StepsLoader_Lock"
-if playerGui:FindFirstChild(LOADER_LOCK_NAME) then
-    warn("[StepsLoader] Already running, aborting duplicate execution.")
+if CoreGui:FindFirstChild(LOADER_LOCK_NAME) then
+    warn("[StepsLoader] Already running")
     return
 end
+Instance.new("BoolValue", CoreGui).Name = LOADER_LOCK_NAME
 
-local lock = Instance.new("BoolValue")
-lock.Name = LOADER_LOCK_NAME
-lock.Value = true
-lock.Parent = playerGui
+local currentPlaceId = game.PlaceId
 
--- Prevents duplicate step execution
-local function canRunStep(stepName)
-    local markerName = "StepsLoader_Step_" .. tostring(stepName)
-    if playerGui:FindFirstChild(markerName) then
-        warn("[StepsLoader] Skipping already executed step:", stepName)
-        return false
-    end
-
-    local marker = Instance.new("BoolValue")
-    marker.Name = markerName
-    marker.Value = true
-    marker.Parent = playerGui
-    return true
-end
-
--- Safe HTTP loader function
 local function safeLoad(url)
-    local success, result = pcall(function()
-        return game:HttpGet(url)
-    end)
-    if success and type(result) == "string" and result ~= "" then
-        local f, err = loadstring(result)
-        if f then
-            local ok, execErr = pcall(f)
-            if not ok then
-                warn("[StepsLoader] Execution failed:", execErr)
-            end
+    local success, result = pcall(game.HttpGet, game, url)
+    if success and result and result ~= "" then
+        local fn, err = loadstring(result)
+        if fn then
+            pcall(fn)
         else
-            warn("[StepsLoader] Loadstring error:", err)
+            warn("[StepsLoader] Loadstring error:", err, "for:", url)
         end
     else
-        warn("[StepsLoader] Failed to fetch from:", url)
+        warn("[StepsLoader] Failed to fetch:", url)
     end
 end
 
--- Define your loading steps here
 local steps = {
-    {
-        name = "Main Menu",
-        run = function()
-            if not canRunStep("Main Menu") then return end
-            safeLoad("https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/SOSMenu.lua") -- Add your loadstring URL here
-        end,
-        delayAfter = 0.1,
-    },
-    {
-        name = "Tag System",
-        run = function()
-            if not canRunStep("Tag System") then return end
-            safeLoad("https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/BR05TagSystem.lua") -- Add your loadstring URL here
-        end,
-        delayAfter = 0.1,
-    },
-    {
-        name = "IY",
-        run = function()
-            if not canRunStep("IY") then return end
-            safeLoad("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source") -- Add your loadstring URL here
-        end,
-        delayAfter = 0.1,
-    },
+    { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/SOSMenu.lua", delay = 0.2 },
+    { name = "Tag System", url = "https://raw.githubusercontent.com/BR05Lua/.../refs/heads/main/BR05TagSystem.lua", delay = 0.1 },
+    { name = "Infinite Yield", url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", delay = 0.1 },
+    -- if u guys wanna use this loader and make your own then remember this bellow
+    -- { name = "My Script", url = "https://example.com/script.lua", delay = 0.1 },
 }
 
--- Execute each step safely
-for i, step in ipairs(steps) do
-    local ok, err = pcall(step.run)
-    if not ok then
-        warn("[StepsLoader] Failed at step:", i, step.name, err)
+local function runSteps()
+    for _, step in ipairs(steps) do
+        pcall(safeLoad, step.url)
+        if step.delay then task.wait(step.delay) end
     end
-
-    if type(step.delayAfter) == "number" and step.delayAfter > 0 then
-        task.wait(step.delayAfter)
-    end
+    print("[StepsLoader] Fully Loaded.")
 end
 
-print("[StepsLoader] Fully Loaded.")
-print("[StepsLoader] Thanks To Co Owner For Making The New Loadstring System.")
+runSteps()
+
+while true do
+    task.wait(1)
+    if game.PlaceId ~= currentPlaceId then
+        currentPlaceId = game.PlaceId
+        task.wait(2)
+        runSteps()
+    end
+end
