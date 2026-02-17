@@ -1,6 +1,7 @@
+;
 -- SOS HUD (The Sins Of Scripting)
 -- Single LocalScript (StarterPlayerScripts recommended)
--- Includes: Anti, Camera, Client, 8 placeholder tabs, popout calculator
+-- Includes: Anti, Camera, Client (enhanced), 8 placeholder tabs, popout calculator
 -- Now with anti‑double‑load protection and no duplicate tag system load
 -- I have made this script in a way its easy to copy and edit yourself
 -- so enjoy but pls credit, if i find no credit this script goes private again enjoy it tho
@@ -296,6 +297,15 @@ local accentColor = Color3.fromRGB(200, 40, 40)  -- default red
 local disableBhop = false
 local disableCarAnim = false
 
+-- New client settings
+local uiScale = 1
+local uiOpacity = 0.18
+local masterVolume = 0.5
+local fpsLimit = 60
+local performanceMode = false
+local colorblindMode = "None"
+local notificationSounds = true
+
 --------------------------------------------------------------------
 -- ANIMATION USAGE TRACKING (for green circle / star)
 --------------------------------------------------------------------
@@ -440,6 +450,15 @@ local function buildSettingsTable()
 		AccentColor = { accentColor.R, accentColor.G, accentColor.B },
 		DisableBhop = disableBhop,
 		DisableCarAnim = disableCarAnim,
+
+		-- New client settings
+		UIScale = uiScale,
+		UIOpacity = uiOpacity,
+		MasterVolume = masterVolume,
+		FPSLimit = fpsLimit,
+		PerformanceMode = performanceMode,
+		ColorblindMode = colorblindMode,
+		NotificationSounds = notificationSounds,
 	}
 end
 
@@ -506,6 +525,15 @@ local function applySettingsTable(s)
 	end
 	if typeof(s.DisableBhop) == "boolean" then disableBhop = s.DisableBhop end
 	if typeof(s.DisableCarAnim) == "boolean" then disableCarAnim = s.DisableCarAnim end
+
+	-- New client settings
+	if typeof(s.UIScale) == "number" then uiScale = math.clamp(s.UIScale, 0.5, 2) end
+	if typeof(s.UIOpacity) == "number" then uiOpacity = math.clamp(s.UIOpacity, 0.1, 0.9) end
+	if typeof(s.MasterVolume) == "number" then masterVolume = math.clamp(s.MasterVolume, 0, 1) end
+	if typeof(s.FPSLimit) == "number" then fpsLimit = math.clamp(s.FPSLimit, 15, 240) end
+	if typeof(s.PerformanceMode) == "boolean" then performanceMode = s.PerformanceMode end
+	if typeof(s.ColorblindMode) == "string" then colorblindMode = s.ColorblindMode end
+	if typeof(s.NotificationSounds) == "boolean" then notificationSounds = s.NotificationSounds end
 end
 
 local function loadSettings()
@@ -585,6 +613,7 @@ local function ensureClickSoundTemplate()
 end
 
 local function playButtonClick()
+    if not notificationSounds then return end
 	local tmpl = ensureClickSoundTemplate()
 	if not tmpl then return end
 
@@ -3747,7 +3776,8 @@ do
         end)
     end)
 end
-	----------------------------------------------------------------
+
+----------------------------------------------------------------
 -- CLIENT TAB (fully enhanced)
 ----------------------------------------------------------------
 do
@@ -4164,6 +4194,7 @@ do
         notify("Client", "All settings reset to defaults.", 2)
     end)
 end
+
 	----------------------------------------------------------------
 	-- SOCIAL TAB (placeholder)
 	----------------------------------------------------------------
