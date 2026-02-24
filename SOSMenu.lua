@@ -915,6 +915,7 @@ local AnimationPacks = {
 	Cowboy = { Idle1=1014390418, Idle2=1014398616, Walk=1014421541, Run=1014401683, Jump=1014394726, Climb=1014380606, Fall=1014384571 },
 	Patrol = { Idle1=1149612882, Idle2=1150842221, Walk=1151231493, Run=1150967949, Jump=1150944216, Climb=1148811837, Fall=1148863382 },
 	ZombieFE = { Idle1=3489171152, Idle2=3489171152, Walk=3489174223, Run=3489173414, Jump=616161997, Climb=616156119, Fall=616157476 },
+	BR05 = { Idle1=1014390418, Idle2=1014398616, Walk=1151231493, Run=656118852, Jump=707853694, Climb=1083439238, Fall=750780242 },
 }
 
 local UnreleasedNames = {
@@ -994,6 +995,26 @@ local CustomIdle = {
 	["Metal Sonic"] = 103607187680497,
 	["Douma"] = 127626736897320,
 	["Hands Behind Back"] = 140184554928517,
+	["Jesus"] = 127593596550106,
+	["There You Are"] = 93810591156861,
+	["Show Off"] = 93106139772346,
+	["Lean"] = 108102772285697,
+	["Hit it Girly"] = 73053697314762,
+	["Hisoka"] = 79917013081161,
+    ["A Catgirl "] = 127329984791672,
+	["Sassy"] = 80556333079582,
+	["Check"] = 70992821446916,
+	["Yoruichi"] = 97525414171943,
+	["Light Yagami"] = 129920388767060,
+    ["Sol's RNG 1"] = 125722696765151,
+    ["Sol's RNG 2"] = 87449122230956,
+	["Poki"] = 86556806322394,
+	["Chill"] = 72503723866423,
+	["Muzan"] = 87999364025071,
+	["Show Off 2"] = 100634313288959,
+	["Vibe"] = 99638411514722,
+	["Sleeping"] = 133650306600805,
+	["More Coming Soon..."] = 103023634822979,
 }
 
 local CustomRun = {
@@ -1033,9 +1054,7 @@ local CustomWalk = nil
 -- NEW: PRIVATE CUSTOM LISTS FOR SINS AND CO/OWNERS
 --------------------------------------------------------------------
 local SinsIdle = {
-	    ["Arms Crossed (Floating)"] = 114638285555594,
-	    ["Sol's RNG 1"] = 125722696765151,
-	    ["Sol's RNG 2"] = 87449122230956,
+	    ["Head Orbit (Head Hold V2)"] = 91751429221388,
 }
 
 local SinsRun = {
