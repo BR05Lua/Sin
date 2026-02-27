@@ -1047,6 +1047,7 @@ local CustomRun = {
 	["American Football"] = 116881956670910,
 	["Shuffle"] = 95729263172851,
 	["Fish Flop"] = 79075971527754,
+	["Griddy"] = 121966805049108,
 }
 
 local CustomWalk = nil
