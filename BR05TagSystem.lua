@@ -129,14 +129,14 @@ local TesterUserIds = {
 
 local SinProfiles = {
 	[105995794]  = { SinName = "Lettuce", ArrivalText = "! Australian Wendigo is Here !", ArrivalSoundId = "rbxassetid://76959581837478" },
-	[138975737]  = { SinName = "Music" }, ArrivalText = "! Get Ready To Hear Some Music !", ArrivalSoundId = "rbxassetid://124126843578298" },
-	[9159968275] = { SinName = "Music" }, ArrivalText = "! Get Ready To Hear Some Music !", ArrivalSoundId = "rbxassetid://124126843578298" },
-	[4659279349] = { SinName = "Trial" }, ArrivalText = "! Get Ready To Be Tested !", ArrivalSoundId = "rbxassetid://1839857908" },
-	[4495710706] = { SinName = "Games Design" }, ArrivalText = "! Imagine Designing Games... !", ArrivalSoundId = "rbxassetid://73060947430946" },
+	[138975737]  = { SinName = "Music" },
+	[9159968275] = { SinName = "Music" },
+	[4659279349] = { SinName = "Trial" },
+	[4495710706] = { SinName = "Games Design" },
 	[1575141882] = { SinName = "Heart" },
 	[118170824]  = { SinName = "Security" },
 	[7870252435] = { SinName = "Security" },
-	[3600244479] = { SinName = "PAWS" }, ArrivalText = "! Dont Tell Anyone but im here for the animtions !", ArrivalSoundId = "rbxassetid://122835165526154" },
+	[3600244479] = { SinName = "PAWS" },
 	[8956134409] = { SinName = "Cars" },
 
 	-- Optional intro overrides per Sin:
@@ -162,7 +162,7 @@ local CustomTags = {
 	[4225432791] = { TagText = "Sir Pooki The Brit" },
 	[1575141882] = { TagText = "Owner Sin of Heart" },
 	[5105522471] = { TagText = "Co-Owner Sin of Heart" },
-	[4524221232] = { TagText = "Heartless Moxxi" },
+	[4524221232] = { TagText = "Co-Owner Sin of Heart" },
 }
 
 --------------------------------------------------------------------
@@ -366,6 +366,18 @@ local TagEffectProfiles = {
 		TopTextColor = Color3.fromRGB(255, 255, 255),
 		BottomTextColor = YELLOW,
 		Effects = { "Pulse", "Scanline" },
+	},
+
+-- Moxxi (4524221232)
+	[4524221232] = {
+		Gradient1 = Color3.fromRGB(255, 0, 0),
+		Gradient2 = Color3.fromRGB(221, 0, 255),
+		Gradient3 = Color3.fromRGB(93, 0, 255),
+		SpinGradient = false,
+		ScrollGradient = true,
+		TopTextColor = Color3.fromRGB(255, 255, 255),
+		BottomTextColor = Color3.fromRGB(255, 255, 255),
+		Effects = { "Pulse", "Shimmer" },
 	},
 
 	-- CoOwner main ID (2630250935)
