@@ -295,7 +295,7 @@ local TagEffectProfiles = {
 		ScrollGradient = true,
 		TopTextColor = RED,
 		BottomTextColor = YELLOW,
-		Effects = { "Pulse", "Scanline" },
+		Effects = { "Pulse", "Shimmer" },
 	},
 
 	-- XTCY IDs
@@ -365,7 +365,19 @@ local TagEffectProfiles = {
 		ScrollGradient = true,
 		TopTextColor = Color3.fromRGB(255, 255, 255),
 		BottomTextColor = YELLOW,
-		Effects = { "Pulse", "Scanline" },
+		Effects = { "Pulse", "Shimmer" },
+	},
+
+	-- Moxxi (4524221232)
+	[4524221232] = {
+		Gradient1 = Color3.fromRGB(255, 0, 0),
+		Gradient2 = Color3.fromRGB(221, 0, 255),
+		Gradient3 = Color3.fromRGB(93, 0, 255),
+		SpinGradient = false,
+		ScrollGradient = true,
+		TopTextColor = Color3.fromRGB(255, 255, 255),
+		BottomTextColor = Color3.fromRGB(255, 255, 255),,
+		Effects = { "Pulse", "Shimmer" },
 	},
 
 	-- CoOwner main ID (2630250935)
