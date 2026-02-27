@@ -162,7 +162,7 @@ local CustomTags = {
 	[4225432791] = { TagText = "Sir Pooki The Brit" },
 	[1575141882] = { TagText = "Owner Sin of Heart" },
 	[5105522471] = { TagText = "Co-Owner Sin of Heart" },
-	[4524221232] = { TagText = "Co-Owner Sin of Heart" },
+	[4524221232] = { TagText = "Heartless Moxxi" },
 }
 
 --------------------------------------------------------------------
@@ -375,7 +375,7 @@ local TagEffectProfiles = {
 		Gradient3 = Color3.fromRGB(93, 0, 255),
 		SpinGradient = true,
 		ScrollGradient = true,
-		TopTextColor = Color3.fromRGB(255, 255, 255),
+		TopTextColor = Color3.fromRGB(93, 0, 255),
 		BottomTextColor = Color3.fromRGB(255, 255, 255),
 		Effects = { "Pulse", "Shimmer" },
 	},
