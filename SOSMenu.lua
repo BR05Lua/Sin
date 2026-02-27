@@ -1,10 +1,7 @@
 -- SOS HUD (The Sins Of Scripting)
--- Single LocalScript (StarterPlayerScripts recommended)
--- Includes: Anti, Camera, Client, 8 placeholder tabs, popout calculator
--- Now with anti‑double‑load protection and no duplicate tag system load
 -- I have made this script in a way its easy to copy and edit yourself
--- so enjoy but pls credit, if i find no credit this script goes private again enjoy it tho
-
+-- so enjoy but pls credit, if i find no credit this script goes private again 
+-- but try to enjoy it tho
 --------------------------------------------------------------------
 -- SAFEGUARD: Prevent running twice
 --------------------------------------------------------------------
@@ -35,12 +32,12 @@ local camera = workspace.CurrentCamera
 --------------------------------------------------------------------
 
 -- Social tab data
-local friendsList = {}          -- { [userId] = { name = "Name", notes = "notes" } }
-local recentPlayers = {}         -- list of userIds (max 10)
-local mutedPlayers = {}          -- { [userId] = true } for mute
-local playerVolumes = {}         -- { [userId] = volume } (0-1)
-local friendNotifications = true -- toggle for join/leave notifications
-local radarEnabled = true        -- toggle for wave radar
+local friendsList = {}          
+local recentPlayers = {}         
+local mutedPlayers = {}          
+local playerVolumes = {}         
+local friendNotifications = true 
+local radarEnabled = true        
 
 _G.SOS_BlockFlight = false
 _G.SOS_BlockFlightReason = nil
@@ -978,7 +975,7 @@ local CustomIdle = {
 	["Hmmm Float"] = 107666091494733,
 	["OG Golden Freddy"] = 138402679058341,
 	["Wally West"] = 106169111259587,
-	["L"] = 103267638009024,
+	["L Sit"] = 103267638009024,
 	["Robot Malfunction"] = 110419039625879,
 	["Spider (fast)"] = 86005347720103,
 	["Spider (Normal)"] = 113915508368392,
@@ -1014,7 +1011,10 @@ local CustomIdle = {
 	["Show Off 2"] = 100634313288959,
 	["Vibe"] = 99638411514722,
 	["Sleeping"] = 133650306600805,
-	["More Coming Soon..."] = 103023634822979,
+	["L Sit (2)"] = 81760800998808,
+	["Police (With Vest)"] = 83026903211659,
+	["Glamorous"] = 137134317750482,
+	["Lego Stud"] = 75458407888182,
 }
 
 local CustomRun = {
@@ -1041,13 +1041,35 @@ local CustomRun = {
 	["Spider"] = 89356423918695,
 	["Ballora"] = 75557142930836,
 	["Pennywise Strut"] = 79671615133463,
-	["The Zombie"] = 113076603308515,
+	["Zombie"] = 113076603308515,
 	["Moonwalk"] = 10714371274,
 	["Garou Slide"] = 107639100736436,
 	["American Football"] = 116881956670910,
 	["Shuffle"] = 95729263172851,
 	["Fish Flop"] = 79075971527754,
 	["Griddy"] = 121966805049108,
+	["Party Rocker"] = 135213895809415,
+	["Money Walk"] = 131582474288402,
+	["Catwalk"] = 73724877336003,
+	["Snoop"] = 86123328011397,
+	["Catwalk 2"] = 124308061345541,
+	["Is this Aura ?"] = 111244432669902,
+	["Lazy ?"] = 136382802509224,
+	["Weird Walk (R6) "] = 133487116712279,
+	["Catwalk 3"] = 126640550232183,
+	["Geto"] = 135751675908137,
+	["Zombie 2"] = 121570842511194,
+	["Slow Motion"] = 82920886438316,
+	["Toji"] = 104923950920332,
+	["Noli"] = 90175656540190,
+	["Style"] = 71484486831954,
+	["Crazy Stomps"] = 116462200642360,
+	["Zombie 3"] = 96819546392344,
+	["Gojo 2"] = 77984099336391,
+	["Scp"] = 88508412373927,
+	["Ride The Pony"] = 119284187579961,
+	["The Worm"] = 89593072932752,
+	["Atmosphere"] = 76771407674660,
 }
 
 local CustomWalk = nil
