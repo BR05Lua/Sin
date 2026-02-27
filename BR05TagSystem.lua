@@ -160,8 +160,8 @@ local CustomTags = {
 	[4689208231] = { TagText = "Shiroyasha" },
 	[2440542440] = { TagText = "Maze" },
 	[4225432791] = { TagText = "Sir Pooki The Brit" },
-	[1575141882] = { TagText = "Owner Sin of Heart" },
-	[5105522471] = { TagText = "Co-Owner Sin of Heart" },
+	[1575141882] = { TagText = "Owners Sin of Heart" },
+	[5105522471] = { TagText = "Co-Owners Sin of Heart" },
 	[4524221232] = { TagText = "Heartless Moxxi" },
 }
 
@@ -380,6 +380,30 @@ local TagEffectProfiles = {
 		Effects = { "Pulse", "Shimmer" },
 	},
 
+	-- Rosie (1575141882)
+	[1575141882] = {
+		Gradient1 = Color3.fromRGB(255, 0, 0),
+		Gradient2 = Color3.fromRGB(221, 0, 255),
+		Gradient3 = Color3.fromRGB(93, 0, 255),
+		SpinGradient = true,
+		ScrollGradient = true,
+		TopTextColor = Color3.fromRGB(93, 0, 255),
+		BottomTextColor = Color3.fromRGB(255, 255, 255),
+		Effects = { "Pulse", "Shimmer" },
+	},
+	
+-- Pooki (2440542440)
+	[4225432791] = {
+		Gradient1 = RED,
+		Gradient2 = WHITE,
+		Gradient3 = BLUE,
+		SpinGradient = true,
+		ScrollGradient = true,
+		TopTextColor = Color3.fromRGB(245, 178, 255),
+		BottomTextColor = YELLOW,
+		Effects = { "Scanline", "Shimmer" },
+	},
+	
 	-- CoOwner main ID (2630250935)
 	[2630250935] = {
 		Gradient1 = Color3.fromRGB(255, 255, 255),
@@ -415,18 +439,6 @@ local TagEffectProfiles = {
 		BottomTextColor = Color3.fromRGB(235, 235, 235),
 		Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" },
 		ScrollGradient = true,
-	},
-
-	-- Pooki (2440542440)
-	[4225432791] = {
-		Gradient1 = RED,
-		Gradient2 = WHITE,
-		Gradient3 = BLUE,
-		SpinGradient = true,
-		ScrollGradient = true,
-		TopTextColor = Color3.fromRGB(245, 178, 255),
-		BottomTextColor = YELLOW,
-		Effects = { "Scanline", "Shimmer" },
 	},
 	
 }
