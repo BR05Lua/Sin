@@ -380,6 +380,18 @@ local TagEffectProfiles = {
 		Effects = { "Pulse", "Shimmer" },
 	},
 
+-- Moxxi (4524221232)
+	[10099541482] = {
+		Gradient1 = Color3.fromRGB(255, 0, 0),
+		Gradient2 = Color3.fromRGB(221, 0, 255),
+		Gradient3 = Color3.fromRGB(93, 0, 255),
+		SpinGradient = true,
+		ScrollGradient = true,
+		TopTextColor = Color3.fromRGB(93, 0, 255),
+		BottomTextColor = Color3.fromRGB(255, 255, 255),
+		Effects = { "Pulse", "Shimmer" },
+	},
+	
 	-- Rosie (1575141882)
 	[1575141882] = {
 		Gradient1 = Color3.fromRGB(255, 161, 251),
