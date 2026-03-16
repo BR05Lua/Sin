@@ -60,8 +60,8 @@ local REFRESH_HOTKEY = Enum.KeyCode.RightControl
 local OWNER_ARRIVAL_TEXT = "He has Arrived"
 local OWNER_ARRIVAL_SOUND_ID = "rbxassetid://136954512002069"
 
-local COOWNER_ARRIVAL_TEXT = "Hes Behind You"
-local COOWNER_ARRIVAL_SOUND_ID = "rbxassetid://119023903778140"
+local COOWNER_ARRIVAL_TEXT = ""
+local COOWNER_ARRIVAL_SOUND_ID = ""
 
 -- Sins intro defaults
 local SIN_ARRIVAL_DEFAULT_SOUND_ID = "rbxassetid://87617059556991"
@@ -118,9 +118,7 @@ local OwnerUserIds = {
 }
 
 local CoOwners = {
-	[2630250935] = true,
-	[9253548067] = true,
-	[5348319883] = true,
+
 }
 
 local TesterUserIds = {
@@ -150,18 +148,16 @@ local OgProfiles = {
 
 -- Custom tags
 local CustomTags = {
-	[2630250935] = { TagText = "Co-Owner" },
-	[8299334811] = { TagText = "Fake Cinny" },
 	[7452991350] = { TagText = "XTCY" },
 	[9072904295] = { TagText = "XTCY" },
 	[7444930172] = { TagText = "XTCY" },
-	[754232813]  = { TagText = "Ghoul" },
+	[754232813] = { TagText = "Ghoul" },
 	[9243834086] = { TagText = "Audio Sam" },
 	[4689208231] = { TagText = "Shiroyasha" },
 	[2440542440] = { TagText = "Maze" },
 	[4225432791] = { TagText = "Sir Pooki The Brit" },
 	[1575141882] = { TagText = "Owners Sin of Heart" },
-	[5105522471] = { TagText = "Co-Owners Sin of Heart" },
+	[5105522471] = { TagText = "The Sin of Bee" },
 	[4524221232] = { TagText = "Heartless Moxxi" },
 }
 
@@ -416,17 +412,6 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 	
-	-- CoOwner main ID (2630250935)
-	[2630250935] = {
-		Gradient1 = Color3.fromRGB(255, 255, 255),
-		Gradient2 = Color3.fromRGB(125, 216, 215),
-		Gradient3 = BLACK,
-		SpinGradient = true,
-		ScrollGradient = true,
-		TopTextColor = YELLOW,
-		BottomTextColor = YELLOW,
-		Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "Scanline", "Shimmer" },
-	},
 
 	-- Owners explicit
 	[433636433] = {
@@ -464,13 +449,6 @@ local RoleEffectPresets = {
 		Effects = { "OwnerGlitchBackdrop", "OwnerGlitchText", "RgbOutline", "Scanline", "Shimmer" },
 		TopTextColor = YELLOW,
 		BottomTextColor = Color3.fromRGB(235, 235, 235),
-		ScrollGradient = true,
-	},
-	CoOwner = {
-		Preset = "WHITE_SOLID",
-		Effects = { "Scanline", "Shimmer" },
-		TopTextColor = Color3.fromRGB(20, 20, 22),
-		BottomTextColor = Color3.fromRGB(20, 20, 22),
 		ScrollGradient = true,
 	},
 	Sin = {
@@ -558,7 +536,7 @@ local refreshBtn
 local refreshTip
 local refreshTipConn
 
-local ownerPresenceAnnounced = false
+local ownerPresenceAnnounced = true
 local coOwnerPresenceAnnounced = false
 
 local FxConnByUserId = {}
