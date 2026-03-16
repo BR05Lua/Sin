@@ -45,7 +45,7 @@ local INIT_DELAY = 0.9
 
 -- Tag sizing
 local TAG_W, TAG_H = 144, 36
-local TAG_OFFSET_Y = 3
+local TAG_OFFSET_Y = 4
 
 local ORB_SIZE = 18
 local ORB_OFFSET_Y = 6.2
