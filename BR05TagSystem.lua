@@ -1,9 +1,6 @@
--- SOS TAGS Standalone LocalScript
--- Put in StarterPlayerScripts
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
--- If this is UI/tag stuff, it should be client-only
 if RunService:IsServer() then
     return
 end
@@ -13,15 +10,12 @@ if not player then
     return
 end
 
--- Hard "init once" lock that survives duplicate loads
 local LOCK_ATTR = "SOS_TagSystem_Initialized"
 if player:GetAttribute(LOCK_ATTR) then
     return
 end
 player:SetAttribute(LOCK_ATTR, true)
---------------------------------------------------------------------
--- SERVICES
---------------------------------------------------------------------
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,9 +26,6 @@ local MarketplaceService = game:GetService("MarketplaceService")
 
 local LocalPlayer = Players.LocalPlayer
 
---------------------------------------------------------------------
--- CONFIG
---------------------------------------------------------------------
 local SOS_ACTIVATE_MARKER = "𖺗"
 local SOS_REPLY_MARKER = "¬"
 
@@ -43,38 +34,28 @@ local AK_MARKER_2 = "؍"
 
 local INIT_DELAY = 0.9
 
--- Tag sizing
 local TAG_W, TAG_H = 144, 36
 local TAG_OFFSET_Y = 4
 
 local ORB_SIZE = 18
 local ORB_OFFSET_Y = 6.2
 
--- Refresh button settings
 local REFRESH_EVENT_NAME = "event_modify_refresh"
 local REFRESH_HOTKEY = Enum.KeyCode.RightControl
 
---------------------------------------------------------------------
--- ARRIVAL FX + POPUPS
---------------------------------------------------------------------
 local OWNER_ARRIVAL_TEXT = "He has Arrived"
 local OWNER_ARRIVAL_SOUND_ID = "rbxassetid://136954512002069"
 
 local COOWNER_ARRIVAL_TEXT = ""
 local COOWNER_ARRIVAL_SOUND_ID = ""
 
--- Sins intro defaults
 local SIN_ARRIVAL_DEFAULT_SOUND_ID = "rbxassetid://87617059556991"
 
--- Intro sound volume tuning
 local INTRO_VOLUME_MULT = 0.30
 
--- SOS activation join ping
 local SOS_JOIN_PING_SOUND_ID = "rbxassetid://5773338685"
 local SOS_JOIN_PING_VOLUME = 0.10
 
--- Optional per user intros (text popup, glitchy)
--- CustomUserIntros[UserId] = { Text = "Hello", SoundId = "rbxassetid://123", TextColor = Color3.fromRGB(255,255,255) }
 local CustomUserIntros = {
 	[7452991350] = {
 		Text = "XTCY Has Been Summoned.",
@@ -94,9 +75,6 @@ local CustomUserIntros = {
 
 }
 
---------------------------------------------------------------------
--- ROLES DATA
---------------------------------------------------------------------
 local ROLE_COLOR = {
 	Normal = Color3.fromRGB(120, 190, 235),
 	Owner  = Color3.fromRGB(255, 255, 80),
@@ -122,7 +100,7 @@ local CoOwners = {
 }
 
 local TesterUserIds = {
-	-- leave blank
+
 }
 
 local SinProfiles = {
@@ -137,16 +115,12 @@ local SinProfiles = {
 	[3600244479] = { SinName = "PAWS" },
 	[8956134409] = { SinName = "Cars" },
 
-	-- Optional intro overrides per Sin:
-	-- [123] = { SinName = "Chaos", ArrivalText = "Chaos Walks In", ArrivalSoundId = "rbxassetid://123" },
 }
 
--- Can be: true OR { OgName = "Something", Color = Color3.fromRGB(...) }
 local OgProfiles = {
 
 }
 
--- Custom tags
 local CustomTags = {
 	[7452991350] = { TagText = "XTCY" },
 	[9072904295] = { TagText = "XTCY" },
@@ -161,9 +135,6 @@ local CustomTags = {
 	[4524221232] = { TagText = "Heartless Moxxi" },
 }
 
---------------------------------------------------------------------
--- SPECIAL FX (Owner and CoOwner trails/light/glitch aura)
---------------------------------------------------------------------
 local FX_FOLDER_NAME = "SOS_SpecialFX"
 
 local CMD_OWNER_ON = "Owner_on"
@@ -177,10 +148,6 @@ local CMD_COOWNER_COLOR_PREFIX = "CoOwner_color:"
 local CMD_OWNER_FX_PREFIX = "Owner_fx:"
 local CMD_COOWNER_FX_PREFIX = "CoOwner_fx:"
 
---------------------------------------------------------------------
--- TAG PRESETS (EASY NAMES)
--- Use: TagEffectProfiles[UserId] = { Preset = "RED_SCROLL" }
---------------------------------------------------------------------
 local TagPresets = {}
 
 local function addPreset(name, t)
@@ -263,9 +230,6 @@ do
 	end
 end
 
---------------------------------------------------------------------
--- TAG EFFECT PROFILES (DEDUPED + CONSISTENT IDS)
---------------------------------------------------------------------
 local YELLOW = Color3.fromRGB(255, 255, 0)
 local LIGHT_BLUE = Color3.fromRGB(120, 190, 235)
 
@@ -282,7 +246,6 @@ local BLACK = Color3.fromRGB(0, 0, 0)
 
 local TagEffectProfiles = {
 	
-	-- Ghoul (754232813)
 	[754232813] = {
 		Gradient1 = Color3.fromRGB(140, 0, 255),
 		Gradient2 = Color3.fromRGB(255, 255, 255),
@@ -294,7 +257,6 @@ local TagEffectProfiles = {
 		Effects = { "Pulse", "Scanline" },
 	},
 
-	-- XTCY IDs
 	[7452991350] = {
 		Gradient1 = Color3.fromRGB(255, 0, 0),
 		Gradient2 = Color3.fromRGB(255, 0, 0),
@@ -328,7 +290,6 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 
-	-- Audio Sam (9243834086)
 	[9243834086] = {
 		Gradient1 = SAM_BLUE,
 		Gradient2 = SAM_PURPLE,
@@ -340,7 +301,6 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 
-	-- Maze (2440542440)
 	[2440542440] = {
 		Gradient1 = AMBER,
 		Gradient2 = BLACK,
@@ -352,7 +312,6 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 
-	-- Shiroyasha (4689208231)
 	[4689208231] = {
 		Gradient1 = Color3.fromRGB(255, 255, 255),
 		Gradient2 = Color3.fromRGB(0, 0, 0),
@@ -364,7 +323,6 @@ local TagEffectProfiles = {
 		Effects = { "Pulse", "Scanline" },
 	},
 
--- Moxxi (4524221232)
 	[4524221232] = {
 		Gradient1 = Color3.fromRGB(255, 0, 0),
 		Gradient2 = Color3.fromRGB(221, 0, 255),
@@ -376,7 +334,6 @@ local TagEffectProfiles = {
 		Effects = { "Pulse", "Shimmer" },
 	},
 
--- Moxxi (4524221232)
 	[10099541482] = {
 		Gradient1 = Color3.fromRGB(255, 0, 0),
 		Gradient2 = Color3.fromRGB(221, 0, 255),
@@ -388,7 +345,6 @@ local TagEffectProfiles = {
 		Effects = { "Pulse", "Shimmer" },
 	},
 	
-	-- Rosie (1575141882)
 	[1575141882] = {
 		Gradient1 = Color3.fromRGB(255, 161, 251),
 		Gradient2 = Color3.fromRGB(255, 0, 212),
@@ -400,7 +356,6 @@ local TagEffectProfiles = {
 		Effects = { "OwnerGlitchBackdrop", "Pulse", "Shimmer" },
 	},
 	
--- Pooki (2440542440)
 	[4225432791] = {
 		Gradient1 = RED,
 		Gradient2 = WHITE,
@@ -412,8 +367,6 @@ local TagEffectProfiles = {
 		Effects = { "Scanline", "Shimmer" },
 	},
 	
-
-	-- Owners explicit
 	[433636433] = {
 		Preset = "BLACK_SOLID",
 		TopTextColor = YELLOW,
@@ -440,9 +393,6 @@ local TagEffectProfiles = {
 	
 }
 
---------------------------------------------------------------------
--- ROLE DEFAULTS
---------------------------------------------------------------------
 local RoleEffectPresets = {
 	Owner = {
 		Preset = "BLACK_SOLID",
@@ -484,9 +434,6 @@ local RoleEffectPresets = {
 	},
 }
 
---------------------------------------------------------------------
--- STATE
---------------------------------------------------------------------
 local SosUsers = {}
 local AkUsers = {}
 
@@ -510,7 +457,6 @@ local FxMode = {
 
 local gui
 
--- Stats popup (expanded)
 local statsPopup
 local statsPopupLabel
 local statsUserIdBox
@@ -525,7 +471,6 @@ local sfxPanel
 local sfxOnBtn
 local sfxOffBtn
 
--- Owner/CoOwner dropdown menu that opens DOWN into the square area
 local trailPanel
 local trailToggleBtn
 local trailContent
@@ -547,13 +492,9 @@ local CustomIntroShown = {}
 
 local JoinPopupByUserId = {}
 
--- Avatar worth cache
 local AvatarWorthCache = {}
 local AvatarWorthInFlight = {}
 
---------------------------------------------------------------------
--- UI HELPERS
---------------------------------------------------------------------
 local function makeCorner(parent, r)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, r or 12)
@@ -639,9 +580,6 @@ local function canSeeTrailMenu()
 	return isOwner(LocalPlayer) or isCoOwner(LocalPlayer)
 end
 
---------------------------------------------------------------------
--- CHAT SEND
---------------------------------------------------------------------
 local function trySendChat(text)
 	do
 		local ok, sent = pcall(function()
@@ -679,9 +617,6 @@ local function trySendChat(text)
 	return false
 end
 
---------------------------------------------------------------------
--- AVATAR WORTH HELPERS (CACHED)
---------------------------------------------------------------------
 local function parseAssetIdList(strValue, out)
 	if type(strValue) ~= "string" or strValue == "" then return end
 	for token in string.gmatch(strValue, "[^,]+") do
@@ -778,9 +713,6 @@ local function getAvatarWorthRobux(userId)
 	return AvatarWorthCache[userId]
 end
 
---------------------------------------------------------------------
--- REFRESH EVENT + BUTTON (TOP RIGHT ABOVE PLAYERLIST)
---------------------------------------------------------------------
 local function findRefreshEvent()
 	local inst = ReplicatedStorage:FindFirstChild(REFRESH_EVENT_NAME)
 	if inst then return inst end
@@ -932,9 +864,6 @@ local function ensureRefreshButton()
 	end)
 end
 
---------------------------------------------------------------------
--- BROADCAST UI (BOTTOM LEFT)
---------------------------------------------------------------------
 local function ensureBroadcastPanel()
 	ensureGui()
 
@@ -980,9 +909,6 @@ local function ensureBroadcastPanel()
 	broadcastAK.Size = UDim2.new(0, 100, 0, 32)
 end
 
---------------------------------------------------------------------
--- SFX PANEL (OWNER OR COOWNER) (ABOVE BROADCAST)
---------------------------------------------------------------------
 local function ensureSfxPanel()
 	ensureGui()
 
@@ -1045,10 +971,6 @@ local function ensureSfxPanel()
 	end)
 end
 
---------------------------------------------------------------------
--- OWNER/COOWNER MENU (OPENS DOWN INTO THE SQUARE AREA)
--- Includes SOS and AK buttons inside it
---------------------------------------------------------------------
 local function makeColorChip(parent, label, color3, onClick)
 	local b = Instance.new("TextButton")
 	b.Name = "Chip_" .. label
@@ -1339,9 +1261,6 @@ local function ensureTrailMenu()
 	setOpen(true)
 end
 
---------------------------------------------------------------------
--- STATS POPUP (RIGHT CLICK OPENS, COPYABLE USERID, AVATAR WORTH)
---------------------------------------------------------------------
 local function ensureStatsPopup()
 	ensureGui()
 	if statsPopup and statsPopup.Parent then return end
@@ -1460,17 +1379,12 @@ local function ensureStatsPopup()
 	end)
 end
 
---------------------------------------------------------------------
--- TAG HELPERS
---------------------------------------------------------------------
 local function destroyTagGui(char, name)
 	if not char then return end
 	local old = char:FindFirstChild(name)
 	if old then old:Destroy() end
 end
---------------------------------------------------------------------
--- AU FLAG TAG (CLIENT SIDE)
---------------------------------------------------------------------
+
 local AU_FLAG_USER_ID = 105995794
 local AU_TAG_NAME = "SOS_AUFlagTag"
 
@@ -1529,9 +1443,6 @@ local function applyAuFlagTag(plr)
 	txt.Parent = bg
 end
 
---------------------------------------------------------------------
--- ROLE RESOLUTION
---------------------------------------------------------------------
 local function getSosRole(plr)
 	if not plr then return nil end
 
@@ -1620,9 +1531,6 @@ local function getTopLine(plr, role)
 	return "SOS User"
 end
 
---------------------------------------------------------------------
--- CLICK ACTIONS
---------------------------------------------------------------------
 local function teleportToPlayer(plr)
 	if not plr or plr == LocalPlayer then return end
 
@@ -1696,10 +1604,6 @@ local function showPlayerStats(plr)
 	end)
 end
 
--- Invisible click catcher overlay
--- Left click teleports
--- Right click opens stats
--- Ctrl click also opens stats as a fallback
 local function makeTagButtonCommon(visualButton, plr)
 	if not visualButton then return end
 
@@ -1742,9 +1646,6 @@ local function makeTagButtonCommon(visualButton, plr)
 	end)
 end
 
---------------------------------------------------------------------
--- TAG VISUAL HELPERS
---------------------------------------------------------------------
 local function startRgbOutline(stroke)
 	if not stroke then return end
 	task.spawn(function()
@@ -1841,9 +1742,6 @@ local function addSinWavyLook(parentBtn)
 	end)
 end
 
---------------------------------------------------------------------
--- TAG FX SYSTEM
---------------------------------------------------------------------
 local function disconnectTagFxConn(userId)
 	local c = TagFxConnByUserId[userId]
 	if c then
@@ -2066,9 +1964,6 @@ local function applyTagEffects(plr, role, btn, baseGrad, stroke, topLabel, botto
 	TagFxConnByUserId[plr.UserId] = conn
 end
 
---------------------------------------------------------------------
--- SPECIAL FX CORE
---------------------------------------------------------------------
 local function disconnectFxConn(userId)
 	local c = FxConnByUserId[userId]
 	if c then
@@ -2268,9 +2163,6 @@ local function ensureSpecialFx(plr)
 	FxConnByUserId[plr.UserId] = conn
 end
 
---------------------------------------------------------------------
--- ARRIVAL INTROS AND JOIN POPUP
---------------------------------------------------------------------
 local function playArrivalSound(parentGui, soundId, volume)
 	if not soundId or soundId == "" then return end
 	local s = Instance.new("Sound")
@@ -2538,9 +2430,6 @@ local function reconcilePresence()
 	end
 end
 
---------------------------------------------------------------------
--- TAGS
---------------------------------------------------------------------
 local function createSosRoleTag(plr)
 	if not plr then return end
 	local char = plr.Character
@@ -2698,12 +2587,8 @@ local function hookPlayer(plr)
 	end
 end
 
---------------------------------------------------------------------
--- SOS AND AK UPDATES
---------------------------------------------------------------------
 local function textHasAk(text)
 	if type(text) ~= "string" then return false end
-	-- Tightened a bit to reduce random triggers
 	if text == AK_MARKER_1 or text == AK_MARKER_2 then return true end
 	if text:sub(1, #AK_MARKER_1) == AK_MARKER_1 then return true end
 	return false
@@ -2730,9 +2615,6 @@ local function onAkSeen(userId)
 	if plr then refreshAllTagsForPlayer(plr) end
 end
 
---------------------------------------------------------------------
--- COMMANDS (OWNER COOWNER ONLY)
---------------------------------------------------------------------
 local function applyCommandFrom(uid, text)
 	local plr = Players:GetPlayerByUserId(uid)
 
@@ -2805,9 +2687,6 @@ local function applyCommandFrom(uid, text)
 	return false
 end
 
---------------------------------------------------------------------
--- CHAT HANDLING
---------------------------------------------------------------------
 local function maybeReplyToActivation(uid)
 	if typeof(uid) ~= "number" then return end
 	if uid == LocalPlayer.UserId then return end
@@ -2877,9 +2756,26 @@ local function hookChatListeners()
 	Players.PlayerAdded:Connect(hookChatted)
 end
 
---------------------------------------------------------------------
--- INIT
---------------------------------------------------------------------
+-- === CHAT FILTER (makes SOS markers invisible) ===
+do
+    if TextChatService and not TextChatService:FindFirstChild("SOS_FilterInstalled") then
+        local marker1 = SOS_ACTIVATE_MARKER
+        local marker2 = SOS_REPLY_MARKER
+        TextChatService.OnIncomingMessage = function(message)
+            local text = message.Text or ""
+            if text == marker1 or text == marker2 then
+                local props = Instance.new("TextChatMessageProperties")
+                props.Text = " "
+                return props
+            end
+        end
+        local f = Instance.new("BoolValue")
+        f.Name = "SOS_FilterInstalled"
+        f.Parent = TextChatService
+    end
+end
+-- ===================================================
+
 local function init()
 	print("SOS init ran")
 
@@ -2949,18 +2845,11 @@ local function init()
 		warn("Refresh event not found: " .. REFRESH_EVENT_NAME)
 	end
 
-	-- If this breaks, blame the gremlins in the Roblox scheduler.
-	-- Also yes, the tag system is basically a tiny UI game of whack a mole.
 	print("SOS Tags loaded. Menu opens down into the square. Right click tags for stats.")
 end
 
 task.delay(INIT_DELAY, init)
 
-
---------------------------------------------------------------------
--- VCB TIMER PATCH (PASTE THIS AT THE VERY END OF YOUR SCRIPT)
--- Adds VCB button left of Refresh + timer pill + dropdown menu
---------------------------------------------------------------------
 do
 	local TeleportService = game:GetService("TeleportService")
 
@@ -3470,7 +3359,6 @@ do
 	task.spawn(function()
 		ensureVcbUi()
 
-		-- If this ever breaks, it's probably Roblox doing that thing where it "helpfully" changes UI sizing.
 		LocalPlayer.Chatted:Connect(function(msg)
 			tryChatTriggerVCB(msg)
 		end)
@@ -3509,13 +3397,7 @@ do
 		end)
 	end)
 end
---------------------------------------------------------------------
--- OWNER AND COOWNER ADMIN MENU PATCH (PASTE BELOW YOUR TAG SCRIPT)
--- Works with your existing SOS tag system (uses SOS_RoleTag and trySendChat)
--- No special extra mini menu, only Owner and CoOwner get the admin panel.
---------------------------------------------------------------------
 do
-	-- Client only
 	if RunService and RunService:IsServer() then
 		return
 	end
@@ -3528,25 +3410,17 @@ do
 		LocalPlayer:SetAttribute(LOCK_ATTR, true)
 	end
 
-	-- Opt in markers (targets type one of these ALONE once)
 	local MARK_ACTIVATE = "𖺗"
 	local MARK_REPLY = "¬"
 
-	-- Victim reply lines
 	local REPLY_PUSH = "ahh"
 	local REPLY_PULL = "ahhh"
 	local REPLY_FROZEN = "im frozen"
 	local REPLY_STOP = "thank you"
 
-	-- Clamp rules
 	local PUSH_MIN, PUSH_MAX = 1, 100
 	local PULL_MIN, PULL_MAX = 1, 50
 
-	-- If this breaks, I'm blaming Roblox physics again. Completely innocent, obviously.
-
-	----------------------------------------------------------------
-	-- Fallbacks in case any helpers are missing
-	----------------------------------------------------------------
 	local function _trim(s)
 		return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 	end
@@ -3699,9 +3573,6 @@ do
 		return false
 	end
 
-	----------------------------------------------------------------
-	-- SOS role tag reader (uses BillboardGui SOS_RoleTag)
-	----------------------------------------------------------------
 	local function getSosBillboard(plr)
 		if not plr or not plr.Character then return nil end
 		return plr.Character:FindFirstChild("SOS_RoleTag")
@@ -3752,7 +3623,6 @@ do
 	end
 
 	local function getRole(plr)
-		-- Prefer your real ownership lists, because your coowner tag sometimes says "Co-Owner"
 		if _isOwner(plr) then return "Owner" end
 		if _isCoOwner(plr) then return "CoOwner" end
 		return roleFromTopLine(getTopLineFromBillboard(plr))
@@ -3766,9 +3636,6 @@ do
 		return _isOwner(plr) or _isCoOwner(plr)
 	end
 
-	----------------------------------------------------------------
-	-- Opt in tracking
-	----------------------------------------------------------------
 	local ExplicitMarked = {}
 	local function markExplicit(userId)
 		if typeof(userId) ~= "number" then return end
@@ -3778,9 +3645,6 @@ do
 		return ExplicitMarked[userId] == true
 	end
 
-	----------------------------------------------------------------
-	-- Dedupe to avoid double fire from 2 chat systems
-	----------------------------------------------------------------
 	local RecentMsg = {}
 	local function seenRecently(uid, text, window)
 		window = window or 0.35
@@ -3792,9 +3656,6 @@ do
 		return false
 	end
 
-	----------------------------------------------------------------
-	-- Eligibility
-	----------------------------------------------------------------
 	local function canSenderAffectTarget(senderPlr, targetPlr)
 		if not senderPlr or not targetPlr then return false end
 		if senderPlr.UserId == targetPlr.UserId then return false end
@@ -3810,9 +3671,6 @@ do
 		return true
 	end
 
-	----------------------------------------------------------------
-	-- Victim side: pull, push, freeze
-	----------------------------------------------------------------
 	local orbitState = {
 		active = false,
 		adminUserId = 0,
@@ -4095,9 +3953,6 @@ do
 		end)
 	end
 
-	----------------------------------------------------------------
-	-- Admin phrases parser
-	----------------------------------------------------------------
 	local function findPlayerByNameLoose(name)
 		name = _trim(name)
 		if name == "" then return nil end
@@ -4182,16 +4037,12 @@ do
 		return nil
 	end
 
-	----------------------------------------------------------------
-	-- Command receiver (victim side)
-	----------------------------------------------------------------
 	local function handleAdminCommand(senderUserId, text)
 		if typeof(senderUserId) ~= "number" then return end
 		if type(text) ~= "string" then return end
 
 		local clean = _trim(text)
 
-		-- Opt in markers, must be typed alone
 		if clean == MARK_ACTIVATE or clean == MARK_REPLY then
 			markExplicit(senderUserId)
 			return
@@ -4222,7 +4073,6 @@ do
 			return
 		end
 
-		-- Target gating
 		if not isEligibleTargetFrom(sender, LocalPlayer) then
 			return
 		end
@@ -4259,9 +4109,6 @@ do
 		end
 	end
 
-	----------------------------------------------------------------
-	-- Hook chat listeners (parallel with your tag script)
-	----------------------------------------------------------------
 	local function hookChatted(plr)
 		if not plr then return end
 		pcall(function()
@@ -4286,9 +4133,6 @@ do
 		end)
 	end
 
-	----------------------------------------------------------------
-	-- Admin UI (owner/coowner only)
-	----------------------------------------------------------------
 	local function canShowAdminPanel()
 		return LocalPlayer and ( _isOwner(LocalPlayer) or _isCoOwner(LocalPlayer) )
 	end
@@ -4752,9 +4596,6 @@ do
 		task.defer(refreshList)
 	end
 
-	----------------------------------------------------------------
-	-- Auto show panel once your tag system has tagged you as Owner or CoOwner
-	----------------------------------------------------------------
 	task.spawn(function()
 		local tries = 0
 		while tries < 120 do
