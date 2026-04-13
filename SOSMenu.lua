@@ -891,7 +891,6 @@ end
 -- ANIMATION PACK LIST (Roblox Anims / Unreleased)
 --------------------------------------------------------------------
 local AnimationPacks = {
-local AnimationPacks = {
 	Vampire = { Idle1=1083445855, Idle2=1083450166, Walk=1083473930, Run=1083462077, Jump=1083455352, Climb=1083439238, Fall=1083443587 },
 	Hero = { Idle1=616111295, Idle2=616113536, Walk=616122287, Run=616117076, Jump=616115533, Climb=616104706, Fall=616108001 },
 	ZombieClassic = { Idle1=616158929, Idle2=616160636, Walk=616168032, Run=616163682, Jump=616161997, Climb=616156119, Fall=616157476 },
