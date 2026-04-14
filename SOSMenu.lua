@@ -2663,7 +2663,7 @@ end
 	end
 
 ----------------------------------------------------------------
--- ANIM PACKS TAB (with green circle / star usage tracking)
+-- ANIM PACKS TAB (with search bar + global search) - FIXED LIVE UPDATE
 ----------------------------------------------------------------
 do
 	-- Cache your avatar's Animate IDs (from the actual Animate script on your character)
@@ -2868,6 +2868,13 @@ do
 	help.Size = UDim2.new(1, 0, 0, 34)
 	help.TextColor3 = Color3.fromRGB(210, 210, 210)
 
+	-- SEARCH BAR
+	local searchBox = makeInput(animScroll, "Search animations... (global)")
+	searchBox.Size = UDim2.new(1, 0, 0, 36)
+	searchBox.ClearTextOnFocus = false
+	searchBox.Text = ""
+	local searchText = ""
+
 	local animStateBar = Instance.new("ScrollingFrame")
 	animStateBar.BackgroundTransparency = 1
 	animStateBar.BorderSizePixel = 0
@@ -2971,7 +2978,159 @@ do
 		return prefix .. baseName
 	end
 
-	local function rebuildPackList()
+	local function matchesSearch(name)
+		if searchText == "" then return true end
+		return name:lower():find(searchText, 1, true) ~= nil
+	end
+
+	-- Build a button for any animation entry
+	local function createAnimButton(parent, displayName, animId, stateName, packEntry)
+		local b = makeButton(parent, buildButtonText(displayName, animId))
+		b.Size = UDim2.new(1, 0, 0, 36)
+
+		b.MouseButton1Click:Connect(function()
+			stateOverrides[stateName] = "rbxassetid://" .. tostring(packEntry)
+			local ok = applyStateOverrideToAnimate(stateName, stateOverrides[stateName])
+			if ok then
+				notify("Anim Packs", "Set " .. stateName .. " to " .. displayName, 2)
+				markAnimationUsed(animId, b)
+				scheduleSave()
+			else
+				notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
+			end
+		end)
+
+		return b
+	end
+
+	----------------------------------------------------------------
+	-- GLOBAL SEARCH (used when searchText is not empty)
+	----------------------------------------------------------------
+	local function rebuildGlobalSearch()
+		for _, ch in ipairs(animListContainer:GetChildren()) do
+			if ch:IsA("TextButton") or ch:IsA("TextLabel") or ch:IsA("Frame") then
+				ch:Destroy()
+			end
+		end
+
+		local shown = 0
+
+		-- Helper to add a category header
+		local function addCategoryHeader(title)
+			local lbl = makeText(animListContainer, title, 14, true)
+			lbl.Size = UDim2.new(1, 0, 0, 24)
+			lbl.TextColor3 = accentColor
+			return lbl
+		end
+
+		-- 1. Roblox Anims
+		local robloxNames = listPackNamesForCategory("Roblox Anims")
+		local robloxShown = 0
+		for _, packName in ipairs(robloxNames) do
+			if matchesSearch(packName) then
+				robloxShown = robloxShown + 1
+			end
+		end
+		if robloxShown > 0 then
+			addCategoryHeader("Roblox Anims (" .. robloxShown .. ")")
+			for _, packName in ipairs(robloxNames) do
+				if matchesSearch(packName) then
+					local animId = makePackAnimId(packName, lastChosenState)
+					local entry = getPackValueForState(packName, lastChosenState)
+					if entry then
+						createAnimButton(animListContainer, packName, animId, lastChosenState, entry)
+						shown = shown + 1
+					end
+				end
+			end
+		end
+
+		-- 2. Unreleased
+		local unreleasedNames = listPackNamesForCategory("Unreleased")
+		local unreleasedShown = 0
+		for _, packName in ipairs(unreleasedNames) do
+			if matchesSearch(packName) then
+				unreleasedShown = unreleasedShown + 1
+			end
+		end
+		if unreleasedShown > 0 then
+			addCategoryHeader("Unreleased (" .. unreleasedShown .. ")")
+			for _, packName in ipairs(unreleasedNames) do
+				if matchesSearch(packName) then
+					local animId = makePackAnimId(packName, lastChosenState)
+					local entry = getPackValueForState(packName, lastChosenState)
+					if entry then
+						createAnimButton(animListContainer, packName, animId, lastChosenState, entry)
+						shown = shown + 1
+					end
+				end
+			end
+		end
+
+		-- 3. Custom Idle
+		if lastChosenState == "Idle" then
+			local idleNames = listCustomNamesForState("Idle")
+			local idleShown = 0
+			for _, nm in ipairs(idleNames) do
+				if matchesSearch(nm) then
+					idleShown = idleShown + 1
+				end
+			end
+			if idleShown > 0 then
+				addCategoryHeader("Custom Idle (" .. idleShown .. ")")
+				for _, nm in ipairs(idleNames) do
+					if matchesSearch(nm) then
+						local animId = makeCustomAnimId("Idle", nm)
+						local entry = getCustomIdForState(nm, "Idle")
+						if entry then
+							createAnimButton(animListContainer, nm, animId, "Idle", entry)
+							shown = shown + 1
+						end
+					end
+				end
+			end
+		end
+
+		-- 4. Custom Run
+		if lastChosenState == "Run" then
+			local runNames = listCustomNamesForState("Run")
+			local runShown = 0
+			for _, nm in ipairs(runNames) do
+				if matchesSearch(nm) then
+					runShown = runShown + 1
+				end
+			end
+			if runShown > 0 then
+				addCategoryHeader("Custom Run (" .. runShown .. ")")
+				for _, nm in ipairs(runNames) do
+					if matchesSearch(nm) then
+						local animId = makeCustomAnimId("Run", nm)
+						local entry = getCustomIdForState(nm, "Run")
+						if entry then
+							createAnimButton(animListContainer, nm, animId, "Run", entry)
+							shown = shown + 1
+						end
+					end
+				end
+			end
+		end
+
+		if shown == 0 then
+			local t = makeText(animListContainer, "No matching animations found.", 14, true)
+			t.Size = UDim2.new(1, 0, 0, 28)
+		else
+			local t = makeText(animListContainer, "Found " .. shown .. " result(s)", 13, false)
+			t.Size = UDim2.new(1, 0, 0, 20)
+			t.TextColor3 = Color3.fromRGB(180, 180, 180)
+		end
+
+		animateListPop()
+	end
+
+	----------------------------------------------------------------
+	-- NORMAL REBUILD (when search is empty, uses current category/state)
+	----------------------------------------------------------------
+	local function rebuildNormal()
 		for _, ch in ipairs(animListContainer:GetChildren()) do
 			if ch:IsA("TextButton") or ch:IsA("TextLabel") or ch:IsA("Frame") then
 				ch:Destroy()
@@ -2996,24 +3155,10 @@ do
 
 			for _, nm in ipairs(names) do
 				local animId = makeCustomAnimId(lastChosenState, nm)
-				local btnText = buildButtonText(nm, animId)
-				local b = makeButton(animListContainer, btnText)
-				b.Size = UDim2.new(1, 0, 0, 36)
-
-				b.MouseButton1Click:Connect(function()
-					local id = getCustomIdForState(nm, lastChosenState)
-					if not id then return end
-					stateOverrides[lastChosenState] = "rbxassetid://" .. tostring(id)
-					local ok = applyStateOverrideToAnimate(lastChosenState, stateOverrides[lastChosenState])
-					if ok then
-						notify("Anim Packs", "Set " .. lastChosenState .. " to " .. nm, 2)
-						-- Mark as used
-						markAnimationUsed(animId, b)
-						scheduleSave()
-					else
-						notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
-					end
-				end)
+				local entry = getCustomIdForState(nm, lastChosenState)
+				if entry then
+					createAnimButton(animListContainer, nm, animId, lastChosenState, entry)
+				end
 			end
 
 			animateListPop()
@@ -3023,31 +3168,29 @@ do
 		local names = listPackNamesForCategory(lastChosenCategory)
 		for _, packName in ipairs(names) do
 			local animId = makePackAnimId(packName, lastChosenState)
-			local btnText = buildButtonText(packName, animId)
-			local b = makeButton(animListContainer, btnText)
-			b.Size = UDim2.new(1, 0, 0, 36)
-
-			b.MouseButton1Click:Connect(function()
-				local id = getPackValueForState(packName, lastChosenState)
-				if not id then
-					notify("Anim Packs", "That pack has no ID for: " .. lastChosenState, 2)
-					return
-				end
-				stateOverrides[lastChosenState] = "rbxassetid://" .. tostring(id)
-				local ok = applyStateOverrideToAnimate(lastChosenState, stateOverrides[lastChosenState])
-				if ok then
-					notify("Anim Packs", "Set " .. lastChosenState .. " to " .. packName, 2)
-					-- Mark as used
-					markAnimationUsed(animId, b)
-					scheduleSave()
-				else
-					notify("Anim Packs", "Failed to apply. (Animate script missing?)", 3)
-				end
-			end)
+			local entry = getPackValueForState(packName, lastChosenState)
+			if entry then
+				createAnimButton(animListContainer, packName, animId, lastChosenState, entry)
+			end
 		end
 
 		animateListPop()
 	end
+
+	-- This is the function that updates the list; we'll connect the search box to it
+	local function rebuildPackList()
+		if searchText ~= "" then
+			rebuildGlobalSearch()
+		else
+			rebuildNormal()
+		end
+	end
+
+	-- NOW connect the search box (after the function exists)
+	searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		searchText = searchBox.Text:lower()
+		rebuildPackList()
+	end)
 
 	local function setCategory(catName)
 		if lastChosenState == "Walk" and catName == "Custom" then
@@ -3101,8 +3244,6 @@ do
 	setCategory(lastChosenCategory)
 	setState(lastChosenState)
 end
-
-
 ----------------------------------------------------------------
 -- PLAYER TAB (BHOP and Car sections fully commented out)
 ----------------------------------------------------------------
@@ -3192,48 +3333,6 @@ do
 		setSpeedFromAlpha(alphaFromSpeed(playerSpeed or 16))
 		notify("Player", "Speed reset.", 2)
 	end)
-
-	--[[
-	----------------------------------------------------------------
-	-- Car Animations (commented out – kept for future use)
-	----------------------------------------------------------------
-	local carHeader = makeText(playerScroll, "Car Animations", 16, true)
-	carHeader.Size = UDim2.new(1, 0, 0, 22)
-
-	local carHint = makeText(playerScroll, "Press Stop before changing animations.", 13, false)
-	carHint.Size = UDim2.new(1, 0, 0, 34)
-	carHint.TextColor3 = Color3.fromRGB(210, 210, 210)
-
-	local carBtn = makeButton(playerScroll, "Look Mum im a Car")
-	carBtn.Size = UDim2.new(0, 240, 0, 40)
-
-	carBtn.MouseButton1Click:Connect(function()
-		if typeof(_G) == "table" and typeof(_G.SOS_StartCarUI) == "function" then
-			_G.SOS_StartCarUI()
-			return true
-		end
-		notify("Car Animations", "Car UI not wired yet. Tell me and I will embed it here.", 4)
-		return false
-	end)
-	--]]
-
-	--[[
-	----------------------------------------------------------------
-	-- BHOP (commented out – kept for future use)
-	----------------------------------------------------------------
-	local bhopHeader = makeText(playerScroll, "Bhop", 16, true)
-	bhopHeader.Size = UDim2.new(1, 0, 0, 22)
-
-	local bhopHint = makeText(playerScroll, "CS 1.6 style movement. Open the menu to enable and tweak settings.", 13, false)
-	bhopHint.Size = UDim2.new(1, 0, 0, 34)
-	bhopHint.TextColor3 = Color3.fromRGB(210, 210, 210)
-
-	local bhopBtn = makeButton(playerScroll, "Bhop")
-	bhopBtn.Size = UDim2.new(0, 240, 0, 40)
-
-	-- Full BHOP implementation would go here (variables, functions, connections)
-	-- It has been omitted for brevity but can be restored by removing the comment block.
-	--]]
 
 	----------------------------------------------------------------
 	-- VISIBILITY (sub-section inside Player tab)
@@ -3662,7 +3761,7 @@ do
     -- Server Info Display
     local infoFrame = Instance.new("Frame")
     infoFrame.BackgroundTransparency = 1
-    infoFrame.Size = UDim2.new(1, 0, 0, 60)
+    infoFrame.Size = UDim2.new(1, 0, 0, 80)
     infoFrame.Parent = serverScroll
 
     local placeIdLabel = makeText(infoFrame, "Place ID: " .. game.PlaceId, 13, false)
@@ -3672,12 +3771,42 @@ do
     jobIdLabel.Size = UDim2.new(1, 0, 0, 18)
     jobIdLabel.Position = UDim2.new(0, 0, 0, 20)
 
-    local playerCount = #Players:GetPlayers()
-    local playerCountLabel = makeText(infoFrame, "Players: " .. playerCount .. "/" .. (game.Players.MaxPlayers or "?"), 13, false)
-    playerCountLabel.Size = UDim2.new(1, 0, 0, 18)
-    playerCountLabel.Position = UDim2.new(0, 0, 0, 40)
+    -- Server Region (fetch once)
+    local regionLabel = makeText(infoFrame, "Region: Fetching...", 13, false)
+    regionLabel.Size = UDim2.new(1, 0, 0, 18)
+    regionLabel.Position = UDim2.new(0, 0, 0, 40)
+    task.spawn(function()
+        local success, region = pcall(function()
+            return TeleportService:GetServerLocation(game.JobId)
+        end)
+        if success and region then
+            regionLabel.Text = "Region: " .. region
+        else
+            regionLabel.Text = "Region: Unknown"
+        end
+    end)
 
-    -- Update player count every 5 seconds
+    -- Server Age (since game start)
+    local ageLabel = makeText(infoFrame, "Server Age: Calculating...", 13, false)
+    ageLabel.Size = UDim2.new(1, 0, 0, 18)
+    ageLabel.Position = UDim2.new(0, 0, 0, 60)
+    task.spawn(function()
+        while ageLabel and ageLabel.Parent do
+            local age = workspace:GetServerTimeNow()
+            local hours = math.floor(age / 3600)
+            local minutes = math.floor((age % 3600) / 60)
+            local seconds = math.floor(age % 60)
+            ageLabel.Text = string.format("Server Age: %02d:%02d:%02d", hours, minutes, seconds)
+            task.wait(1)
+        end
+    end)
+
+    -- Player count with real-time update
+    local playerCountLabel = makeText(infoFrame, "Players: " .. #Players:GetPlayers() .. "/" .. (game.Players.MaxPlayers or "?"), 13, false)
+    playerCountLabel.Size = UDim2.new(1, 0, 0, 18)
+    playerCountLabel.Position = UDim2.new(0, 0, 0, 80)
+
+    -- Update player count and region (region may change after teleport, but rare)
     task.spawn(function()
         while true do
             task.wait(5)
@@ -3692,8 +3821,9 @@ do
     local copyInfoBtn = makeButton(serverScroll, "Copy Server Info")
     copyInfoBtn.Size = UDim2.new(0, 230, 0, 36)
     copyInfoBtn.MouseButton1Click:Connect(function()
-        local info = string.format("Game: %s\nPlace ID: %s\nJob ID: %s\nPlayers: %d/%d", 
-            game.Name, game.PlaceId, game.JobId, #Players:GetPlayers(), game.Players.MaxPlayers)
+        local info = string.format("Game: %s\nPlace ID: %s\nJob ID: %s\nPlayers: %d/%d\nRegion: %s\nServer Age: %s", 
+            game.Name, game.PlaceId, game.JobId, #Players:GetPlayers(), game.Players.MaxPlayers,
+            regionLabel.Text:gsub("Region: ", ""), ageLabel.Text:gsub("Server Age: ", ""))
         pcall(function()
             if setclipboard then
                 setclipboard(info)
@@ -3743,7 +3873,102 @@ do
         end)
     end)
 
-    -- Original server controls
+    -- Small Server Finder button
+    local smallServerBtn = makeButton(serverScroll, "Find Small Server (Hop)")
+    smallServerBtn.Size = UDim2.new(0, 230, 0, 36)
+    smallServerBtn.MouseButton1Click:Connect(function()
+        notify("Server", "Searching for a server with < 5 players...", 2)
+        task.spawn(function()
+            local placeId = game.PlaceId
+            local cursor = ""
+            local best = nil
+            local bestCount = math.huge
+
+            for _ = 1, 5 do
+                local url = "https://games.roblox.com/v1/games/" .. tostring(placeId) .. "/servers/Public?sortOrder=Asc&limit=100"
+                if cursor ~= "" then
+                    url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
+                end
+                local ok, res = pcall(function()
+                    return HttpService:GetAsync(url)
+                end)
+                if not ok then break end
+                local data = HttpService:JSONDecode(res)
+                for _, srv in ipairs(data.data or {}) do
+                    if srv.id and srv.id ~= game.JobId then
+                        local playing = srv.playing or 0
+                        if playing < 5 and playing < bestCount then
+                            best = srv
+                            bestCount = playing
+                        end
+                    end
+                end
+                cursor = data.nextPageCursor or ""
+                if cursor == "" then break end
+            end
+
+            if best and best.id then
+                notify("Server Hop", "Teleporting to server with " .. bestCount .. " players...", 2)
+                pcall(function()
+                    TeleportService:TeleportToPlaceInstance(placeId, best.id, LocalPlayer)
+                end)
+            else
+                notify("Server Hop", "No small server found. Trying normal hop.", 3)
+                pcall(function()
+                    TeleportService:Teleport(placeId, LocalPlayer)
+                end)
+            end
+        end)
+    end)
+
+    -- Player List with profile links
+    local playersHeader = makeText(serverScroll, "Players in Server (Click to Copy Profile)", 15, true)
+    playersHeader.Size = UDim2.new(1, 0, 0, 20)
+
+    local playersFrame = Instance.new("ScrollingFrame")
+    playersFrame.BackgroundTransparency = 1
+    playersFrame.BorderSizePixel = 0
+    playersFrame.Size = UDim2.new(1, 0, 0, 150)
+    playersFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    playersFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    playersFrame.ScrollBarThickness = 4
+    playersFrame.Parent = serverScroll
+
+    local playersContainer = Instance.new("Frame")
+    playersContainer.BackgroundTransparency = 1
+    playersContainer.Size = UDim2.new(1, 0, 0, 0)
+    playersContainer.Parent = playersFrame
+
+    local playersLayout = Instance.new("UIListLayout")
+    playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    playersLayout.Padding = UDim.new(0, 8)
+    playersLayout.Parent = playersContainer
+
+    local function refreshServerPlayerList()
+        for _, child in ipairs(playersContainer:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            local btn = makeButton(playersContainer, plr.Name .. (plr == LocalPlayer and " (You)" or ""))
+            btn.Size = UDim2.new(1, 0, 0, 36)
+            btn.MouseButton1Click:Connect(function()
+                local profileLink = "https://www.roblox.com/users/" .. plr.UserId .. "/profile"
+                pcall(function()
+                    if setclipboard then
+                        setclipboard(profileLink)
+                        notify("Profile", "Copied " .. plr.Name .. "'s profile link", 2)
+                    else
+                        notify("Profile", profileLink, 5)
+                    end
+                end)
+            end)
+        end
+    end
+    refreshServerPlayerList()
+    Players.PlayerAdded:Connect(refreshServerPlayerList)
+    Players.PlayerRemoving:Connect(refreshServerPlayerList)
+
+    -- Original server controls (Rejoin, Server Hop)
     local controls = makeText(serverScroll, "Server Controls", 15, true)
     controls.Size = UDim2.new(1, 0, 0, 20)
 
