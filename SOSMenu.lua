@@ -2355,16 +2355,8 @@ local function createUI()
 	local antiPage, antiScroll = makePage("Anti")
 	local serverPage, serverScroll = makePage("Server")
 	local clientPage, clientScroll = makePage("Client")
-
-	-- New placeholder tabs
 	local socialPage, socialScroll = makePage("Social")
-	local funPage, funScroll = makePage("Fun")
 	local toolsPage, toolsScroll = makePage("Tools")
-	local statsPage, statsScroll = makePage("Stats")
-	local cosmeticsPage, cosmeticsScroll = makePage("Cosmetics")
-	local musicPage, musicScroll = makePage("Music")
-	local gamesPage, gamesScroll = makePage("Games")
-	local devPage, devScroll = makePage("Developer")
 
 	-- Role tabs
 	local sinsPage, sinsScroll = nil, nil
@@ -4241,16 +4233,6 @@ do
         end
     end)
 end
-	----------------------------------------------------------------
-	-- FUN TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(funScroll, "Fun", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(funScroll, "Coming soon: emotes, particle effects, dance commands, and silly visuals.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
 
 	----------------------------------------------------------------
 	-- TOOLS TAB (with popout calculator)
@@ -4538,61 +4520,6 @@ end
 			end
 		end)
 	end
-	
-	----------------------------------------------------------------
-	-- STATS TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(statsScroll, "Stats", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(statsScroll, "Coming soon: playtime, animation usage, speed records, and more.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- COSMETICS TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(cosmeticsScroll, "Cosmetics", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(cosmeticsScroll, "Coming soon: outfit saving, color customization, and accessories.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- MUSIC TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(musicScroll, "Music", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(musicScroll, "Coming soon: music player, soundboard, and voice effects.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- GAMES TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(gamesScroll, "Games", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(gamesScroll, "Coming soon: mini‑games like rock paper scissors, trivia, and more.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
-
-	----------------------------------------------------------------
-	-- DEVELOPER TAB (placeholder)
-	----------------------------------------------------------------
-	do
-		local header = makeText(devScroll, "Developer", 16, true)
-		header.Size = UDim2.new(1, 0, 0, 22)
-
-		local msg = makeText(devScroll, "Coming soon: debug info, script console, and performance graphs.", 14, false)
-		msg.Size = UDim2.new(1, 0, 0, 50)
-	end
 
 	----------------------------------------------------------------
 	-- MIC UP TAB (unchanged)
@@ -4706,22 +4633,16 @@ end
 	addTabButton("Server", 9)
 	addTabButton("Client", 10)
 	addTabButton("Social", 11)
-	addTabButton("Fun", 12)
-	addTabButton("Tools", 13)
-	addTabButton("Stats", 14)
-	addTabButton("Cosmetics", 15)
-	addTabButton("Music", 16)
-	addTabButton("Games", 17)
-	addTabButton("Developer", 18, 130)
+	addTabButton("Tools", 12)
 
 	if sinsPage then
-		addTabButton("Sins", 19, 120)
+		addTabButton("Sins", 13, 120)
 	end
 	if coOwnersPage then
-		addTabButton("Co/Owners", 20, 140)
+		addTabButton("Co/Owners", 14, 140)
 	end
 	if micupPage then
-		addTabButton("Mic up", 21, 120)
+		addTabButton("Mic up", 15, 120)
 	end
 
 	pages["Info"].Page.Visible = true
