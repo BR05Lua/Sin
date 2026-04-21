@@ -66,7 +66,7 @@ local steps = {
     { name = "SOS HUD", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/SOSMenu.lua", delay = 0.2 },
     { name = "Tag System", url = "https://raw.githubusercontent.com/BR05Lua/Sin/refs/heads/main/BR05TagSystem.lua", delay = 0.1 },
     { name = "Infinite Yield", url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", delay = 0.1 },
-    { name = "7YD7 Emote Menu", url = "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua", delay = 0.1 },
+--    { name = "7YD7 Emote Menu", url = "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua", delay = 0.1 },
 }
 
 local function runSteps()
