@@ -1047,6 +1047,12 @@ local CustomIdle = {
 	["MHA Bakugo"] = 96651832291764,
 	["RDR Arthur Morgan"] = 122554419070575,
 	["JJBA Shadow Dio"] = 130399440456166,
+	["RDR Arthur Morgan"] = 94428390083053,
+	["Invinsible"] = 117101924631707,
+	["I Conquest"] = 73559727995551,
+	["I Omni Man"] = 74854783010509,
+	["AM Oguri Cap"] = 94428390083053,
+	["FNAF Deactivated Twitch"] = 124566621091242,
 }
 
 local CustomRun = {
