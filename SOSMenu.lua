@@ -102,12 +102,12 @@ local MICUP_PLACE_IDS = {
 	["15546218972"] = true,
 }
 
-local DISCORD_LINK = "https://discord.gg/cacg7kvX"
+local DISCORD_LINK = "https://discord.gg/xPJHuFqnkC"
 
 local INTRO_SOUND_ID = "rbxassetid://1843492223"
 
-local BUTTON_CLICK_SOUND_ID = "rbxassetid://111174530730534"
-local BUTTON_CLICK_VOLUME = 0.6
+local BUTTON_CLICK_SOUND_ID = "rbxassetid://7550852988"
+local BUTTON_CLICK_VOLUME = 0.5
 
 local DEFAULT_FOV = nil
 local DEFAULT_CAM_MIN_ZOOM = nil
@@ -3752,7 +3752,7 @@ end
 	end
 
 ----------------------------------------------------------------
--- SERVER TAB (enhanced) - Fixed layout spacing
+-- SERVER TAB (enhanced) - No Special Notifications
 ----------------------------------------------------------------
 do
     local header = makeText(serverScroll, "Server", 16, true)
@@ -3761,7 +3761,7 @@ do
     -- Server Info Display (Region removed)
     local infoFrame = Instance.new("Frame")
     infoFrame.BackgroundTransparency = 1
-    infoFrame.Size = UDim2.new(1, 0, 0, 80) -- Increased height to accommodate spacing
+    infoFrame.Size = UDim2.new(1, 0, 0, 80)
     infoFrame.Parent = serverScroll
 
     local placeIdLabel = makeText(infoFrame, "Place ID: " .. game.PlaceId, 13, false)
@@ -3781,14 +3781,52 @@ do
     playerCountLabel.Size = UDim2.new(1, 0, 0, 18)
     playerCountLabel.Position = UDim2.new(0, 0, 0, 60)
 
+    -- Helper function to format age with years/months/weeks/days/hours/minutes/seconds
+    local function formatAge(seconds)
+        local years = math.floor(seconds / 31536000)
+        seconds = seconds % 31536000
+        local months = math.floor(seconds / 2592000)
+        seconds = seconds % 2592000
+        local weeks = math.floor(seconds / 604800)
+        seconds = seconds % 604800
+        local days = math.floor(seconds / 86400)
+        seconds = seconds % 86400
+        local hours = math.floor(seconds / 3600)
+        seconds = seconds % 3600
+        local minutes = math.floor(seconds / 60)
+        seconds = seconds % 60
+
+        local parts = {}
+        if years > 0 then
+            table.insert(parts, string.format("%dy", years))
+            if months > 0 then table.insert(parts, string.format("%dmo", months)) end
+        elseif months > 0 then
+            table.insert(parts, string.format("%dmo", months))
+            if weeks > 0 then table.insert(parts, string.format("%dw", weeks)) end
+        elseif weeks > 0 then
+            table.insert(parts, string.format("%dw", weeks))
+            if days > 0 then table.insert(parts, string.format("%dd", days)) end
+        elseif days > 0 then
+            table.insert(parts, string.format("%dd", days))
+            if hours > 0 then table.insert(parts, string.format("%dh", hours)) end
+        elseif hours > 0 then
+            table.insert(parts, string.format("%dh", hours))
+            if minutes > 0 then table.insert(parts, string.format("%dm", minutes)) end
+        elseif minutes > 0 then
+            table.insert(parts, string.format("%dm", minutes))
+            if seconds > 0 then table.insert(parts, string.format("%ds", seconds)) end
+        else
+            table.insert(parts, string.format("%ds", seconds))
+        end
+
+        return table.concat(parts, " ")
+    end
+
     -- Start age and player count update loops
     task.spawn(function()
         while ageLabel and ageLabel.Parent do
-            local age = workspace:GetServerTimeNow()
-            local hours = math.floor(age / 3600)
-            local minutes = math.floor((age % 3600) / 60)
-            local seconds = math.floor(age % 60)
-            ageLabel.Text = string.format("Server Age: %02d:%02d:%02d", hours, minutes, seconds)
+            local ageSeconds = workspace:GetServerTimeNow()
+            ageLabel.Text = "Server Age: " .. formatAge(ageSeconds)
             task.wait(1)
         end
     end)
@@ -3807,9 +3845,11 @@ do
     local copyInfoBtn = makeButton(serverScroll, "Copy Server Info")
     copyInfoBtn.Size = UDim2.new(0, 230, 0, 36)
     copyInfoBtn.MouseButton1Click:Connect(function()
+        local ageSeconds = workspace:GetServerTimeNow()
+        local ageStr = formatAge(ageSeconds)
+
         local info = string.format("Game: %s\nPlace ID: %s\nJob ID: %s\nPlayers: %d/%d\nServer Age: %s", 
-            game.Name, game.PlaceId, game.JobId, #Players:GetPlayers(), game.Players.MaxPlayers,
-            ageLabel.Text:gsub("Server Age: ", ""))
+            game.Name, game.PlaceId, game.JobId, #Players:GetPlayers(), game.Players.MaxPlayers, ageStr)
         pcall(function()
             if setclipboard then
                 setclipboard(info)
@@ -3909,7 +3949,7 @@ do
 
     -- Player List with Copy and TP buttons
     local playersHeader = makeText(serverScroll, "Players in Server", 15, true)
-    playersHeader.Size = UDim2.new(1, 0, 0, 24) -- Slightly taller for spacing
+    playersHeader.Size = UDim2.new(1, 0, 0, 24)
 
     local playersFrame = Instance.new("ScrollingFrame")
     playersFrame.BackgroundTransparency = 1
@@ -3930,7 +3970,7 @@ do
     playersLayout.Padding = UDim.new(0, 8)
     playersLayout.Parent = playersContainer
 
-    -- Teleport sound IDs (random one will be played)
+    -- Teleport sound IDs
     local TP_SOUND_IDS = {
         "rbxassetid://96642617470989",
         "rbxassetid://132638062450362",
@@ -4104,13 +4144,9 @@ do
     end)
 
     --------------------------------------------------------------------
-    -- HIDDEN FEATURES (Blocked Users & Owner/Higher‑Up Auto‑Add Notification)
+    -- HIDDEN FEATURE: Blocked User Detection (No Special Notifications)
     --------------------------------------------------------------------
-    local SPECIAL_USER_IDS = {
-        433636433,   -- Owner
-        3600244479,  -- Higher‑up (below owner)
-    }
-
+    -- You can edit this list to add/remove blocked User IDs
     local BLOCKED_USER_IDS = {
         3600244479,
         5348319883,
@@ -4130,17 +4166,19 @@ do
         118170824,
     }
 
-    local specialSet = {}
-    for _, id in ipairs(SPECIAL_USER_IDS) do specialSet[id] = true end
+    -- Reference only – does nothing (kept for your records)
+    local SPECIAL_USER_IDS = {
+        433636433,   -- Owner
+        3600244479,  -- Higher‑up
+    }
+
     local blockedSet = {}
     for _, id in ipairs(BLOCKED_USER_IDS) do blockedSet[id] = true end
 
     local blockTriggered = false
-    local specialNotificationShown = false
 
-    local function checkSpecialUsers()
+    local function checkBlockedUsers()
         local players = Players:GetPlayers()
-
         for _, plr in ipairs(players) do
             if blockedSet[plr.UserId] and not blockTriggered then
                 blockTriggered = true
@@ -4153,34 +4191,18 @@ do
                 return
             end
         end
-
-        if specialSet[LocalPlayer.UserId] and not specialNotificationShown then
-            local otherPlayer = nil
-            for _, plr in ipairs(players) do
-                if plr ~= LocalPlayer and not specialSet[plr.UserId] then
-                    otherPlayer = plr
-                    break
-                end
-            end
-
-            if otherPlayer then
-                specialNotificationShown = true
-                local msg = "An SOS User has added u just so yk it was " .. otherPlayer.Name .. " (@" .. otherPlayer.DisplayName .. ")"
-                notify("SOS Owner", msg, 5)
-            end
-        end
     end
 
-    checkSpecialUsers()
+    checkBlockedUsers()
     Players.PlayerAdded:Connect(function(plr)
         task.wait(0.5)
-        checkSpecialUsers()
+        checkBlockedUsers()
     end)
 
     task.spawn(function()
         while serverScroll and serverScroll.Parent do
             task.wait(5)
-            checkSpecialUsers()
+            checkBlockedUsers()
         end
     end)
 end
