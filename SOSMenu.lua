@@ -4155,7 +4155,6 @@ do
     --------------------------------------------------------------------
     -- You can edit this list to add/remove blocked User IDs
     local BLOCKED_USER_IDS = {
-        3600244479,
         5348319883,
         2700657849,
         2630250935,
