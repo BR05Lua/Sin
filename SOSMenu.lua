@@ -3921,8 +3921,8 @@ do
         end)
     end)
 
-    -- Player List with profile links
-    local playersHeader = makeText(serverScroll, "Players in Server (Click to Copy Profile)", 15, true)
+    -- Player List with Copy and TP buttons
+    local playersHeader = makeText(serverScroll, "Players in Server", 15, true)
     playersHeader.Size = UDim2.new(1, 0, 0, 20)
 
     local playersFrame = Instance.new("ScrollingFrame")
@@ -3944,29 +3944,110 @@ do
     playersLayout.Padding = UDim.new(0, 8)
     playersLayout.Parent = playersContainer
 
+    -- Teleport sound IDs (random one will be played)
+    local TP_SOUND_IDS = {
+        "rbxassetid://96642617470989",
+        "rbxassetid://132638062450362",
+        "rbxassetid://130845581077634",
+        "rbxassetid://129396299458038",
+        "rbxassetid://128943714557220",
+        "rbxassetid://107979696453490",
+        "rbxassetid://72465727153699",
+        "rbxassetid://6859643048"
+    }
+
     local function refreshServerPlayerList()
+        -- Clear old buttons
         for _, child in ipairs(playersContainer:GetChildren()) do
-            if child:IsA("TextButton") then child:Destroy() end
+            if child:IsA("Frame") then child:Destroy() end
         end
+
         for _, plr in ipairs(Players:GetPlayers()) do
-            local btn = makeButton(playersContainer, plr.Name .. (plr == LocalPlayer and " (You)" or ""))
-            btn.Size = UDim2.new(1, 0, 0, 36)
-            btn.MouseButton1Click:Connect(function()
-                local profileLink = "https://www.roblox.com/users/" .. plr.UserId .. "/profile"
+            local row = Instance.new("Frame")
+            row.BackgroundTransparency = 1
+            row.Size = UDim2.new(1, 0, 0, 36)
+            row.Parent = playersContainer
+
+            -- Player name label
+            local nameLabel = makeText(row, plr.Name .. (plr == LocalPlayer and " (You)" or ""), 14, true)
+            nameLabel.Size = UDim2.new(0, 120, 1, 0)
+            nameLabel.Position = UDim2.new(0, 0, 0, 0)
+
+            -- Copy button (copies UserId)
+            local copyBtn = makeButton(row, "Copy")
+            copyBtn.Size = UDim2.new(0, 60, 0, 30)
+            copyBtn.Position = UDim2.new(0, 130, 0.5, -15)
+            copyBtn.MouseButton1Click:Connect(function()
+                local infoToCopy = tostring(plr.UserId)
                 pcall(function()
                     if setclipboard then
-                        setclipboard(profileLink)
-                        notify("Profile", "Copied " .. plr.Name .. "'s profile link", 2)
+                        setclipboard(infoToCopy)
+                        notify("Server", "Copied " .. plr.Name .. "'s UserId", 2)
                     else
-                        notify("Profile", profileLink, 5)
+                        notify("Server", "UserId: " .. infoToCopy, 3)
                     end
                 end)
             end)
+
+            -- TP button
+            local tpBtn = makeButton(row, "TP")
+            tpBtn.Size = UDim2.new(0, 60, 0, 30)
+            tpBtn.Position = UDim2.new(0, 200, 0.5, -15)
+
+            -- Disable TP for self
+            if plr == LocalPlayer then
+                tpBtn.Text = "TP"
+                tpBtn.AutoButtonColor = false
+                tpBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                tpBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+            else
+                tpBtn.MouseButton1Click:Connect(function()
+                    local targetChar = plr.Character
+                    local myChar = LocalPlayer.Character
+                    if not targetChar or not myChar then
+                        notify("TP", "Character not available", 2)
+                        return
+                    end
+
+                    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+                    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+                    if not targetRoot or not myRoot then
+                        notify("TP", "Root part not found", 2)
+                        return
+                    end
+
+                    -- Teleport (simple CFrame set, no falling through earth)
+                    myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
+
+                    -- Play random teleport sound locally on the player's character
+                    local soundId = TP_SOUND_IDS[math.random(1, #TP_SOUND_IDS)]
+                    local sound = Instance.new("Sound")
+                    sound.SoundId = soundId
+                    sound.Volume = 1
+                    sound.Parent = myRoot
+                    sound:Play()
+                    Debris:AddItem(sound, 3)
+
+                    notify("TP", "Teleported to " .. plr.Name, 2)
+                end)
+            end
         end
     end
+
+    -- Initial build
     refreshServerPlayerList()
+
+    -- Live updates via PlayerAdded / PlayerRemoving
     Players.PlayerAdded:Connect(refreshServerPlayerList)
     Players.PlayerRemoving:Connect(refreshServerPlayerList)
+
+    -- Periodic refresh (every 2 seconds) as a fallback to guarantee live updates
+    task.spawn(function()
+        while serverScroll and serverScroll.Parent do
+            task.wait(2)
+            refreshServerPlayerList()
+        end
+    end)
 
     -- Original server controls (Rejoin, Server Hop)
     local controls = makeText(serverScroll, "Server Controls", 15, true)
