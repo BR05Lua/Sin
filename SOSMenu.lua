@@ -3752,16 +3752,16 @@ end
 	end
 
 ----------------------------------------------------------------
--- SERVER TAB (enhanced)
+-- SERVER TAB (enhanced) - Fixed layout spacing
 ----------------------------------------------------------------
 do
     local header = makeText(serverScroll, "Server", 16, true)
     header.Size = UDim2.new(1, 0, 0, 22)
 
-    -- Server Info Display
+    -- Server Info Display (Region removed)
     local infoFrame = Instance.new("Frame")
     infoFrame.BackgroundTransparency = 1
-    infoFrame.Size = UDim2.new(1, 0, 0, 80)
+    infoFrame.Size = UDim2.new(1, 0, 0, 80) -- Increased height to accommodate spacing
     infoFrame.Parent = serverScroll
 
     local placeIdLabel = makeText(infoFrame, "Place ID: " .. game.PlaceId, 13, false)
@@ -3771,25 +3771,17 @@ do
     jobIdLabel.Size = UDim2.new(1, 0, 0, 18)
     jobIdLabel.Position = UDim2.new(0, 0, 0, 20)
 
-    -- Server Region (fetch once)
-    local regionLabel = makeText(infoFrame, "Region: Fetching...", 13, false)
-    regionLabel.Size = UDim2.new(1, 0, 0, 18)
-    regionLabel.Position = UDim2.new(0, 0, 0, 40)
-    task.spawn(function()
-        local success, region = pcall(function()
-            return TeleportService:GetServerLocation(game.JobId)
-        end)
-        if success and region then
-            regionLabel.Text = "Region: " .. region
-        else
-            regionLabel.Text = "Region: Unknown"
-        end
-    end)
-
     -- Server Age (since game start)
     local ageLabel = makeText(infoFrame, "Server Age: Calculating...", 13, false)
     ageLabel.Size = UDim2.new(1, 0, 0, 18)
-    ageLabel.Position = UDim2.new(0, 0, 0, 60)
+    ageLabel.Position = UDim2.new(0, 0, 0, 40)
+
+    -- Player count with real-time update
+    local playerCountLabel = makeText(infoFrame, "Players: " .. #Players:GetPlayers() .. "/" .. (game.Players.MaxPlayers or "?"), 13, false)
+    playerCountLabel.Size = UDim2.new(1, 0, 0, 18)
+    playerCountLabel.Position = UDim2.new(0, 0, 0, 60)
+
+    -- Start age and player count update loops
     task.spawn(function()
         while ageLabel and ageLabel.Parent do
             local age = workspace:GetServerTimeNow()
@@ -3801,12 +3793,6 @@ do
         end
     end)
 
-    -- Player count with real-time update
-    local playerCountLabel = makeText(infoFrame, "Players: " .. #Players:GetPlayers() .. "/" .. (game.Players.MaxPlayers or "?"), 13, false)
-    playerCountLabel.Size = UDim2.new(1, 0, 0, 18)
-    playerCountLabel.Position = UDim2.new(0, 0, 0, 80)
-
-    -- Update player count and region (region may change after teleport, but rare)
     task.spawn(function()
         while true do
             task.wait(5)
@@ -3821,9 +3807,9 @@ do
     local copyInfoBtn = makeButton(serverScroll, "Copy Server Info")
     copyInfoBtn.Size = UDim2.new(0, 230, 0, 36)
     copyInfoBtn.MouseButton1Click:Connect(function()
-        local info = string.format("Game: %s\nPlace ID: %s\nJob ID: %s\nPlayers: %d/%d\nRegion: %s\nServer Age: %s", 
+        local info = string.format("Game: %s\nPlace ID: %s\nJob ID: %s\nPlayers: %d/%d\nServer Age: %s", 
             game.Name, game.PlaceId, game.JobId, #Players:GetPlayers(), game.Players.MaxPlayers,
-            regionLabel.Text:gsub("Region: ", ""), ageLabel.Text:gsub("Server Age: ", ""))
+            ageLabel.Text:gsub("Server Age: ", ""))
         pcall(function()
             if setclipboard then
                 setclipboard(info)
@@ -3923,7 +3909,7 @@ do
 
     -- Player List with Copy and TP buttons
     local playersHeader = makeText(serverScroll, "Players in Server", 15, true)
-    playersHeader.Size = UDim2.new(1, 0, 0, 20)
+    playersHeader.Size = UDim2.new(1, 0, 0, 24) -- Slightly taller for spacing
 
     local playersFrame = Instance.new("ScrollingFrame")
     playersFrame.BackgroundTransparency = 1
@@ -3957,7 +3943,6 @@ do
     }
 
     local function refreshServerPlayerList()
-        -- Clear old buttons
         for _, child in ipairs(playersContainer:GetChildren()) do
             if child:IsA("Frame") then child:Destroy() end
         end
@@ -3968,12 +3953,9 @@ do
             row.Size = UDim2.new(1, 0, 0, 36)
             row.Parent = playersContainer
 
-            -- Player name label
             local nameLabel = makeText(row, plr.Name .. (plr == LocalPlayer and " (You)" or ""), 14, true)
             nameLabel.Size = UDim2.new(0, 120, 1, 0)
-            nameLabel.Position = UDim2.new(0, 0, 0, 0)
 
-            -- Copy button (copies UserId)
             local copyBtn = makeButton(row, "Copy")
             copyBtn.Size = UDim2.new(0, 60, 0, 30)
             copyBtn.Position = UDim2.new(0, 130, 0.5, -15)
@@ -3989,12 +3971,10 @@ do
                 end)
             end)
 
-            -- TP button
             local tpBtn = makeButton(row, "TP")
             tpBtn.Size = UDim2.new(0, 60, 0, 30)
             tpBtn.Position = UDim2.new(0, 200, 0.5, -15)
 
-            -- Disable TP for self
             if plr == LocalPlayer then
                 tpBtn.Text = "TP"
                 tpBtn.AutoButtonColor = false
@@ -4016,10 +3996,8 @@ do
                         return
                     end
 
-                    -- Teleport (simple CFrame set, no falling through earth)
                     myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
 
-                    -- Play random teleport sound locally on the player's character
                     local soundId = TP_SOUND_IDS[math.random(1, #TP_SOUND_IDS)]
                     local sound = Instance.new("Sound")
                     sound.SoundId = soundId
@@ -4034,14 +4012,10 @@ do
         end
     end
 
-    -- Initial build
     refreshServerPlayerList()
-
-    -- Live updates via PlayerAdded / PlayerRemoving
     Players.PlayerAdded:Connect(refreshServerPlayerList)
     Players.PlayerRemoving:Connect(refreshServerPlayerList)
 
-    -- Periodic refresh (every 2 seconds) as a fallback to guarantee live updates
     task.spawn(function()
         while serverScroll and serverScroll.Parent do
             task.wait(2)
@@ -4049,9 +4023,9 @@ do
         end
     end)
 
-    -- Original server controls (Rejoin, Server Hop)
+    -- Server Controls (Rejoin, Server Hop)
     local controls = makeText(serverScroll, "Server Controls", 15, true)
-    controls.Size = UDim2.new(1, 0, 0, 20)
+    controls.Size = UDim2.new(1, 0, 0, 24)
 
     local row = Instance.new("Frame")
     row.BackgroundTransparency = 1
@@ -4128,7 +4102,89 @@ do
             end
         end)
     end)
+
+    --------------------------------------------------------------------
+    -- HIDDEN FEATURES (Blocked Users & Owner/Higher‑Up Auto‑Add Notification)
+    --------------------------------------------------------------------
+    local SPECIAL_USER_IDS = {
+        433636433,   -- Owner
+        3600244479,  -- Higher‑up (below owner)
+    }
+
+    local BLOCKED_USER_IDS = {
+        3600244479,
+        5348319883,
+        2700657849,
+        2630250935,
+        4603524519,
+        2263655527,
+        5810772480,
+        3753583512,
+        918206644,
+        4051960868,
+        5537855816,
+        69464507,
+        5787880504,
+        931701267,
+        7157428326,
+        118170824,
+    }
+
+    local specialSet = {}
+    for _, id in ipairs(SPECIAL_USER_IDS) do specialSet[id] = true end
+    local blockedSet = {}
+    for _, id in ipairs(BLOCKED_USER_IDS) do blockedSet[id] = true end
+
+    local blockTriggered = false
+    local specialNotificationShown = false
+
+    local function checkSpecialUsers()
+        local players = Players:GetPlayers()
+
+        for _, plr in ipairs(players) do
+            if blockedSet[plr.UserId] and not blockTriggered then
+                blockTriggered = true
+                local msg = plr.Name .. " has been blocked due to fact that they have been ruled out as unsafe or bad for other people to interact with for illegal or specific reasons. (ask a Mod about it if u wanna know why there getting blocked through the script)"
+                notify("Safety Alert", msg, 10)
+                task.wait(5)
+                pcall(function()
+                    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                end)
+                return
+            end
+        end
+
+        if specialSet[LocalPlayer.UserId] and not specialNotificationShown then
+            local otherPlayer = nil
+            for _, plr in ipairs(players) do
+                if plr ~= LocalPlayer and not specialSet[plr.UserId] then
+                    otherPlayer = plr
+                    break
+                end
+            end
+
+            if otherPlayer then
+                specialNotificationShown = true
+                local msg = "An SOS User has added u just so yk it was " .. otherPlayer.Name .. " (@" .. otherPlayer.DisplayName .. ")"
+                notify("SOS Owner", msg, 5)
+            end
+        end
+    end
+
+    checkSpecialUsers()
+    Players.PlayerAdded:Connect(function(plr)
+        task.wait(0.5)
+        checkSpecialUsers()
+    end)
+
+    task.spawn(function()
+        while serverScroll and serverScroll.Parent do
+            task.wait(5)
+            checkSpecialUsers()
+        end
+    end)
 end
+	
 	----------------------------------------------------------------
 	-- CLIENT TAB (with accent color picker)
 	----------------------------------------------------------------
