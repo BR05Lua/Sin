@@ -1105,6 +1105,7 @@ local CustomRun = {
 	["FN Ride The Pony"] = 119284187579961,
 	["FN The Worm"] = 89593072932752,
 	["FN Atmosphere"] = 76771407674660,
+	["Cant Catch Me"] = 91071050103167,
 }
 
 local CustomWalk = nil
