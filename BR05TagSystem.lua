@@ -57,8 +57,8 @@ local REFRESH_HOTKEY = Enum.KeyCode.RightControl
 --------------------------------------------------------------------
 -- ARRIVAL FX + POPUPS
 --------------------------------------------------------------------
-local OWNER_ARRIVAL_TEXT = "He has Arrived"
-local OWNER_ARRIVAL_SOUND_ID = "rbxassetid://136954512002069"
+local OWNER_ARRIVAL_TEXT = "Stand Ready For My Arrival"
+local OWNER_ARRIVAL_SOUND_ID = "rbxassetid://138535024047729"
 
 local COOWNER_ARRIVAL_TEXT = ""
 local COOWNER_ARRIVAL_SOUND_ID = ""
