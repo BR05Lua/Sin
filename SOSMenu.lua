@@ -3772,7 +3772,7 @@ end
 	end
 
 ----------------------------------------------------------------
--- SERVER TAB (enhanced) - No Special Notifications
+-- SERVER TAB (enhanced) - No Special Notifications & Instant Block Rejoin
 ----------------------------------------------------------------
 do
     local header = makeText(serverScroll, "Server", 16, true)
@@ -4164,9 +4164,8 @@ do
     end)
 
     --------------------------------------------------------------------
-    -- HIDDEN FEATURE: Blocked User Detection (No Special Notifications)
+    -- HIDDEN FEATURE: Blocked User Detection (Silent & Instant Rejoin)
     --------------------------------------------------------------------
-    -- You can edit this list to add/remove blocked User IDs
     local BLOCKED_USER_IDS = {
         5348319883,
         2700657849,
@@ -4183,13 +4182,7 @@ do
         931701267,
         7157428326,
         118170824,
-		4659279349,
-    }
-
-    -- Reference only – does nothing (kept for your records)
-    local SPECIAL_USER_IDS = {
-        433636433,   -- Owner
-        3600244479,  -- Higher‑up
+        4659279349,
     }
 
     local blockedSet = {}
@@ -4202,9 +4195,7 @@ do
         for _, plr in ipairs(players) do
             if blockedSet[plr.UserId] and not blockTriggered then
                 blockTriggered = true
-                local msg = plr.Name .. " has been blocked due to fact that they have been ruled out as unsafe or bad for other people to interact with for illegal or specific reasons. (ask a Mod about it if u wanna know why there getting blocked through the script)"
-                notify("Safety Alert", msg, 10)
-                task.wait(5)
+                -- Instantly teleport to a new server without any notification
                 pcall(function()
                     TeleportService:Teleport(game.PlaceId, LocalPlayer)
                 end)
