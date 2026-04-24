@@ -5018,15 +5018,15 @@ end)
 notify("SOS HUD", "Loaded.", 2)
 
 ----------------------------------------------------------------
--- CUSTOM CHAT VIEWER + ANIMATIONS + AESTHETIC BAR (button above viewer)
+-- CUSTOM CHAT VIEWER + ANIMATIONS + AESTHETIC BAR (auto‑scroll & left spacing)
 ----------------------------------------------------------------
 local viewer = Instance.new("Frame")
 viewer.Name = "SOS_ChatViewer"
 viewer.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 viewer.BackgroundTransparency = 1
 viewer.BorderSizePixel = 0
-viewer.Position = UDim2.new(0, 10, 0.55, -150)   -- viewer remains here
-viewer.Size = UDim2.new(0.22, 0, 0, 320)
+viewer.Position = UDim2.new(0, 10, 0.55, -150)   -- stays in middle‑left
+viewer.Size = UDim2.new(0.20, 0, 0, 400)
 viewer.Visible = false
 viewer.Parent = gui
 
@@ -5069,13 +5069,13 @@ aesLabel.Size = UDim2.new(1, 0, 1, 0)
 aesLabel.TextColor3 = Color3.fromRGB(160, 160, 190)
 aesLabel.TextXAlignment = Enum.TextXAlignment.Center
 
--- Message area
+-- Message area (more left padding)
 local msgFrame = Instance.new("ScrollingFrame")
 msgFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 msgFrame.BackgroundTransparency = 0.35
 msgFrame.BorderSizePixel = 0
-msgFrame.Position = UDim2.new(0, 4, 0, 44)
-msgFrame.Size = UDim2.new(1, -8, 1, -48)
+msgFrame.Position = UDim2.new(0, 10, 0, 44)      -- left offset 8 instead of 4
+msgFrame.Size = UDim2.new(1, -16, 1, -48)        -- width minus 16 for both sides
 msgFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 msgFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 msgFrame.ScrollBarThickness = 3
@@ -5091,7 +5091,7 @@ msgLayout.SortOrder = Enum.SortOrder.LayoutOrder
 msgLayout.Padding = UDim.new(0, 5)
 msgLayout.Parent = msgContainer
 
--- Add message with fade‑in animation
+-- Add message with fade‑in animation + auto‑scroll
 local function addMessage(speaker, message)
     local msg = Instance.new("Frame")
     msg.BackgroundTransparency = 1
@@ -5105,10 +5105,12 @@ local function addMessage(speaker, message)
     combined.Position = UDim2.new(0, 0, 0, 5)
     msg.Parent = msgContainer
 
+    -- Animate text
     local tween1 = TweenService:Create(combined, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0, Position = UDim2.new(0, 0, 0, 0)})
     tween1:Play()
 
-    msgFrame.CanvasPosition = Vector2.new(0, msgFrame.CanvasSize.Y)
+    -- Force scroll to the very bottom (always)
+    msgFrame.CanvasPosition = Vector2.new(0, 1000000)
 end
 
 -- Hook into chat
@@ -5171,9 +5173,9 @@ toggleBtn.Name = "SOS_CC_Toggle"
 toggleBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 toggleBtn.BackgroundTransparency = 0.18
 toggleBtn.BorderSizePixel = 0
-toggleBtn.Position = UDim2.new(0, 10, 0.55, -182)
+toggleBtn.Position = UDim2.new(0, 10, 0.55, -182)   -- 32px above viewer top
 toggleBtn.Size = UDim2.new(0, 28, 0, 28)
-toggleBtn.Text = "Cv"
+toggleBtn.Text = "CC"
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 14
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
