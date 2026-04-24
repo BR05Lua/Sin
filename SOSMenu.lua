@@ -28,43 +28,6 @@ local LocalPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 --------------------------------------------------------------------
--- GLOBAL INTERFACE (for BHOP and Car UI)
---------------------------------------------------------------------
-
--- Social tab data
-local friendsList = {}          
-local recentPlayers = {}         
-local mutedPlayers = {}          
-local playerVolumes = {}         
-local friendNotifications = true 
-local radarEnabled = true        
-
-_G.SOS_BlockFlight = false
-_G.SOS_BlockFlightReason = nil
-
-_G.SOS_SetFlightEnabled = function(enabled, reason)
-    if enabled then
-        if not flying and not _G.SOS_BlockFlight then
-            startFlying()
-        end
-    else
-        if flying then
-            stopFlying()
-        end
-    end
-end
-
-_G.SOS_StopFlight = function(reason)
-    if flying then
-        stopFlying()
-    end
-end
-
-_G.SOS_StartCarUI = function()
-    notify("Car Animations", "Car UI not wired yet. Tell me and I will embed it here.", 4)
-end
-
---------------------------------------------------------------------
 -- CONFIG
 --------------------------------------------------------------------
 local DEBUG = false
@@ -202,6 +165,8 @@ local humanoid
 local rootPart
 
 local flying = false
+local isTyping = false   -- true when a TextBox is focused (chat etc.)
+
 local bodyGyro
 local bodyVel
 
@@ -291,7 +256,6 @@ local antiEnabled = {
 	fling = false,
 }
 
--- For anti-push/anti-fling: monitor velocity and counteract
 local antiPushForce = nil
 local antiFlingForce = nil
 
@@ -299,22 +263,18 @@ local antiFlingForce = nil
 -- CLIENT CUSTOMIZATION
 --------------------------------------------------------------------
 local accentColor = Color3.fromRGB(200, 40, 40)  -- default red
-local disableBhop = false
-local disableCarAnim = false
 
 --------------------------------------------------------------------
--- ANIMATION USAGE TRACKING (for green circle / star)
+-- ANIMATION USAGE TRACKING
 --------------------------------------------------------------------
 local AnimationUsage = {}          -- idString -> true if ever applied
 local KnownAnimations = {}         -- idString -> true (snapshot from last run)
 local NewAnimations = {}          -- idString -> true (computed on load)
 
--- Helper to build a unique ID for a Pack animation
 local function makePackAnimId(packName, state)
 	return "Pack:" .. packName .. ":" .. state .. ":" .. packName
 end
 
--- Helper to build a unique ID for a Custom animation
 local function makeCustomAnimId(state, name)
 	return "Custom:" .. state .. ":" .. name
 end
@@ -385,7 +345,7 @@ local function stopAllPlayingTracks(hum)
 end
 
 --------------------------------------------------------------------
--- SAVE / LOAD (per UserId)
+-- SAVE / LOAD
 --------------------------------------------------------------------
 local function canFileIO()
 	return (typeof(readfile) == "function") and (typeof(writefile) == "function") and (typeof(isfile) == "function")
@@ -435,17 +395,12 @@ local function buildSettingsTable()
 
 		Lighting = _G.__SOS_LightingSaveState or nil,
 
-		-- Animation usage tracking
 		AnimationUsage = AnimationUsage,
 		KnownAnimations = KnownAnimations,
 
-		-- Anti features
 		AntiEnabled = antiEnabled,
 
-		-- Client customisation
 		AccentColor = { accentColor.R, accentColor.G, accentColor.B },
-		DisableBhop = disableBhop,
-		DisableCarAnim = disableCarAnim,
 	}
 end
 
@@ -489,7 +444,6 @@ local function applySettingsTable(s)
 		_G.__SOS_LightingSaveState = s.Lighting
 	end
 
-	-- Animation usage tracking
 	if typeof(s.AnimationUsage) == "table" then
 		AnimationUsage = s.AnimationUsage
 	end
@@ -497,7 +451,6 @@ local function applySettingsTable(s)
 		KnownAnimations = s.KnownAnimations
 	end
 
-	-- Anti features
 	if typeof(s.AntiEnabled) == "table" then
 		for k, v in pairs(s.AntiEnabled) do
 			if antiEnabled[k] ~= nil then
@@ -506,12 +459,9 @@ local function applySettingsTable(s)
 		end
 	end
 
-	-- Client customisation
 	if typeof(s.AccentColor) == "table" and #s.AccentColor >= 3 then
 		accentColor = Color3.new(s.AccentColor[1], s.AccentColor[2], s.AccentColor[3])
 	end
-	if typeof(s.DisableBhop) == "boolean" then disableBhop = s.DisableBhop end
-	if typeof(s.DisableCarAnim) == "boolean" then disableCarAnim = s.DisableCarAnim end
 end
 
 local function loadSettings()
@@ -810,7 +760,7 @@ local function getCharacter()
 end
 
 --------------------------------------------------------------------
--- ANIMATE OVERRIDES (Anim Packs)
+-- ANIMATE OVERRIDES
 --------------------------------------------------------------------
 local function getAnimateScript()
 	if not character then return nil end
@@ -888,7 +838,7 @@ local function reapplyAllOverridesAfterRespawn()
 end
 
 --------------------------------------------------------------------
--- ANIMATION PACK LIST (Roblox Anims / Unreleased)
+-- ANIMATION PACK LIST
 --------------------------------------------------------------------
 local AnimationPacks = {
 	Vampire = { Idle1=1083445855, Idle2=1083450166, Walk=1083473930, Run=1083462077, Jump=1083455352, Climb=1083439238, Fall=1083443587 },
@@ -949,7 +899,7 @@ local function isInUnreleased(name)
 	return false
 end
 --------------------------------------------------------------------
--- CUSTOM ANIMS (Custom tab)
+-- CUSTOM ANIMS
 --------------------------------------------------------------------
 local CustomIdle = {
 	["Lethal Company (R6)"] = 109994416741422,
@@ -1124,7 +1074,7 @@ local CustomRun = {
 local CustomWalk = nil
 
 --------------------------------------------------------------------
--- NEW: PRIVATE CUSTOM LISTS FOR SINS AND CO/OWNERS
+-- PRIVATE CUSTOM LISTS FOR SINS AND CO/OWNERS
 --------------------------------------------------------------------
 local SinsIdle = {
 	    ["Head Orbit (Head Hold V2)"] = 91751429221388,
@@ -1136,7 +1086,6 @@ local SinsRun = {
 
 local CoOwnersIdle = {
 	-- ["Name"] = 1234567890,
-	    
 }
 
 local CoOwnersRun = {
@@ -1209,7 +1158,22 @@ end
 --------------------------------------------------------------------
 -- MOVEMENT INPUT
 --------------------------------------------------------------------
+local isTyping = false
+
+UserInputService.TextBoxFocused:Connect(function()
+	isTyping = true
+end)
+UserInputService.TextBoxFocusReleased:Connect(function()
+	isTyping = false
+end)
+
 local function updateMovementInput()
+	if isTyping then
+		moveInput = Vector3.new(0, 0, 0)
+		verticalInput = 0
+		return
+	end
+
 	local dir = Vector3.new(0, 0, 0)
 
 	if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Vector3.new(0, 0, -1) end
@@ -1230,10 +1194,6 @@ end
 --------------------------------------------------------------------
 local function startFlying()
 	if flying or not humanoid or not rootPart then return end
-	if _G.SOS_BlockFlight then
-		notify("Flight", "Blocked by " .. (_G.SOS_BlockFlightReason or "another feature"), 2)
-		return
-	end
 	flying = true
 
 	humanoid.PlatformStand = true
