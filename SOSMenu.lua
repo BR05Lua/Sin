@@ -2375,7 +2375,6 @@ local function createUI()
 	local antiPage, antiScroll = makePage("Anti")
 	local serverPage, serverScroll = makePage("Server")
 	local clientPage, clientScroll = makePage("Client")
-	local socialPage, socialScroll = makePage("Social")
 	local toolsPage, toolsScroll = makePage("Tools")
 
 	-- Role tabs
@@ -4276,364 +4275,6 @@ end
 		end)
 	end
 
-----------------------------------------------------------------
--- SOCIAL TAB (fully enhanced)
-----------------------------------------------------------------
-do
-    local header = makeText(socialScroll, "Social", 16, true)
-    header.Size = UDim2.new(1, 0, 0, 22)
-
-    -- ------------------------------
-    -- Friends List
-    -- ------------------------------
-    local friendsHeader = makeText(socialScroll, "Friends", 15, true)
-    friendsHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    -- Add friend row
-    local addFriendRow = Instance.new("Frame")
-    addFriendRow.BackgroundTransparency = 1
-    addFriendRow.Size = UDim2.new(1, 0, 0, 44)
-    addFriendRow.Parent = socialScroll
-
-    local friendInput = makeInput(addFriendRow, "Enter User ID")
-    friendInput.Size = UDim2.new(0, 200, 0, 36)
-
-    local addFriendBtn = makeButton(addFriendRow, "Add Friend")
-    addFriendBtn.Size = UDim2.new(0, 120, 0, 36)
-    addFriendBtn.Position = UDim2.new(0, 210, 0, 4)
-    addFriendBtn.MouseButton1Click:Connect(function()
-        local userId = tonumber(friendInput.Text)
-        if not userId then
-            notify("Social", "Enter a valid user ID", 2)
-            return
-        end
-        -- FIXED: Use GetNameFromUserIdAsync instead of GetNameById
-        local success, name = pcall(function()
-            return Players:GetNameFromUserIdAsync(userId)
-        end)
-        if success and name then
-            friendsList[userId] = { name = name, notes = "" }
-            scheduleSave()
-            refreshFriendsList()
-            notify("Social", "Added " .. name .. " to friends", 2)
-        else
-            notify("Social", "Invalid user ID or API error", 2)
-        end
-    end)
-
-    -- Friends list scroll frame
-    local friendsFrame = Instance.new("ScrollingFrame")
-    friendsFrame.BackgroundTransparency = 1
-    friendsFrame.BorderSizePixel = 0
-    friendsFrame.Size = UDim2.new(1, 0, 0, 200)
-    friendsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    friendsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    friendsFrame.ScrollBarThickness = 4
-    friendsFrame.Parent = socialScroll
-
-    local friendsContainer = Instance.new("Frame")
-    friendsContainer.BackgroundTransparency = 1
-    friendsContainer.Size = UDim2.new(1, 0, 0, 0)
-    friendsContainer.Parent = friendsFrame
-
-    local friendsLayout = Instance.new("UIListLayout")
-    friendsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    friendsLayout.Padding = UDim.new(0, 8)
-    friendsLayout.Parent = friendsContainer
-
-    local function refreshFriendsList()
-        for _, child in ipairs(friendsContainer:GetChildren()) do
-            if child:IsA("Frame") then child:Destroy() end
-        end
-
-        for userId, data in pairs(friendsList) do
-            local online = Players:GetPlayerByUserId(userId) ~= nil
-            local row = Instance.new("Frame")
-            row.BackgroundTransparency = 1
-            row.Size = UDim2.new(1, 0, 0, 40)
-            row.Parent = friendsContainer
-
-            local nameLabel = makeText(row, data.name .. (online and " (Online)" or " (Offline)"), 14, true)
-            nameLabel.Size = UDim2.new(0, 200, 1, 0)
-
-            if online then
-                local dot = Instance.new("Frame")
-                dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                dot.Size = UDim2.new(0, 10, 0, 10)
-                dot.Position = UDim2.new(0, 210, 0.5, -5)
-                dot.Parent = row
-                makeCorner(dot, 5)
-            end
-
-            local notesBox = makeInput(row, "Notes")
-            notesBox.Size = UDim2.new(0, 150, 0, 30)
-            notesBox.Position = UDim2.new(0, 230, 0.5, -15)
-            notesBox.Text = data.notes or ""
-            notesBox.FocusLost:Connect(function()
-                friendsList[userId].notes = notesBox.Text
-                scheduleSave()
-            end)
-
-            local removeBtn = makeButton(row, "X")
-            removeBtn.Size = UDim2.new(0, 30, 0, 30)
-            removeBtn.Position = UDim2.new(1, -40, 0.5, -15)
-            removeBtn.MouseButton1Click:Connect(function()
-                friendsList[userId] = nil
-                scheduleSave()
-                refreshFriendsList()
-            end)
-        end
-    end
-    refreshFriendsList()
-
-    -- ------------------------------
-    -- Recent Players
-    -- ------------------------------
-    local recentHeader = makeText(socialScroll, "Recent Players", 15, true)
-    recentHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local recentFrame = Instance.new("ScrollingFrame")
-    recentFrame.BackgroundTransparency = 1
-    recentFrame.BorderSizePixel = 0
-    recentFrame.Size = UDim2.new(1, 0, 0, 150)
-    recentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    recentFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    recentFrame.ScrollBarThickness = 4
-    recentFrame.Parent = socialScroll
-
-    local recentContainer = Instance.new("Frame")
-    recentContainer.BackgroundTransparency = 1
-    recentContainer.Size = UDim2.new(1, 0, 0, 0)
-    recentContainer.Parent = recentFrame
-
-    local recentLayout = Instance.new("UIListLayout")
-    recentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    recentLayout.Padding = UDim.new(0, 8)
-    recentLayout.Parent = recentContainer
-
-    local function refreshRecentList()
-        for _, child in ipairs(recentContainer:GetChildren()) do
-            if child:IsA("Frame") then child:Destroy() end
-        end
-
-        for i, userId in ipairs(recentPlayers) do
-            -- FIXED: Use GetNameFromUserIdAsync
-            local success, name = pcall(function()
-                return Players:GetNameFromUserIdAsync(userId)
-            end)
-            if success and name then
-                local row = Instance.new("Frame")
-                row.BackgroundTransparency = 1
-                row.Size = UDim2.new(1, 0, 0, 40)
-                row.Parent = recentContainer
-
-                local nameLabel = makeText(row, name, 14, true)
-                nameLabel.Size = UDim2.new(0, 200, 1, 0)
-
-                local addFriendBtn = makeButton(row, "Add Friend")
-                addFriendBtn.Size = UDim2.new(0, 100, 0, 30)
-                addFriendBtn.Position = UDim2.new(0, 210, 0.5, -15)
-                addFriendBtn.MouseButton1Click:Connect(function()
-                    friendsList[userId] = { name = name, notes = "" }
-                    scheduleSave()
-                    refreshFriendsList()
-                    notify("Social", "Added " .. name .. " to friends", 2)
-                end)
-
-                local addNoteBtn = makeButton(row, "Note")
-                addNoteBtn.Size = UDim2.new(0, 60, 0, 30)
-                addNoteBtn.Position = UDim2.new(0, 320, 0.5, -15)
-                addNoteBtn.MouseButton1Click:Connect(function()
-                    -- open a small input to add note
-                end)
-            end
-        end
-    end
-    refreshRecentList()
-
-    -- Track players joining to update recent list
-    Players.PlayerAdded:Connect(function(plr)
-        local userId = plr.UserId
-        -- Remove if already present
-        for i, id in ipairs(recentPlayers) do
-            if id == userId then
-                table.remove(recentPlayers, i)
-                break
-            end
-        end
-        table.insert(recentPlayers, 1, userId)
-        if #recentPlayers > 10 then table.remove(recentPlayers) end
-        refreshRecentList()
-        scheduleSave()
-    end)
-
-    -- ------------------------------
-    -- Player List with Mute/Volume
-    -- ------------------------------
-    local playersHeader = makeText(socialScroll, "Players in Server", 15, true)
-    playersHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local playersFrame = Instance.new("ScrollingFrame")
-    playersFrame.BackgroundTransparency = 1
-    playersFrame.BorderSizePixel = 0
-    playersFrame.Size = UDim2.new(1, 0, 0, 200)
-    playersFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    playersFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    playersFrame.ScrollBarThickness = 4
-    playersFrame.Parent = socialScroll
-
-    local playersContainer = Instance.new("Frame")
-    playersContainer.BackgroundTransparency = 1
-    playersContainer.Size = UDim2.new(1, 0, 0, 0)
-    playersContainer.Parent = playersFrame
-
-    local playersLayout = Instance.new("UIListLayout")
-    playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    playersLayout.Padding = UDim.new(0, 8)
-    playersLayout.Parent = playersContainer
-
-    local function refreshPlayersList()
-        for _, child in ipairs(playersContainer:GetChildren()) do
-            if child:IsA("Frame") then child:Destroy() end
-        end
-
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                local userId = plr.UserId
-                local row = Instance.new("Frame")
-                row.BackgroundTransparency = 1
-                row.Size = UDim2.new(1, 0, 0, 40)
-                row.Parent = playersContainer
-
-                local nameLabel = makeText(row, plr.Name, 14, true)
-                nameLabel.Size = UDim2.new(0, 150, 1, 0)
-
-                local muteBtn = makeButton(row, mutedPlayers[userId] and "Unmute" or "Mute")
-                muteBtn.Size = UDim2.new(0, 70, 0, 30)
-                muteBtn.Position = UDim2.new(0, 160, 0.5, -15)
-                muteBtn.MouseButton1Click:Connect(function()
-                    if mutedPlayers[userId] then
-                        mutedPlayers[userId] = nil
-                        -- unmute logic (if any)
-                    else
-                        mutedPlayers[userId] = true
-                        -- mute logic
-                    end
-                    muteBtn.Text = mutedPlayers[userId] and "Unmute" or "Mute"
-                    scheduleSave()
-                end)
-
-                local volume = playerVolumes[userId] or 1
-                local volSlider = Instance.new("Frame")
-                volSlider.BackgroundTransparency = 1
-                volSlider.Size = UDim2.new(0, 100, 0, 20)
-                volSlider.Position = UDim2.new(0, 240, 0.5, -10)
-                volSlider.Parent = row
-
-                local volLabel = makeText(volSlider, math.floor(volume*100).."%", 12, true)
-                volLabel.Size = UDim2.new(1, 0, 0, 20)
-                -- In a real implementation, you'd add a slider here
-                -- For simplicity, we'll just display the volume.
-            end
-        end
-    end
-    refreshPlayersList()
-
-    Players.PlayerAdded:Connect(refreshPlayersList)
-    Players.PlayerRemoving:Connect(refreshPlayersList)
-
-    -- ------------------------------
-    -- Notifications Toggle
-    -- ------------------------------
-    local notifRow = Instance.new("Frame")
-    notifRow.BackgroundTransparency = 1
-    notifRow.Size = UDim2.new(1, 0, 0, 44)
-    notifRow.Parent = socialScroll
-
-    local notifToggle = makeButton(notifRow, friendNotifications and "Friend Notifications: ON" or "Friend Notifications: OFF")
-    notifToggle.Size = UDim2.new(0, 250, 0, 36)
-    notifToggle.MouseButton1Click:Connect(function()
-        friendNotifications = not friendNotifications
-        notifToggle.Text = friendNotifications and "Friend Notifications: ON" or "Friend Notifications: OFF"
-        scheduleSave()
-    end)
-
-    -- ------------------------------
-    -- Wave Radar (simple arrow)
-    -- ------------------------------
-    local radarHeader = makeText(socialScroll, "Friend Radar", 15, true)
-    radarHeader.Size = UDim2.new(1, 0, 0, 20)
-
-    local radarToggle = makeButton(socialScroll, radarEnabled and "Radar: ON" or "Radar: OFF")
-    radarToggle.Size = UDim2.new(0, 250, 0, 36)
-    radarToggle.MouseButton1Click:Connect(function()
-        radarEnabled = not radarEnabled
-        radarToggle.Text = radarEnabled and "Radar: ON" or "Radar: OFF"
-        scheduleSave()
-    end)
-
-    -- Wave radar arrow (small UI in corner)
-    local radarArrow = Instance.new("ImageLabel")
-    radarArrow.Name = "RadarArrow"
-    radarArrow.BackgroundTransparency = 1
-    radarArrow.Size = UDim2.new(0, 40, 0, 40)
-    radarArrow.Position = UDim2.new(1, -50, 1, -50)
-    radarArrow.AnchorPoint = Vector2.new(1, 1)
-    radarArrow.Image = "rbxassetid://6031090990" -- arrow image
-    radarArrow.Visible = radarEnabled
-    radarArrow.Parent = gui
-
-    -- Update radar direction
-    RunService.RenderStepped:Connect(function()
-        if not radarEnabled or not radarArrow then return end
-        -- Find closest friend
-        local myChar = LocalPlayer.Character
-        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        if not myRoot then return end
-
-        local closestFriend = nil
-        local closestDist = math.huge
-        for userId, data in pairs(friendsList) do
-            local plr = Players:GetPlayerByUserId(userId)
-            if plr and plr.Character then
-                local root = plr.Character:FindFirstChild("HumanoidRootPart")
-                if root then
-                    local dist = (root.Position - myRoot.Position).Magnitude
-                    if dist < closestDist then
-                        closestDist = dist
-                        closestFriend = root
-                    end
-                end
-            end
-        end
-
-        if closestFriend then
-            local dir = (closestFriend.Position - myRoot.Position).Unit
-            local angle = math.atan2(-dir.X, -dir.Z) -- because of Roblox's coordinate system
-            radarArrow.Rotation = math.deg(angle)
-            radarArrow.Visible = true
-        else
-            radarArrow.Visible = false
-        end
-    end)
-
-    -- Friend join/leave notifications
-    local function onFriendJoin(plr)
-        if not friendNotifications then return end
-        if friendsList[plr.UserId] then
-            notify("Friend", plr.Name .. " joined the server", 2)
-        end
-    end
-    Players.PlayerAdded:Connect(onFriendJoin)
-
-    Players.PlayerRemoving:Connect(function(plr)
-        if not friendNotifications then return end
-        if friendsList[plr.UserId] then
-            notify("Friend", plr.Name .. " left the server", 2)
-        end
-    end)
-end
-
 	----------------------------------------------------------------
 	-- TOOLS TAB (with popout calculator)
 	----------------------------------------------------------------
@@ -5024,15 +4665,14 @@ end
 
 	addTabButton("Info", 1)
 	addTabButton("Controls", 2, 130)
-	addTabButton("Fly", 3)
-	addTabButton("Anim Packs", 4, 140)
+	addTabButton("Fly", 4)
+	addTabButton("Anim Packs", 3, 140)
 	addTabButton("Player", 5)
 	addTabButton("Camera", 6)
 	addTabButton("Lighting", 7)
 	addTabButton("Anti", 8, 100)
 	addTabButton("Server", 9)
 	addTabButton("Client", 10)
-	addTabButton("Social", 11)
 	addTabButton("Tools", 12)
 
 	if sinsPage then
@@ -5376,3 +5016,187 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 notify("SOS HUD", "Loaded.", 2)
+
+----------------------------------------------------------------
+-- CUSTOM CHAT VIEWER + ANIMATIONS + AESTHETIC BAR (button above viewer)
+----------------------------------------------------------------
+local viewer = Instance.new("Frame")
+viewer.Name = "SOS_ChatViewer"
+viewer.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+viewer.BackgroundTransparency = 1
+viewer.BorderSizePixel = 0
+viewer.Position = UDim2.new(0, 10, 0.55, -150)   -- viewer remains here
+viewer.Size = UDim2.new(0.22, 0, 0, 320)
+viewer.Visible = false
+viewer.Parent = gui
+
+makeCorner(viewer, 12)
+makeGlass(viewer)
+makeStroke(viewer, 2)
+
+-- Title bar (draggable)
+local viewerTitle = Instance.new("Frame")
+viewerTitle.BackgroundTransparency = 1
+viewerTitle.Size = UDim2.new(1, 0, 0, 24)
+viewerTitle.Parent = viewer
+
+local titleLabel = makeText(viewerTitle, "Messages", 14, true)
+titleLabel.Size = UDim2.new(1, -30, 1, 0)
+titleLabel.Position = UDim2.new(0, 8, 0, 0)
+
+local closeBtn = makeButton(viewerTitle, "X")
+closeBtn.Size = UDim2.new(0, 22, 0, 22)
+closeBtn.AnchorPoint = Vector2.new(1, 0.5)
+closeBtn.Position = UDim2.new(1, -4, 0.5, 0)
+closeBtn.TextSize = 12
+closeBtn.MouseButton1Click:Connect(function()
+    local t = TweenService:Create(viewer, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+    t:Play()
+    t.Completed:Connect(function()
+        viewer.Visible = false
+    end)
+end)
+
+-- Aesthetic bar
+local aesFrame = Instance.new("Frame")
+aesFrame.BackgroundTransparency = 1
+aesFrame.Size = UDim2.new(1, 0, 0, 14)
+aesFrame.Position = UDim2.new(0, 0, 0, 26)
+aesFrame.Parent = viewer
+
+local aesLabel = makeText(aesFrame, "SOS Chat Viewer (For The Aesthetic)", 10, false)
+aesLabel.Size = UDim2.new(1, 0, 1, 0)
+aesLabel.TextColor3 = Color3.fromRGB(160, 160, 190)
+aesLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Message area
+local msgFrame = Instance.new("ScrollingFrame")
+msgFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+msgFrame.BackgroundTransparency = 0.35
+msgFrame.BorderSizePixel = 0
+msgFrame.Position = UDim2.new(0, 4, 0, 44)
+msgFrame.Size = UDim2.new(1, -8, 1, -48)
+msgFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+msgFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+msgFrame.ScrollBarThickness = 3
+msgFrame.Parent = viewer
+
+local msgContainer = Instance.new("Frame")
+msgContainer.BackgroundTransparency = 1
+msgContainer.Size = UDim2.new(1, 0, 0, 0)
+msgContainer.Parent = msgFrame
+
+local msgLayout = Instance.new("UIListLayout")
+msgLayout.SortOrder = Enum.SortOrder.LayoutOrder
+msgLayout.Padding = UDim.new(0, 5)
+msgLayout.Parent = msgContainer
+
+-- Add message with fade‑in animation
+local function addMessage(speaker, message)
+    local msg = Instance.new("Frame")
+    msg.BackgroundTransparency = 1
+    msg.Size = UDim2.new(1, 0, 0, 22)
+    msg.AutomaticSize = Enum.AutomaticSize.Y
+
+    local combined = makeText(msg, speaker .. ": " .. message, 14, false)
+    combined.Size = UDim2.new(1, 0, 1, 0)
+    combined.TextWrapped = true
+    combined.TextTransparency = 1
+    combined.Position = UDim2.new(0, 0, 0, 5)
+    msg.Parent = msgContainer
+
+    local tween1 = TweenService:Create(combined, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0, Position = UDim2.new(0, 0, 0, 0)})
+    tween1:Play()
+
+    msgFrame.CanvasPosition = Vector2.new(0, msgFrame.CanvasSize.Y)
+end
+
+-- Hook into chat
+pcall(function()
+    local tcs = game:GetService("TextChatService")
+    if tcs then
+        local signal = tcs.MessageReceived
+        if signal then
+            signal:Connect(function(message)
+                local speaker = message.TextSource and message.TextSource.Name or "Unknown"
+                local text = message.Text or ""
+                addMessage(speaker, text)
+            end)
+        else
+            local oldCallback = tcs.OnIncomingMessage
+            tcs.OnIncomingMessage = function(message)
+                if oldCallback then oldCallback(message) end
+                local speaker = message.TextSource and message.TextSource.Name or "Unknown"
+                local text = message.Text or ""
+                addMessage(speaker, text)
+            end
+        end
+    end
+end)
+
+pcall(function()
+    Players.PlayerChatted:Connect(function(plr, message)
+        addMessage(plr.Name, message)
+    end)
+end)
+
+-- Dragging logic
+local dragStart, startPos
+viewerTitle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragStart = input.Position
+        startPos = viewer.Position
+    end
+end)
+viewerTitle.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragStart = nil
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragStart and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        viewer.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- ==============================
+-- Glass toggle button "CC" (just above viewer)
+-- ==============================
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "SOS_CC_Toggle"
+toggleBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+toggleBtn.BackgroundTransparency = 0.18
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Position = UDim2.new(0, 10, 0.55, -182)
+toggleBtn.Size = UDim2.new(0, 28, 0, 28)
+toggleBtn.Text = "CC"
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 14
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Visible = true
+toggleBtn.Parent = gui
+
+makeCorner(toggleBtn, 10)
+makeStroke(toggleBtn, 2)
+
+-- Toggle viewer with fade animation
+toggleBtn.MouseButton1Click:Connect(function()
+    if not viewer.Visible then
+        viewer.Visible = true
+        viewer.BackgroundTransparency = 1
+        local t = TweenService:Create(viewer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.18})
+        t:Play()
+    else
+        local t = TweenService:Create(viewer, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+        t:Play()
+        t.Completed:Connect(function()
+            viewer.Visible = false
+        end)
+    end
+end)
+
+_G.SOS_ChatViewer = viewer
