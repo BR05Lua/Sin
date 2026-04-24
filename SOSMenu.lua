@@ -4307,8 +4307,10 @@ do
             notify("Social", "Enter a valid user ID", 2)
             return
         end
-        -- Try to get name
-        local success, name = pcall(Players.GetNameById, Players, userId)
+        -- FIXED: Use GetNameFromUserIdAsync instead of GetNameById
+        local success, name = pcall(function()
+            return Players:GetNameFromUserIdAsync(userId)
+        end)
         if success and name then
             friendsList[userId] = { name = name, notes = "" }
             scheduleSave()
@@ -4415,8 +4417,11 @@ do
         end
 
         for i, userId in ipairs(recentPlayers) do
-            local success, name = pcall(Players.GetNameById, Players, userId)
-            if success then
+            -- FIXED: Use GetNameFromUserIdAsync
+            local success, name = pcall(function()
+                return Players:GetNameFromUserIdAsync(userId)
+            end)
+            if success and name then
                 local row = Instance.new("Frame")
                 row.BackgroundTransparency = 1
                 row.Size = UDim2.new(1, 0, 0, 40)
