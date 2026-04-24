@@ -6,8 +6,6 @@ if RunService:IsServer() then return end
 
 local player = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- ==================== BLOCKED USERS ====================
--- Add User IDs that should NOT be able to use this loader
 local BLOCKED_USER_IDS = {
 	5348319883,
 	2700657849,
@@ -28,7 +26,7 @@ local BLOCKED_USER_IDS = {
 	-- Add more IDs if needed
 }
 if BLOCKED_USER_IDS[player.UserId] then
-	-- Blocked user – do nothing
+
 	return
 end
 -- =======================================================
