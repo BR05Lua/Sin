@@ -6,6 +6,33 @@ if RunService:IsServer() then return end
 
 local player = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
+-- ==================== BLOCKED USERS ====================
+-- Add User IDs that should NOT be able to use this loader
+local BLOCKED_USER_IDS = {
+	5348319883,
+	2700657849,
+	2630250935,
+	4603524519,
+	2263655527,
+	5810772480,
+	3753583512,
+	918206644,
+	4051960868,
+	5537855816,
+	69464507,
+	5787880504,
+	931701267,
+	7157428326,
+	118170824,
+	4659279349,
+	-- Add more IDs if needed
+}
+if BLOCKED_USER_IDS[player.UserId] then
+	-- Blocked user – do nothing
+	return
+end
+-- =======================================================
+
 local LOADER_LOCK_NAME = "StepsLoader_Lock"
 if CoreGui:FindFirstChild(LOADER_LOCK_NAME) then
     warn("[StepsLoader] Already running")
