@@ -2642,7 +2642,7 @@ end
 	end
 
 ----------------------------------------------------------------
--- ANIM PACKS TAB (with search bar + global search) - FIXED LIVE UPDATE
+-- ANIM PACKS TAB (with Emote Browser toggle)
 ----------------------------------------------------------------
 do
 	-- Cache your avatar's Animate IDs (from the actual Animate script on your character)
@@ -2810,10 +2810,363 @@ do
 		end)
 	end)
 
+	-- ========== EMOTE BROWSER (PAGINATED, LIVE CATALOG) ==========
+	local emoteBrowserGui = nil
+	local function createEmoteBrowser()
+		if emoteBrowserGui then
+			emoteBrowserGui.Enabled = not emoteBrowserGui.Enabled
+			return
+		end
+
+		-- Safe HTTP helper (works in Xeno: http_request, HttpGet, request)
+		local function httpGet(url)
+			if http_request then
+				local s, r = pcall(function() return http_request({Url=url, Method="GET"}) end)
+				if s and r and r.Body then return r.Body end
+			end
+			if HttpGet then
+				local s, r = pcall(function() return HttpGet(url) end)
+				if s and r then return r end
+			end
+			if request then
+				local s, r = pcall(function() return request({Url=url, Method="GET"}) end)
+				if s and r and r.Body then return r.Body end
+			end
+			return nil
+		end
+
+		local function resolveAnimationId(assetId)
+			local url = "https://assetdelivery.roblox.com/v1/assetId/" .. assetId
+			local raw = httpGet(url)
+			if not raw then return nil end
+			local ok, delivery = pcall(function() return HttpService:JSONDecode(raw) end)
+			if ok and delivery.location then
+				local content = httpGet(delivery.location)
+				if content then
+					local match = content:match("rbxassetid://%d+")
+					if match then return match end
+				end
+			end
+			return nil
+		end
+
+		local loadedEmotes = {}
+		local searchQuery = ""
+		local listFrame, statusLabel, pageLabel
+		local currentCursor = nil            -- nextPageCursor for next fetch
+		local cursorStack = {}               -- stack of cursors for previous pages
+		local currentPage = 1
+
+		local function updateList()
+			if not listFrame then return end
+			for _, c in ipairs(listFrame:GetChildren()) do
+				if c:IsA("TextButton") then c:Destroy() end
+			end
+			for _, em in ipairs(loadedEmotes) do
+				if searchQuery == "" or em.name:lower():find(searchQuery, 1, true) then
+					local btn = Instance.new("TextButton")
+					btn.BackgroundColor3 = Color3.fromRGB(16,16,20)
+					btn.BackgroundTransparency = 0.25
+					btn.BorderSizePixel = 0
+					btn.Size = UDim2.new(1,0,0,34)
+					btn.Text = ""
+					btn.Parent = listFrame
+					Instance.new("UICorner",btn).CornerRadius = UDim.new(0,6)
+					local lbl = Instance.new("TextLabel")
+					lbl.BackgroundTransparency = 1
+					lbl.Position = UDim2.new(0,8,0,0)
+					lbl.Size = UDim2.new(1,-60,1,0)
+					lbl.TextXAlignment = Enum.TextXAlignment.Left
+					lbl.Font = Enum.Font.Gotham
+					lbl.TextSize = 14
+					lbl.TextColor3 = Color3.fromRGB(245,245,245)
+					lbl.Text = em.name
+					lbl.Parent = btn
+					btn.MouseButton1Click:Connect(function()
+						local animId
+						if em.animationid then
+							-- Already resolved (from GitHub fallback)
+							animId = em.animationid:match("id=(%d+)")
+							animId = animId and ("rbxassetid://"..animId) or em.animationid
+						else
+							-- Resolve from live catalog asset ID
+							if statusLabel then
+								statusLabel.Text = "Loading animation..."
+								statusLabel.TextColor3 = Color3.fromRGB(200,200,200)
+							end
+							animId = resolveAnimationId(em.id)
+							if not animId then
+								if statusLabel then
+									statusLabel.Text = "Could not load animation."
+									statusLabel.TextColor3 = Color3.fromRGB(220,80,80)
+								end
+								return
+							end
+							if statusLabel then
+								statusLabel.Text = string.format("Page %d • %d emotes", currentPage, #loadedEmotes)
+								statusLabel.TextColor3 = Color3.fromRGB(180,255,180)
+							end
+						end
+						if animId then
+							local char = LocalPlayer.Character
+							if char then
+								local animate = char:FindFirstChild("Animate")
+								if animate then
+									local anim = Instance.new("Animation")
+									anim.AnimationId = animId
+									pcall(function() animate.PlayEmote:Invoke(anim) end)
+								end
+							end
+						end
+					end)
+				end
+			end
+		end
+
+		local function fetchEmotes(query, cursor, goingBack)
+			statusLabel.Text = "Loading..."
+			statusLabel.TextColor3 = Color3.fromRGB(200,200,200)
+
+			local url
+			if query and query ~= "" then
+				url = "https://catalog.roblox.com/v1/search/items/details"
+					.. "?Category=12&Subcategory=39&SortType=Relevance&IncludeNotForSale=true&Limit=30&Keyword="
+					.. HttpService:UrlEncode(query)
+			else
+				url = "https://catalog.roblox.com/v1/search/items/details"
+					.. "?Category=12&Subcategory=39&SortType=3&IncludeNotForSale=true&Limit=30"
+			end
+			if cursor and cursor ~= "" then
+				url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
+			end
+
+			local raw = httpGet(url)
+
+			if raw then
+				local ok, response = pcall(function() return HttpService:JSONDecode(raw) end)
+				if ok and response and response.data then
+					loadedEmotes = {}
+					for _, item in ipairs(response.data) do
+						if item.name then
+							table.insert(loadedEmotes, {
+								id = item.id,
+								name = item.name,
+								animationid = nil, -- resolved on click
+								price = item.price,
+								creatorName = item.creatorName,
+							})
+						end
+					end
+					currentCursor = response.nextPageCursor or ""
+					if not goingBack then
+						-- When going forward, push the previous cursor onto the stack
+						table.insert(cursorStack, cursor)
+					else
+						-- When going back, pop from the stack
+						table.remove(cursorStack)
+					end
+					statusLabel.Text = string.format("Page %d • %d emotes (live)", currentPage, #loadedEmotes)
+					statusLabel.TextColor3 = Color3.fromRGB(180,255,180)
+					if pageLabel then pageLabel.Text = "Page " .. tostring(currentPage) end
+					updateList()
+					return
+				end
+			end
+
+			-- Fallback to GitHub static list (only on first page, no query)
+			if currentPage == 1 and (not query or query == "") then
+				local rawGit = httpGet("https://raw.githubusercontent.com/Joystickplays/AFEM/refs/heads/main/emotes.json")
+				if rawGit then
+					local ok, list = pcall(function() return HttpService:JSONDecode(rawGit) end)
+					if ok and list then
+						loadedEmotes = {}
+						for _, e in ipairs(list) do
+							if e.name and e.animationid then
+								table.insert(loadedEmotes, {
+									id = e.id,
+									name = e.name,
+									animationid = e.animationid,
+								})
+							end
+						end
+						currentCursor = ""
+						statusLabel.Text = string.format("Loaded %d emotes (offline list)", #loadedEmotes)
+						statusLabel.TextColor3 = Color3.fromRGB(255,220,80)
+						if pageLabel then pageLabel.Text = "Offline" end
+						updateList()
+						return
+					end
+				end
+			end
+
+			statusLabel.Text = "Network error"
+			statusLabel.TextColor3 = Color3.fromRGB(220,80,80)
+		end
+
+		local function goNext()
+			if currentCursor ~= "" then
+				currentPage = currentPage + 1
+				fetchEmotes(searchQuery, currentCursor, false)
+			end
+		end
+
+		local function goPrev()
+			if #cursorStack > 0 then
+				currentPage = currentPage - 1
+				local prevCursor = cursorStack[#cursorStack]
+				fetchEmotes(searchQuery, prevCursor, true)
+			end
+		end
+
+		-- Build the Emote Browser GUI
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "SOS_EmoteBrowser"
+		gui.ResetOnSpawn = false
+		gui.IgnoreGuiInset = true
+		gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+		local main = Instance.new("Frame")
+		main.AnchorPoint = Vector2.new(0,0)
+		main.Position = UDim2.new(0, 320, 0, 160)
+		main.Size = UDim2.new(0, 310, 0, 400)
+		main.BorderSizePixel = 0
+		main.ClipsDescendants = true
+		main.BackgroundColor3 = Color3.fromRGB(10,10,12)
+		main.BackgroundTransparency = 0.18
+		main.Parent = gui
+
+		Instance.new("UICorner",main).CornerRadius = UDim.new(0,12)
+		local glass = Instance.new("UIGradient",main)
+		glass.Rotation = 90
+		glass.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0,Color3.fromRGB(18,18,22)),
+			ColorSequenceKeypoint.new(0.4,Color3.fromRGB(10,10,12)),
+			ColorSequenceKeypoint.new(1,Color3.fromRGB(6,6,8))
+		})
+		local stroke = Instance.new("UIStroke",main)
+		stroke.Color = accentColor
+		stroke.Thickness = 2
+		stroke.Transparency = 0.1
+
+		-- Title bar (draggable)
+		local titleBar = Instance.new("Frame")
+		titleBar.BackgroundTransparency = 1
+		titleBar.Size = UDim2.new(1,0,0,30)
+		titleBar.Parent = main
+
+		local titleLabel = Instance.new("TextLabel")
+		titleLabel.BackgroundTransparency = 1
+		titleLabel.Position = UDim2.new(0,8,0,0)
+		titleLabel.Size = UDim2.new(1,-40,1,0)
+		titleLabel.Font = Enum.Font.GothamBold
+		titleLabel.TextSize = 16
+		titleLabel.Text = "Emotes"
+		titleLabel.TextColor3 = Color3.fromRGB(245,245,245)
+		titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+		titleLabel.Parent = titleBar
+
+		local closeBtn = makeButton(titleBar, "X")
+		closeBtn.Size = UDim2.new(0,24,0,24)
+		closeBtn.AnchorPoint = Vector2.new(1,0.5)
+		closeBtn.Position = UDim2.new(1,-6,0.5,0)
+		closeBtn.TextSize = 14
+		closeBtn.MouseButton1Click:Connect(function() gui.Enabled = false end)
+
+		-- Status label
+		statusLabel = makeText(main, "Loading...", 13, false)
+		statusLabel.Position = UDim2.new(0,8,0,32)
+		statusLabel.Size = UDim2.new(1,-16,0,18)
+
+		-- Search box
+		local searchBox = makeInput(main, "Search...")
+		searchBox.Position = UDim2.new(0,8,0,52)
+		searchBox.Size = UDim2.new(1,-16,0,28)
+		searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+			searchQuery = searchBox.Text
+			currentPage = 1
+			currentCursor = nil
+			cursorStack = {}
+			fetchEmotes(searchQuery, nil, false)
+		end)
+
+		-- Pagination row (Prev, page label, Next)
+		local pagBar = Instance.new("Frame")
+		pagBar.BackgroundTransparency = 1
+		pagBar.Position = UDim2.new(0,8,0,84)
+		pagBar.Size = UDim2.new(1,-16,0,24)
+		pagBar.Parent = main
+		local pagLayout = Instance.new("UIListLayout")
+		pagLayout.FillDirection = Enum.FillDirection.Horizontal
+		pagLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		pagLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		pagLayout.Padding = UDim.new(0,8)
+		pagLayout.Parent = pagBar
+
+		local prevBtn = makeButton(pagBar, "Prev")
+		prevBtn.Size = UDim2.new(0,60,0,22)
+		prevBtn.TextSize = 12
+		prevBtn.MouseButton1Click:Connect(goPrev)
+
+		pageLabel = makeText(pagBar, "Page 1", 12, true)
+		pageLabel.Size = UDim2.new(0,60,0,22)
+		pageLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+		local nextBtn = makeButton(pagBar, "Next")
+		nextBtn.Size = UDim2.new(0,60,0,22)
+		nextBtn.TextSize = 12
+		nextBtn.MouseButton1Click:Connect(goNext)
+
+		-- Emote list
+		listFrame = Instance.new("ScrollingFrame")
+		listFrame.BackgroundTransparency = 1
+		listFrame.BorderSizePixel = 0
+		listFrame.Position = UDim2.new(0,8,0,112)
+		listFrame.Size = UDim2.new(1,-16,1,-120)
+		listFrame.CanvasSize = UDim2.new(0,0,0,0)
+		listFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		listFrame.ScrollBarThickness = 3
+		listFrame.Parent = main
+
+		local listLayout = Instance.new("UIListLayout")
+		listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		listLayout.Padding = UDim.new(0,4)
+		listLayout.Parent = listFrame
+
+		-- Dragging
+		local dragging, dragStart, startPos
+		titleBar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+				dragStart = input.Position
+				startPos = main.Position
+			end
+		end)
+		titleBar.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(input)
+			if not dragging then return end
+			if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+			local delta = input.Position - dragStart
+			main.Position = UDim2.new(
+				startPos.X.Scale, startPos.X.Offset + delta.X,
+				startPos.Y.Scale, startPos.Y.Offset + delta.Y
+			)
+		end)
+
+		-- Initial fetch
+		fetchEmotes("", nil, false)
+		emoteBrowserGui = gui
+	end
+
+	-- ========== ORIGINAL ANIM PACKS TAB CONTENT ==========
 	local header = makeText(animScroll, "Anim Packs", 16, true)
 	header.Size = UDim2.new(1, 0, 0, 22)
 
-	-- Reset row at the top
+	-- Reset row at the top (now includes Emote toggle)
 	do
 		local row = Instance.new("Frame")
 		row.BackgroundTransparency = 1
@@ -2828,6 +3181,11 @@ do
 
 		local resetBtn = makeButton(row, "Reset to Avatar")
 		resetBtn.Size = UDim2.new(0, 170, 0, 36)
+
+		-- NEW: Emote browser button
+		local emoteBtn = makeButton(row, "🎭 Emotes")
+		emoteBtn.Size = UDim2.new(0, 120, 0, 36)
+		emoteBtn.MouseButton1Click:Connect(createEmoteBrowser)
 
 		local hint = makeText(row, "Restores what your avatar had equipped (not the menu).", 13, false)
 		hint.Size = UDim2.new(1, -190, 1, 0)
@@ -3223,6 +3581,7 @@ do
 	setCategory(lastChosenCategory)
 	setState(lastChosenState)
 end
+	
 ----------------------------------------------------------------
 -- PLAYER TAB (BHOP and Car sections fully commented out)
 ----------------------------------------------------------------
@@ -4142,6 +4501,7 @@ do
         7157428326,
         118170824,
         4659279349,
+	    9782121990,
     }
 
     local blockedSet = {}
