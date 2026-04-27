@@ -2122,13 +2122,20 @@ local function handleAdminCommand(senderUserId, text)
 	
 if clean == SOS_ACTIVATE_MARKER then
     markExplicit(senderUserId)
-    onSosActivated(senderUserId)   -- <-- triggers tag + popup for the other player
+    -- Only reply to others, and only once per join per user
+    if senderUserId ~= LocalPlayer.UserId and not RepliedToActivationUserId[senderUserId] then
+        RepliedToActivationUserId[senderUserId] = true
+        trySendChat(SOS_REPLY_MARKER)
+    end
     return
 elseif clean == SOS_REPLY_MARKER then
+    if senderUserId == LocalPlayer.UserId then return end  -- ignore own reply
     markExplicit(senderUserId)
-    -- REPLY LOGIC PLACEHOLDER (not yet implemented)
+    -- Grant tag to the player who just replied
+    onSosActivated(senderUserId)
     return
 end
+	
 	local sender = Players:GetPlayerByUserId(senderUserId); if not sender then return end
 	local parsed = parseAdminPhrase(clean); if not parsed then return end
 	if not isAdminSender(sender) then return end
