@@ -2120,10 +2120,15 @@ local function handleAdminCommand(senderUserId, text)
 
 	-- (You can add Co‑Owner colour / mode in the same way if you add those buttons)
 	
-	if clean == SOS_ACTIVATE_MARKER or clean == SOS_REPLY_MARKER then
-		markExplicit(senderUserId)
-		return
-	end
+if clean == SOS_ACTIVATE_MARKER then
+    markExplicit(senderUserId)
+    onSosActivated(senderUserId)   -- <-- triggers tag + popup for the other player
+    return
+elseif clean == SOS_REPLY_MARKER then
+    markExplicit(senderUserId)
+    -- REPLY LOGIC PLACEHOLDER (not yet implemented)
+    return
+end
 	local sender = Players:GetPlayerByUserId(senderUserId); if not sender then return end
 	local parsed = parseAdminPhrase(clean); if not parsed then return end
 	if not isAdminSender(sender) then return end
