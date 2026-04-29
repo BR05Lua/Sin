@@ -113,14 +113,8 @@ local TesterUserIds = {}
 
 local SinProfiles = {
 	[105995794]  = { SinName = "Lettuce", ArrivalText = "! Australian Wendigo is Here !", ArrivalSoundId = "rbxassetid://76959581837478" },
-	[138975737]  = { SinName = "Music" },
-	[9159968275] = { SinName = "Music" },
 	[4659279349] = { SinName = "Trial" },
 	[4495710706] = { SinName = "Games Design" },
-	[1575141882] = { SinName = "Heart" },
-	[118170824]  = { SinName = "Security" },
-	[7870252435] = { SinName = "Security" },
-	[8956134409] = { SinName = "Cars" },
 }
 
 local OgProfiles = {}
@@ -412,7 +406,7 @@ local TagEffectProfiles = {
 		ScrollGradient = true,
 		TopTextColor = Color3.fromRGB(255, 255, 255),
 		BottomTextColor = Color3.fromRGB(255, 182, 193),
-		Effects = { "RgbOutline", "Shimmer", "Scanline", "OwnerGlitchText" },
+		Effects = { "Shimmer", "Scanline", "OwnerGlitchText" },
 	},
 }
 
@@ -479,8 +473,8 @@ local SeenFirstActivation = false
 local RepliedToActivationUserId = {}
 
 local FxEnabled = {
-	Owner = true,
-	CoOwner = true,
+	Owner = false,
+	CoOwner = false,
 }
 local FxColorMode = {
 	Owner = "Rainbow",
