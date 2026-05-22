@@ -1017,13 +1017,17 @@ local CustomIdle = {
 	["I Omni Man"] = 74854783010509,
 	["AM Oguri Cap"] = 94428390083053,
 	["FNAF Deactivated Twitch"] = 124566621091242,
+	["Brick King"] = 70963155156959,
+	["Wobble"] = 103528280162597,
+	["Tomodachi"] = 105385696264631,
+	["JJK Gojo 2"] = 137375595037335,
 }
 
 local CustomRun = {
 	["Conga (R6)"] = 117506341081827,
-	["Dr. Livesey (R6)"] = 126769395026240,
+	["Phonk 1 (R6)"] = 126769395026240,
 	["Tall"] = 134010853417610,
-	["CWACOM Officer Earl"] = 104646820775114,
+	["CWACOM Officer Earl"] = 111126630007706,
 	["AOT Titan"] = 95363958550738,
 	["Animal"] = 87721497492370,
 	["POTC Captain JS"] = 87806542116815,
@@ -1070,6 +1074,25 @@ local CustomRun = {
 	["FN The Worm"] = 89593072932752,
 	["FN Atmosphere"] = 76771407674660,
 	["Cant Catch Me"] = 91071050103167,
+	["Podium"] = 82402644662310,
+	["Zesty"] = 73076155222803,
+	["FG Sneakers O toole"] = 105375174412585,
+	["Animal 2"] = 82512667882125,
+	["B Walk"] = 76363327620578,
+	["Zombie 4"] = 70408316066496,
+	["F Jane Doe (R6)"] = 119545916455209,
+	["Tuff"] = 72012603133368,
+	["Tall 2"] = 100019669366103,
+	["Chill (R6)"] = 117819103741451,
+	["Animal 3"] = 120271445804906,
+	["Phonk 2"] = 77542054452640,
+	["Tall (Retro)"] = 128642113698397,
+	["Holy Vibe"] = 138232209975169,
+	["Zombie 5"] = 111031755511754,
+	["Zombie 6"] = 114920662920155,
+	["OMG RUN "] = 88942339708679,
+	["Animal 4"] = 81740587768409,
+	["Run Run Run"] = 106972156438627,
 }
 
 local CustomWalk = nil
@@ -1079,10 +1102,12 @@ local CustomWalk = nil
 --------------------------------------------------------------------
 local SinsIdle = {
 	    ["Head Orbit (Head Hold V2)"] = 91751429221388,
+	
 }
 
 local SinsRun = {
-	-- ["Name"] = 1234567890,
+	["Float Forward (R6)"] = 91163581190453,
+	
 }
 
 local CoOwnersIdle = {
