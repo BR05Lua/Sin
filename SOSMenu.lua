@@ -1021,6 +1021,12 @@ local CustomIdle = {
 	["Wobble"] = 103528280162597,
 	["Tomodachi"] = 105385696264631,
 	["JJK Gojo 2"] = 137375595037335,
+	["DW Goob"] = 84966079108685,
+	["MD Cyn Maid"] = 79205117460376,
+	["Look i have a Tail"] = 84215390765310,
+	["Absolute Cinema"] = 137483785463787,
+	["Vibe (sit)"] = 87335992288034,
+	["F Injured"] = 73905365652295,
 }
 
 local CustomRun = {
