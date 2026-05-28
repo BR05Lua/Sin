@@ -1092,6 +1092,7 @@ local CustomRun = {
 	["OMG RUN "] = 88942339708679,
 	["Animal 4"] = 81740587768409,
 	["Run Run Run"] = 106972156438627,
+	["Sneakers"] = 122407648398789,
 }
 
 local CustomWalk = nil
