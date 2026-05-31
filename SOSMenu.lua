@@ -1027,6 +1027,7 @@ local CustomIdle = {
 	["Absolute Cinema"] = 137483785463787,
 	["Vibe (sit)"] = 87335992288034,
 	["F Injured"] = 73905365652295,
+	["Cat Girl"] = 120967255124828,
 }
 
 local CustomRun = {
